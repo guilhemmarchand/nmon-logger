@@ -31,9 +31,73 @@ For this to be achievied, syslog can be used as the transport layer.
 
 *** For rsyslog: ***
 
-See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:syslog-ng
+See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:rsyslog
 
 *** For syslog-ng: ***
 
-See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:rsyslog
+See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:syslog-ng
+
+###################################
+### Project:			###
+###################################
+
+Using rsyslog:
+
+Unix / Linux --> nmon-logger --> local rsyslog --> rsyslog file monitoring --> rsyslog collector --> Splunk
+
+Using syslog-ng:
+
+Unix / Linux --> nmon-logger --> local syslog-ng --> syslog-ng file monitoring --> syslog-ng collector --> Splunk
+
+###################################
+### Requirements:               ###
+###################################
+
+- rsyslog v8.x minimum OR syslog-ng v3.x
+
+- Perl (minimal core env)
+
+- Python 2.7.x
+
+###################################
+### Content:                    ###
+###################################
+
+### nmon-logger-rsyslog: ###
+
+etc/
+    cron.d/nmon-logger
+    logrotate.d/nmon-logger
+    nmon-logger/
+		bin/(various)
+		default/nmon.conf
+    rsyslog.d/20-nmon-logger.conf
+
+### nmon-logger-syslog-ng: ###
+
+etc/
+    cron.d/nmon-logger
+    logrotate.d/nmon-logger
+    nmon-logger/
+                bin/(various)
+                default/nmon.conf
+    syslog-ng/conf.d/nmon-logger.conf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
