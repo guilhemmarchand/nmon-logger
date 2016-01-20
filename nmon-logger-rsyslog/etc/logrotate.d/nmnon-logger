@@ -1,0 +1,39 @@
+/var/log/nmon-logger/var/perf_repository/nmon_perfdata.log
+{
+        rotate 7
+        daily
+        missingok
+        notifempty
+        delaycompress
+        compress
+        postrotate
+                reload rsyslog >/dev/null 2>&1 || true
+        endscript
+}
+
+/var/log/nmon-logger/var/config_repository/nmon_configdata.log
+{
+        rotate 7
+        daily
+        missingok
+        notifempty
+        delaycompress
+        compress
+        postrotate
+                reload rsyslog >/dev/null 2>&1 || true
+        endscript
+}
+
+/var/log/nmon-logger/*.log
+{
+        rotate 7
+        daily
+        missingok
+        notifempty
+        delaycompress
+        compress
+        postrotate
+                reload rsyslog >/dev/null 2>&1 || true
+        endscript
+}
+
