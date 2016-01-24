@@ -1183,10 +1183,9 @@ def standard_section_fn(section):
                             count += 1
 
                             # Write header
-                            final_header = 'timestamp' + ',' + 'data' + ',' + 'frameID' + ',' + 'OStype' + ',' +\
-                                           'type' + ',' + 'hostname' + ',' + 'serialnum' + ',' + 'logical_cpus' + ',' +\
-                                           'virtual_cpus' + ',' + 'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' +\
-                                           ',' + header + '\n'
+                            final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' +\
+                                           'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' +\
+                                           ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
 
                             # Number of separators in final header
                             num_cols_header = final_header.count(',')
@@ -1220,10 +1219,9 @@ def standard_section_fn(section):
                                 count += 1
 
                                 # Write header
-                                final_header = 'timestamp' + ',' + 'data' + ',' + 'frameID' + ',' + 'OStype' + ',' +\
-                                               'type' + ',' + 'hostname' + ',' + 'serialnum' + ','  + 'logical_cpus' +\
-                                               ',' + 'virtual_cpus' + ',' + 'ZZZZ' + ',' + 'interval' + ',' +\
-                                               'snapshots' + ',' + header + '\n'
+                                final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' +\
+                                               'serialnum' + ','  + 'logical_cpus' + ',' + 'virtual_cpus' + ',' +\
+                                               'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
 
                                 # Number of separators in final header
                                 num_cols_header = final_header.count(',')
@@ -1300,15 +1298,15 @@ def standard_section_fn(section):
                                 # final_perfdata
                                 if section == 'CPUnn':
 
-                                    final_perfdata = ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID +\
-                                                     ',' + OStype + ',' + perfdatatype + ',' + SN + ',' + HOSTNAME +\
-                                                     ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp +\
-                                                     ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'
+                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN +\
+                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
+                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                                     perfdata + '\n'
                                 else:
-                                    final_perfdata = ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID +\
-                                                     ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME +\
-                                                     ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp +\
-                                                     ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'
+                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN +\
+                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
+                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                                     perfdata + '\n'
 
                                 # Analyse the first line of data: Compare number of fields in data with number of fields
                                 # in header
@@ -1356,15 +1354,15 @@ def standard_section_fn(section):
 
                             # final_perfdata
                             if section == 'CPUnn':
-                                final_perfdata = ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' +\
-                                                 OStype + ',' + perfdatatype + ',' + SN + ',' + HOSTNAME + ',' +\
-                                                 logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' +\
-                                                 INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'
+                                final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN +\
+                                                 ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
+                                                 ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                                 perfdata + '\n'
                             else:
-                                final_perfdata = ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' +\
-                                                 OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +\
-                                                 logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' +\
-                                                 INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'
+                                final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN +\
+                                                 ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
+                                                 ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                                 perfdata + '\n'
 
                             # Analyse the first line of data: Compare number of fields in data with number of fields
                             # in header
@@ -1543,9 +1541,9 @@ def top_section_fn(section):
 
                             # Write header
                             membuffer.write(
-                                'timestamp' + ',' + 'data' + ',' + 'frameID' + ',' + 'OStype' + ',' + 'type' + ',' +
-                                'serialnum' + ',' + 'hostname' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' +
-                                'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'),
+                                'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'serialnum' + ',' + 'hostname' +
+                                ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + ',' + 'interval' + ',' +
+                                'snapshots' + ',' + header + '\n'),
 
                     # Extract timestamp
 
@@ -1607,9 +1605,9 @@ def top_section_fn(section):
 
                             # Write perf data
                             membuffer.write(
-                                ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' + OStype + ',' +
-                                section + ',' + SN + ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus +
-                                ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                                ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
+                                logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
+                                SNAPSHOTS + ',' + perfdata + '\n'),
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
@@ -1623,9 +1621,9 @@ def top_section_fn(section):
 
                         # Write perf data
                         membuffer.write(
-                            ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' + OStype + ',' +
-                            section + ',' + SN + ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +
-                            ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                            ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
+                            logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
+                            SNAPSHOTS + ',' + perfdata + '\n'),
 
         # Rewind temp
         membuffer.seek(0)
@@ -1768,9 +1766,9 @@ def uarg_section_fn(section):
 
                         # Write header
                         membuffer.write(
-                            'timestamp' + ',' + 'data' + ',' + 'frameID' + ',' + 'OStype' + ',' + 'type' + ',' +
-                            'serialnum' + ',' + 'hostname' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' +
-                            'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'),
+                            'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'serialnum' + ',' + 'hostname' +
+                            ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + ',' + 'interval' +
+                            ',' + 'snapshots' + ',' + header + '\n'),
 
                 # Extract timestamp
 
@@ -1840,9 +1838,9 @@ def uarg_section_fn(section):
 
                             # Write perf data
                             membuffer.write(
-                                 ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' + OStype + ',' +
-                                 ',' + section + ',' + SN + ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus +
-                                 ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                                 ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME +
+                                 ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL +
+                                 ',' + SNAPSHOTS + ',' + perfdata + '\n'),
 
                     elif colddata:
 
@@ -1851,9 +1849,9 @@ def uarg_section_fn(section):
 
                         # Write perf data
                         membuffer.write(
-                            ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' + OStype + ',' + section +
-                            ',' + SN + ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +
-                            ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                            ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME +
+                            ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL +
+                            ',' + SNAPSHOTS + ',' + perfdata + '\n'),
 
             if oslevel == 'AIX_or_Solaris':  # AIX and Solaris OS specific header
 
@@ -1888,9 +1886,9 @@ def uarg_section_fn(section):
 
                             # Write perf data
                             membuffer.write(
-                                ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' + OStype + ',' +
-                                section + ',' + SN + ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus +
-                                ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                                ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
+                                logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
+                                SNAPSHOTS + ',' + perfdata + '\n'),
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
@@ -1904,9 +1902,9 @@ def uarg_section_fn(section):
 
                         # Write perf data
                         membuffer.write(
-                            ZZZZ_epochtime + ',' + 'nmon_performance' + ',' + frameID + ',' + OStype + ',' + section +
-                            ',' + SN + ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +
-                            ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                            ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
+                            logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
+                            SNAPSHOTS + ',' + perfdata + '\n'),
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
@@ -2221,7 +2219,7 @@ def dynamic_section_fn(section):
                 # Write to second temp place
                 writer = csv.writer(membuffer2)
                 writer.writerow(
-                    ['timestamp', 'data', 'frameID', 'OStype', 'type', 'serialnum', 'hostname', 'interval',
+                    ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'interval',
                      'snapshots', 'ZZZZ', 'device', 'value'])
 
                 # increment
@@ -2233,7 +2231,7 @@ def dynamic_section_fn(section):
                         # increment
                         count += 1
 
-                        row = [ZZZZ_epochtime, 'nmon_performance', frameID, OStype, section, SN, HOSTNAME, INTERVAL,
+                        row = [ZZZZ_epochtime, OStype, section, SN, HOSTNAME, INTERVAL,
                                SNAPSHOTS, ZZZZ, device, value]
                         writer.writerow(row)
 
@@ -2594,7 +2592,7 @@ def solaris_wlm_section_fn(section):
 
                 writer = csv.writer(membuffer2)
                 writer.writerow(
-                    ['timestamp', 'data', 'frameID', 'OStype', 'type', 'serialnum', 'hostname', 'logical_cpus',
+                    ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'logical_cpus',
                      'interval', 'snapshots', 'ZZZZ', 'device', 'value'])
 
                 # increment
@@ -2606,7 +2604,7 @@ def solaris_wlm_section_fn(section):
                         # increment
                         count += 1
 
-                        row = [ZZZZ_epochtime, 'nmon_performance', frameID, OStype, section, SN, HOSTNAME,
+                        row = [ZZZZ_epochtime, OStype, section, SN, HOSTNAME,
                                logical_cpus, INTERVAL, SNAPSHOTS, ZZZZ, device, value]
                         writer.writerow(row)
 
