@@ -1,9 +1,8 @@
-# The nmon_helper.sh is responsible for nmon binary launch and requires arguments: <arg1: binaries path> <arg2: Var path>
+# The nmon_helper.sh is responsible for nmon binary launch and requires arguments: <arg1: binaries path> <arg2: log path>
 */1 * * * * root /etc/nmon-logger/bin/nmon_helper.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_collect.log 2>&1
 
-# The nmon_manage.sh is responsible for launching nmon kv converter and requires argument: <arg1: binaries path> <arg2: Var path>
+# The nmon_manage.sh is responsible for launching nmon kv converter and requires arguments: <arg1: binaries path> <arg2: log path>
 */1 * * * * root /etc/nmon-logger/bin/nmon_manage.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_processing.log 2>&1
 
-# The nmon_cleaner.py is responbible for nmon files cleaning and requires argument: --nmon_home <arg1: var path>
-*/5 * * * * root sleep 30; python /etc/nmon-logger/bin/nmon_cleaner.py --nmon_home /var/log/nmon-logger >> /var/log/nmon-logger/nmon_clean.log 2>&1
-
+# The nmon_cleaner.sh is responsible for nmon files cleaning and requires arguments: <arg1: binaries path> <arg2: log path>
+*/5 * * * * root sleep 30; /etc/nmon-logger/bin/nmon_cleaner.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_clean.log 2>&1

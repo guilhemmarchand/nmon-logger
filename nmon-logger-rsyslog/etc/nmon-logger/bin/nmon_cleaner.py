@@ -23,7 +23,7 @@ import platform
 import re
 import argparse
 
-# Converter version
+# Cleaner version
 version = '1.0.0'
 
 # LOGGING INFORMATION:
