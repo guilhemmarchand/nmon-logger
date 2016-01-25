@@ -1,0 +1,38 @@
+---
+- hosts: rsyslog-clients
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+
+  tasks:
+
+  - name: Create the system nmon account if required
+    user: name=nmon comment="system account for nmon-logger" system=yes state=present
+
+  - name: Create the /var/log/nmon-logger directory if required
+    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=yes
+
+  - name: Deploy nmon-logger binaries (/etc/nmon-logger)
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/
+            owner=nmon group=root mode=755
+
+  - name: Deploy nmon-logger cron.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
+            owner=root group=root mode=0644
+
+  - name: Deploy nmon-logger logrotate.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
+            owner=root group=root mode=0644
+
+  - name: Deploy nmon-logger rsyslog.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
+            owner=root group=root mode=0644
+    notify:
+        - restart rsyslog
+
+  handlers:
+
+    - name: restart rsyslog
+      service: name=rsyslog state=restarted
