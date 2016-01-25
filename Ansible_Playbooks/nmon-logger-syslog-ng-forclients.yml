@@ -16,19 +16,19 @@
 
   - name: Deploy nmon-logger binaries (/etc/nmon-logger)
     copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/nmon-logger dest=/etc/
-            owner=nmon group=root mode=755
+            owner=nmon group=nmon mode=0755
 
   - name: Deploy nmon-logger cron.d configuration
     copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/cron.d/nmon-logger dest=/etc/cron.d/
-            owner=root group=root mode=0644
+            owner=nmon group=nmon mode=0644
 
   - name: Deploy nmon-logger logrotate.d configuration
     copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
-            owner=root group=root mode=0644
+            owner=nmon group=nmon mode=0644
 
   - name: Deploy nmon-logger syslog-ng configuration
     copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/syslog-ng/conf.d/nmon-logger.conf dest=/etc/syslog-ng/conf.d/
-            owner=root group=root mode=0644
+            owner=nmon group=nmon mode=0644
     notify:
         - restart syslog-ng
 
