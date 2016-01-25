@@ -55,9 +55,11 @@ Unix / Linux --> nmon-logger --> local syslog-ng --> syslog-ng file monitoring -
 
 - rsyslog v8.x minimum OR syslog-ng v3.x
 
-- Perl (minimal core env)
+- Perl (minimal)
 
-- Python 2.7.x
+- Python 2.7.x or Perl can be used for nmon processing steps
+
+- Systems lacking Python 2.7.x interpreter requires Perl WITH Time::HiRes module available
 
 ###################################
 ### Content:                    ###
@@ -82,22 +84,4 @@ etc/
                 bin/(various)
                 default/nmon.conf
     syslog-ng/conf.d/nmon-logger.conf
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
