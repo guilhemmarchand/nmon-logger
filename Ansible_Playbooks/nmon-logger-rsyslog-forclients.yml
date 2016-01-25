@@ -12,7 +12,7 @@
     user: name=nmon comment="system account for nmon-logger" system=yes state=present
 
   - name: Create the /var/log/nmon-logger directory if required
-    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=yes
+    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=no
 
   - name: Deploy nmon-logger binaries (/etc/nmon-logger)
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/
