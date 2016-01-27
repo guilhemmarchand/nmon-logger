@@ -20,15 +20,15 @@
 
   - name: Deploy nmon-logger cron.d configuration
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
-            owner=nmon group=nmon mode=0644
+            owner=root group=root mode=0644
 
   - name: Deploy nmon-logger logrotate.d configuration
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
-            owner=nmon group=nmon mode=0644
+            owner=root group=root mode=0644
 
   - name: Deploy nmon-logger rsyslog.d configuration
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
-            owner=nmon group=nmon mode=0644
+            owner=root group=root mode=0644
     notify:
         - restart rsyslog
 
