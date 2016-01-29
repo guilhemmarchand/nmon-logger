@@ -435,7 +435,7 @@ foreach $FILENAME (@nmon_files) {
     my $idnmon = "${DATE}:${TIME},${HOSTNAME},${SN},$bytes";
 
     # Print Main information
-    print "${time} Reading NMON data: $lines lines $bytes bytes\n";
+    print "nmon2csv: ${time} Reading NMON data: $lines lines $bytes bytes\n";
 
     # Print NMON_HOME
     print "Nmon var directory (\$NMON_HOME): $NMON_HOME \n";

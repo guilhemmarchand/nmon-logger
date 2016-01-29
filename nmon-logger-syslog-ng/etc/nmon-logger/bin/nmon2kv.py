@@ -395,7 +395,8 @@ nbr_lines = len(data)
 bytes_total = len(''.join(data))
 
 # Show current time and number of lines
-msg = currenttime() + " Reading NMON data: " + str(nbr_lines) + " lines" + " " + str(bytes_total) + " bytes"
+msg = "nmon2csv:" + currenttime() + " Reading NMON data: " + str(nbr_lines) + " lines" + " " +\
+      str(bytes_total) + " bytes"
 logging.info(msg)
 
 # Show Splunk Root Directory
@@ -791,13 +792,13 @@ if realtime:
         msg = "ANALYSIS: Enforcing realtime mode using --mode option"
     else:
         msg = 'ANALYSIS: Assuming Nmon realtime data'
-    print(msg)
+    logging.info(msg)
 elif colddata:
     if options.mode == 'colddata':
         msg = "ANALYSIS: Enforcing colddata mode using --mode option"
     else:
         msg = 'ANALYSIS: Assuming Nmon cold data'
-    print(msg)
+    logging.info(msg)
 
 # Open reference file for reading, if exists already
 if os.path.isfile(ID_REF):
