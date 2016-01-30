@@ -1,5 +1,6 @@
 /var/log/nmon-logger/var/perf_repository/nmon_perfdata.log
 {
+        su
         rotate 7
         daily
         missingok
@@ -13,6 +14,7 @@
 
 /var/log/nmon-logger/var/config_repository/nmon_configdata.log
 {
+        su
         rotate 7
         daily
         missingok
@@ -26,6 +28,7 @@
 
 /var/log/nmon-logger/*.log
 {
+        su
         rotate 7
         daily
         missingok
