@@ -15,8 +15,17 @@
     file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=no
 
   - name: Deploy nmon-logger binaries (/etc/nmon-logger)
+
+    # synchronize (rsync) is the fatest method, but is more complex to achieve without any trouble
+    # default uses copy to facilitate first configuration deployments
+
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/
             owner=nmon group=nmon mode=0755
+
+    #synchronize: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/ rsync_path="sudo rsync" archive="yes" delete="yes" owner="no" group="no"
+
+  - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
+    file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
 
   - name: Deploy nmon-logger cron.d configuration
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
