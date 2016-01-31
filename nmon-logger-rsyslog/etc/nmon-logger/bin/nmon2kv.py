@@ -141,9 +141,9 @@ sanity_check = "-1"
 
 parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog '+nmon2csv_version)
 
-parser.set_defaults(nmon_home='/var/log/nmon', mode='auto', json_mode='pretty', dumpargs=False)
+parser.set_defaults(nmon_var='/var/log/nmon', mode='auto', json_mode='pretty', dumpargs=False)
 
-parser.add_option('-o', '--nmon_home', action='store', type='string', dest='nmon_home',
+parser.add_option('-o', '--nmon_var', action='store', type='string', dest='nmon_var',
                   help='sets the output Home directory for Nmon (Default: %default)')
 opmodes = ['auto', 'realtime', 'colddata']
 parser.add_option('-m', '--mode', action='store', type='choice', dest='mode', choices=opmodes,
@@ -198,27 +198,27 @@ csv_timestamp = time.strftime("%Y%m%d%H%M%S")
 # Python version
 python_version = platform.python_version()
 
-# NMON_HOME environment variable
-if options.nmon_home:
-    NMON_HOME = options.nmon_home
+# NMON_VAR variable
+if options.nmon_var:
+    NMON_VAR = options.nmon_var
 else:
-    NMON_HOME = '/var/log/nmon'
+    NMON_VAR = '/var/log/nmon'
 
-# Verify nmon_home
-if not os.path.exists(NMON_HOME):
+# Verify nmon_var
+if not os.path.exists(NMON_VAR):
     try:
-        os.makedirs(NMON_HOME)
+        os.makedirs(NMON_VAR)
     except Exception as ex:
-        logging.error("Unable to create data output directory '%s': %s" % (NMON_HOME, ex))
+        logging.error("Unable to create data output directory '%s': %s" % (NMON_VAR, ex))
         sys.exit(1)
 
 # APP_VAR directory
 if is_windows:
-    APP_MAINVAR = NMON_HOME + '\\var'
-    APP_VAR = NMON_HOME + '\\var'
+    APP_MAINVAR = NMON_VAR + '\\var'
+    APP_VAR = NMON_VAR + '\\var'
 else:
-    APP_MAINVAR = NMON_HOME + '/var'
-    APP_VAR = NMON_HOME + '/var'
+    APP_MAINVAR = NMON_VAR + '/var'
+    APP_VAR = NMON_VAR + '/var'
 if not os.path.exists(APP_MAINVAR):
     os.mkdir(APP_MAINVAR)
 if not os.path.exists(APP_VAR):
@@ -400,7 +400,7 @@ msg = "nmon2csv:" + currenttime() + " Reading NMON data: " + str(nbr_lines) + " 
 logging.info(msg)
 
 # Show Splunk Root Directory
-msg = 'Splunk Root Directory ($NMON_HOME): ' + str(NMON_HOME)
+msg = 'Splunk Root Directory ($NMON_VAR): ' + str(NMON_VAR)
 logging.info(msg)
 
 # Show program version

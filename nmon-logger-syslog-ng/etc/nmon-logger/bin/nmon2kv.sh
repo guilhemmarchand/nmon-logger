@@ -80,16 +80,16 @@ if [ $? -eq 0 ]; then
 	case $python_subversion in
 	
 	*" 2.7"*)
-		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py --nmon_home ${NMON_VAR} ;;
+		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py --nmon_var ${NMON_VAR} ;;
 		
 	*)
-		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl --nmon_home ${NMON_VAR} ;;
+		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl --nmon_var ${NMON_VAR} ;;
 	
 	esac
 
 else
 
-	cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl --nmon_home ${NMON_VAR}
+	cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl --nmon_var ${NMON_VAR}
 
 fi
 

@@ -43,11 +43,11 @@ use File::Copy;
 # Default values
 
 my $OPMODE    = "";
-my $NMON_HOME = "/var/log/nmon";
+my $NMON_VAR = "/var/log/nmon";
 
 $result = GetOptions(
     "mode=s"      => \$OPMODE,       # string
-    "nmon_home=s" => \$NMON_HOME,    # string
+    "nmon_var=s" => \$NMON_VAR,    # string
     "version"     => \$VERSION,      # flag
     "help"        => \$help,         # flag
     "debug"       => \$DEBUG,        # flag
@@ -73,7 +73,7 @@ This script has been designed to read the nmon file from stdin. (eg. cat <my fil
 Available options are:
 
 --mode <realtime | colddata> :Force the script to consider the data as cold data (nmon process has over) or real time data (nmon is running)
---nmon_home <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
+--nmon_var <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
 --debug :Activate debugging mode for testing purposes
 --version :Show current program version \n
 "
@@ -162,11 +162,11 @@ my $time_epoch = time();
 # timestamp used to name csv files
 $csv_timestamp = strftime "%Y%m%d%H%M%S", localtime;
 
-# Verify NMON_HOME definition
-if ( !-d "$NMON_HOME" ) {
-    print("$time ERROR: The log directory NMON_HOME does not exist.\n");
+# Verify NMON_VAR definition
+if ( !-d "$NMON_VAR" ) {
+    print("$time ERROR: The log directory NMON_VAR does not exist.\n");
     print(
-"Please create the directory manually or specify the --nmon_home <path directory> option. (we tried $NMON_HOME) \n"
+"Please create the directory manually or specify the --nmon_var <path directory> option. (we tried $NMON_VAR) \n"
     );
     die;
 }
@@ -175,7 +175,7 @@ if ( !-d "$NMON_HOME" ) {
 my $APP = "";
 
 # var main directory
-my $APP_VAR = "$NMON_HOME/var";
+my $APP_VAR = "$NMON_VAR/var";
 
 # If may main directories do not exist
 if ( !-d "$APP_MAINVAR" ) { mkdir "$APP_MAINVAR"; }
@@ -437,8 +437,8 @@ foreach $FILENAME (@nmon_files) {
     # Print Main information
     print "nmon2csv: ${time} Reading NMON data: $lines lines $bytes bytes\n";
 
-    # Print NMON_HOME
-    print "Nmon var directory (\$NMON_HOME): $NMON_HOME \n";
+    # Print NMON_VAR
+    print "Nmon var directory (\$NMON_VAR): $NMON_VAR \n";
 
     # Show program version
     print "nmon2kv version: $version \n";
