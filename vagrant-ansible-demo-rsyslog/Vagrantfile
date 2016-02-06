@@ -1,0 +1,38 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrant multi machine configuration
+
+Vagrant.configure(2) do |config|
+
+  # Set memory explicitly
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "256"]
+  end
+
+# Start 4 nodes from machine1 to machine4
+N = 4
+(1..N).each do |machine_id|
+  config.vm.define "machine#{machine_id}" do |machine|
+    config.ssh.insert_key = false
+    machine.vm.box = "ubuntu/vivid64"
+    machine.vm.hostname = "machine#{machine_id}"
+    machine.vm.network "private_network", ip: "192.168.33.#{100+machine_id}"
+
+    # Only execute once the Ansible provisioner,
+    # when all the machines are up and ready.
+    if machine_id == N
+      machine.vm.provision :ansible do |ansible|
+        # Disable default limit to connect to all the machines
+        ansible.limit = "all"
+        ansible.playbook = "playbook.yml"
+        ansible.inventory_path = "ansible_inventory"
+        #ansible.host_key_checking = false
+        #ansible.verbose = "v"
+      end
+    end
+  end
+end
+
+
+end

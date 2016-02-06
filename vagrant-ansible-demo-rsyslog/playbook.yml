@@ -1,0 +1,143 @@
+---
+
+- hosts: rsyslog-servers
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docvagrant: /opt/deployment/vagrant
+
+  tasks:
+
+  - name: Install rsyslog apt repository for Ubuntu
+    apt_repository: repo='ppa:adiscon/v8-stable' state=present
+
+  - name: apt-get update
+    apt: update_cache=yes
+
+  # Using apt module does not seem to update rsyslog package, updating using command
+  - name: apt-get install rsyslog
+    command: apt-get install -y rsyslog
+
+# Configure time zone
+  - name: Set timezone variables
+    copy: content='Europe/Paris'
+          dest=/etc/timezone
+          owner=root
+          group=root
+          mode=0644
+          backup=yes
+    notify:
+      - update timezone
+
+  # Create remote hosts directory for logging
+  - name: Create the /var/log/remote-hosts directory if required
+    file: path=/var/log/remote-hosts owner=syslog group=syslog state=directory mode=0755 recurse=no
+
+  # Create nmon performance directory for logging
+  - name: Create the /var/log/nmon-performance directory if required
+    file: path=/var/log/nmon-performance owner=syslog group=syslog state=directory mode=0755 recurse=no
+
+  # Set this host as a central syslog collector
+  - name: Deploy rsyslog central configuration for global logging
+    copy: src={{ docvagrant }}/99-central-server.conf dest=/etc/rsyslog.d/
+    notify:
+        - restart rsyslog
+
+  # Set this host as a central syslog collector
+  - name: Deploy rsyslog central configuration for nmon performance
+    copy: src={{ docvagrant }}/20-nmon-performance.conf dest=/etc/rsyslog.d/
+    notify:
+        - restart rsyslog
+
+  handlers:
+
+    - name: restart rsyslog
+      service: name=rsyslog state=restarted
+
+    - name: update timezone
+      command: dpkg-reconfigure --frontend noninteractive tzdata
+
+
+###############################################################
+
+- hosts: rsyslog-clients
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+   - docvagrant: /opt/deployment/vagrant
+
+  tasks:
+
+  - name: Install rsyslog apt repository for Ubuntu
+    apt_repository: repo='ppa:adiscon/v8-stable' state=present
+
+  - name: apt-get update
+    apt: update_cache=yes
+
+  # Using apt module does not seem to update rsyslog package, updating using command
+  - name: apt-get install rsyslog
+    command: apt-get install -y rsyslog
+
+# Configure time zone
+  - name: Set timezone variables
+    copy: content='Europe/Paris'
+          dest=/etc/timezone
+          owner=root
+          group=root
+          mode=0644
+          backup=yes
+    notify:
+      - update timezone
+
+  # Configure rsyslog on this host: Send data to rsyslog server, add rsyslog repo, update and upgrade rsyslog
+
+  - name: Deploy rsyslog central configuration
+    copy: src={{ docvagrant }}/01-central-client.conf dest=/etc/rsyslog.d/
+    notify:
+        - restart rsyslog
+
+  # NMON LOGGER installation
+
+  - name: Create the system nmon account if required
+    user: name=nmon comment="system account for nmon-logger" system=yes state=present
+
+  - name: Create the /var/log/nmon-logger directory if required
+    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=no
+
+  - name: Deploy nmon-logger binaries (/etc/nmon-logger)
+
+  # synchronize (rsync) is the fatest method, but is more complex to achieve without any trouble
+  # default uses copy to facilitate first configuration deployments
+
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/
+            owner=nmon group=nmon mode=0755
+
+  # synchronize: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/ rsync_path="sudo rsync" archive="yes" delete="yes" owner="no" group="no"
+
+  - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
+    file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
+
+  - name: Deploy nmon-logger cron.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
+            owner=root group=root mode=0644
+
+  - name: Deploy nmon-logger logrotate.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
+            owner=root group=root mode=0644
+
+  - name: Deploy nmon-logger rsyslog.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
+            owner=root group=root mode=0644
+    notify:
+        - restart rsyslog
+
+  handlers:
+
+    - name: restart rsyslog
+      service: name=rsyslog state=restarted
+
+    - name: update timezone
+      command: dpkg-reconfigure --frontend noninteractive tzdata
