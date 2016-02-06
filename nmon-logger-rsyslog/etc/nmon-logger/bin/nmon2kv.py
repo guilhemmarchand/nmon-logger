@@ -214,13 +214,9 @@ if not os.path.exists(NMON_VAR):
 
 # APP_VAR directory
 if is_windows:
-    APP_MAINVAR = NMON_VAR + '\\var'
     APP_VAR = NMON_VAR + '\\var'
 else:
-    APP_MAINVAR = NMON_VAR + '/var'
     APP_VAR = NMON_VAR + '/var'
-if not os.path.exists(APP_MAINVAR):
-    os.mkdir(APP_MAINVAR)
 if not os.path.exists(APP_VAR):
     os.mkdir(APP_VAR)
 
@@ -248,33 +244,15 @@ else:
 
 # CSV Perf data repository
 if is_windows:
-    DATA_DIR = APP_VAR + '\\perf_repository\\'
+    DATA_DIR = APP_VAR
 else:
-    DATA_DIR = APP_VAR + '/perf_repository/'
-if not os.path.exists(DATA_DIR):
-    os.mkdir(DATA_DIR)
+    DATA_DIR = APP_VAR
 
 # CSV output repository
 if is_windows:
-    CONFIG_DIR = APP_VAR + '\\config_repository\\'
+    CONFIG_DIR = APP_VAR
 else:
-    CONFIG_DIR = APP_VAR + '/config_repository/'
-if not os.path.exists(CONFIG_DIR):
-    os.mkdir(CONFIG_DIR)
-
-if not os.path.exists(DATA_DIR):
-    try:
-        os.makedirs(DATA_DIR)
-    except Exception as ex:
-        logging.error("Unable to create data output directory '%s': %s" % (DATA_DIR, ex))
-        sys.exit(1)
-
-if not os.path.exists(CONFIG_DIR):
-    try:
-        os.makedirs(CONFIG_DIR)
-    except Exception as ex:
-        logging.error("Unable to create config output directory '%s': %s" % (CONFIG_DIR, ex))
-        sys.exit(1)
+    CONFIG_DIR = APP_VAR
 
 #################################################
 #      Functions

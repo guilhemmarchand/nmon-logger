@@ -178,7 +178,6 @@ my $APP = "";
 my $APP_VAR = "$NMON_VAR/var";
 
 # If may main directories do not exist
-if ( !-d "$APP_MAINVAR" ) { mkdir "$APP_MAINVAR"; }
 if ( !-d "$APP_VAR" )     { mkdir "$APP_VAR"; }
 
 # Spool directory for NMON files processing
@@ -189,13 +188,11 @@ if ( !-d "$SPOOL_DIR" ) { mkdir "$SPOOL_DIR"; }
 my $OUTPUT_DIR = "$APP_VAR/csv_workingdir";
 if ( !-d "$OUTPUT_DIR" ) { mkdir "$OUTPUT_DIR"; }
 
-# CSV Perf data working directory (files are moved at the end from DATA_DIR to DATAWORKING_DIR)
-my $OUTPUTFINAL_DIR = "$APP_VAR/perf_repository";
-if ( !-d "$OUTPUTFINAL_DIR" ) { mkdir "$OUTPUTFINAL_DIR"; }
+# CSV Perf data working directory
+my $OUTPUTFINAL_DIR = "$APP_VAR";
 
 # Config csv data
-my $OUTPUTCONF_DIR = "$APP_VAR/config_repository";
-if ( !-d "$OUTPUTCONF_DIR" ) { mkdir "$OUTPUTCONF_DIR"; }
+my $OUTPUTCONF_DIR = "$APP_VAR";
 
 # ID reference file, will be used to temporarily store the last execution result for a given nmon file, and prevent Splunk from
 # generating duplicates by relaunching the conversion process

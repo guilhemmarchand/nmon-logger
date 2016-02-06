@@ -1,30 +1,4 @@
-/var/log/nmon-logger/var/perf_repository/nmon_perfdata.log
-{
-        su
-        rotate 7
-        daily
-        missingok
-        notifempty
-        delaycompress
-        compress
-        postrotate
-                reload rsyslog >/dev/null 2>&1 || true
-        endscript
-}
-
-/var/log/nmon-logger/var/config_repository/nmon_configdata.log
-{
-        su
-        rotate 7
-        daily
-        missingok
-        notifempty
-        delaycompress
-        compress
-        postrotate
-                reload rsyslog >/dev/null 2>&1 || true
-        endscript
-}
+# logrotate for nmon-logger
 
 /var/log/nmon-logger/*.log
 {
@@ -39,4 +13,3 @@
                 reload rsyslog >/dev/null 2>&1 || true
         endscript
 }
-
