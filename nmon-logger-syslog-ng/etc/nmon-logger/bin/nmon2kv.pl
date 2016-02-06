@@ -188,11 +188,11 @@ if ( !-d "$SPOOL_DIR" ) { mkdir "$SPOOL_DIR"; }
 my $OUTPUT_DIR = "$APP_VAR/csv_workingdir";
 if ( !-d "$OUTPUT_DIR" ) { mkdir "$OUTPUT_DIR"; }
 
-# CSV Perf data working directory
-my $OUTPUTFINAL_DIR = "$APP_VAR";
+# Directory for Performance log
+my $OUTPUTFINAL_DIR = "$NMON_VAR";
 
-# Config csv data
-my $OUTPUTCONF_DIR = "$APP_VAR";
+# Directory for Configuration log
+my $OUTPUTCONF_DIR = "$NMON_VAR";
 
 # ID reference file, will be used to temporarily store the last execution result for a given nmon file, and prevent Splunk from
 # generating duplicates by relaunching the conversion process
