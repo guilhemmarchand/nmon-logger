@@ -864,7 +864,7 @@ if last_known_epochtime == 0:
 section = "CONFIG"
 
 # Set output file
-config_output = CONFIG_DIR + 'nmon_configdata.log'
+config_output = NMON_VAR + '/nmon_configdata.log'
 
 # Set default for config_run:
 # 0 --> Extract configuration
@@ -1031,7 +1031,7 @@ def standard_section_fn(section):
 
 
     # Set output file
-    currsection_output = DATA_DIR + 'nmon_perfdata.log'
+    currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
     # Store last epochtime if in real time mode
     keyref = HOSTNAME_VAR + '/' + HOSTNAME + '.' + section + '_lastepoch.txt'
@@ -1419,7 +1419,7 @@ if OStype in ("Solaris", "Unknown"):
 def top_section_fn(section):
 
     # Set output file
-    currsection_output = DATA_DIR + 'nmon_perfdata.log'
+    currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
     # Store last epochtime if in real time mode
     keyref = HOSTNAME_VAR + '/' + HOSTNAME + '.' + section + '_lastepoch.txt'
@@ -1640,7 +1640,7 @@ for section in top_section:
 def uarg_section_fn(section):
 
     # Set output file
-    currsection_output = DATA_DIR + 'nmon_perfdata.log'
+    currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
     # Store last epochtime if in real time mode
     keyref = HOSTNAME_VAR + '/' + HOSTNAME + '.' + section + '_lastepoch.txt'
@@ -1921,7 +1921,7 @@ if OStype in ('AIX', 'Linux', 'Solaris', 'Unknown'):
 def dynamic_section_fn(section):
 
     # Set output file (will be opened for writing after data transposition)
-    currsection_output = DATA_DIR + 'nmon_perfdata.log'
+    currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
     # Sequence to search for
     seq = str(section) + ',' + 'T'
@@ -2293,7 +2293,7 @@ if OStype in ("AIX", "Unknown"):
 def solaris_wlm_section_fn(section):
 
     # Set output file (will be opened for writing after data transposition)
-    currsection_output = DATA_DIR + 'nmon_perfdata.log'
+    currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
     # Sequence to search for
     seq = str(section) + ',' + 'T'

@@ -414,10 +414,6 @@ esac
 NMON_REPOSITORY=${APP_VAR}/var/nmon_repository
 [ ! -d $NMON_REPOSITORY ] && { mkdir -p $NMON_REPOSITORY; }
 
-#also needed - 
-[ -d ${APP_VAR}/var/perf_repository ] || { mkdir -p ${APP_VAR}/var/perf_repository; }
-[ -d ${APP_VAR}/var/config_repository ] || { mkdir -p ${APP_VAR}/var/config_repository; }
-
 # Nmon PID file
 PIDFILE=${APP_VAR}/var/nmon.pid
 
