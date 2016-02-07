@@ -55,7 +55,15 @@ fi
 
 for nmon_file in `find ${NMON_VAR}/var/nmon_repository -name "*.nmon" -type f -print`; do
 
-    cat $nmon_file | ${NMON_BIN}/bin/nmon2kv.sh ${NMON_BIN} ${NMON_VAR}
+    # Use perl to get file age in seconds (perl will be portable to every system)
+    perl -e "\$mtime=(stat(\"$nmon_file\"))[9]; \$cur_time=time();  print \$cur_time - \$mtime;" > ${NMON_VAR}/nmon_manage.sh.tmp.$$
+    nmon_age=`cat ${NMON_VAR}/nmon_manage.sh.tmp.$$`
+    rm ${NMON_VAR}/nmon_manage.sh.tmp.$$
+
+    # Only manage nmon files updated within last 5 minutes (300 sec) minimum to prevent managing ended nmon files
+    if [ ${nmon_age} -lt 300 ]; then
+        cat $nmon_file | ${NMON_BIN}/bin/nmon2kv.sh ${NMON_BIN} ${NMON_VAR}
+    fi
 
 done
 
