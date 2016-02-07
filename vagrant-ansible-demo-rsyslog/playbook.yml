@@ -53,7 +53,11 @@
     - name: Update rsyslog for RHEL/CentOS
 
       # Update package
-      yum: name=httpd state=latest
+      # Note: Using yum module does not seem to update rsyslog package, updating using command
+      command: yum install -y rsyslog
+
+    - name: Install minimal Perl environment
+      yum: name=perl state=latest
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
@@ -96,14 +100,10 @@
   # Set this host as a central syslog collector
   - name: Deploy rsyslog central configuration for global logging
     copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/99-central-server.conf dest=/etc/rsyslog.d/
-    notify:
-        - restart rsyslog
 
   # Set this host as a central syslog collector
   - name: Deploy rsyslog central configuration for nmon performance
     copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/20-nmon-performance.conf dest=/etc/rsyslog.d/
-    notify:
-        - restart rsyslog
 
   # Verify if Splunk Universal Forwarder is already installed
   - name: Check if Splunk Universal Forwarder path exists
@@ -155,10 +155,11 @@
   - name: Restart Splunk Universal Forwarder
     command: "{{ splunk_installpath }}/splunkforwarder/bin/splunk restart"
 
-  handlers:
+  # Last but not least, restart rsyslog (using module service causes some trouble, let's use simple command)
+  - name: Restart rsyslog
+    command: service rsyslog restart
 
-    - name: restart rsyslog
-      service: name=rsyslog state=restarted
+  handlers:
 
     - name: update timezone
       command: dpkg-reconfigure --frontend noninteractive tzdata
@@ -213,7 +214,11 @@
     - name: Update rsyslog for RHEL/CentOS
 
       # Update package
-      yum: name=httpd state=latest
+      # Note: Using yum module does not seem to update rsyslog package, updating using command
+      command: yum install -y rsyslog
+
+    - name: Install minimal Perl environment
+      yum: name=perl state=latest
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
@@ -234,8 +239,6 @@
 
   - name: Deploy rsyslog central configuration
     copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/01-central-client.conf dest=/etc/rsyslog.d/
-    notify:
-        - restart rsyslog
 
   # NMON LOGGER installation
 
@@ -247,13 +250,9 @@
 
   - name: Deploy nmon-logger binaries (/etc/nmon-logger)
 
-  # synchronize (rsync) is the fatest method, but is more complex to achieve without any trouble
-  # default uses copy to facilitate first configuration deployments
-
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/
-            owner=nmon group=nmon mode=0755
-
-  # synchronize: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/ rsync_path="sudo rsync" archive="yes" delete="yes" owner="no" group="no"
+  # Deploy /etc/nmon-logger by uncompressing the nmon-logger.tar.gz
+    unarchive: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger.tar.gz dest=/etc/
+                owner=nmon group=nmon mode=0755
 
   - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
     file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
@@ -269,13 +268,12 @@
   - name: Deploy nmon-logger rsyslog.d configuration
     copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
             owner=root group=root mode=0644
-    notify:
-        - restart rsyslog
+
+  # Last but not least, restart rsyslog (using module service causes some trouble, let's use simple command)
+  - name: Restart rsyslog
+    command: service rsyslog restart
 
   handlers:
-
-    - name: restart rsyslog
-      service: name=rsyslog state=restarted
 
     - name: update timezone
       command: dpkg-reconfigure --frontend noninteractive tzdata
