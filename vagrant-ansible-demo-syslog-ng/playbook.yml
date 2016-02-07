@@ -1,6 +1,6 @@
 ---
 
-- hosts: rsyslog-servers
+- hosts: syslog-ng-servers
   become: yes
   become_method: sudo
 
@@ -20,22 +20,15 @@
 
   - block:
 
-    - name: Install rsyslog repo for Ubuntu
-
-      # Add repo
-      apt_repository: repo='ppa:adiscon/v8-stable' state=present
-      when: ansible_distribution == 'Ubuntu'
-
     - name: Update cache for Ubuntu
 
       # Update apt cache
       apt: update_cache=yes
 
-    - name: Update rsyslog for Ubuntu
+    - name: Install syslog-ng for Ubuntu
 
-      # Update package
-      # Note: Using apt module does not seem to update rsyslog package, updating using command
-      command: apt-get install -y rsyslog
+      # Install package
+      - apt: name=syslog-ng state=present
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
@@ -45,15 +38,10 @@
 
   - block:
 
-    - name: Install rsyslog repo for RHEL/CentOS
-
-      # Install repo file
-      get_url: url=http://rpms.adiscon.com/v8-stable/rsyslog.repo dest=/etc/yum.repos.d/
-
-    - name: Update rsyslog for RHEL/CentOS
+    - name: Install syslog-ng for RHEL/CentOS
 
       # Update package
-      yum: name=httpd state=latest
+      yum: name=syslog-ng state=latest
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
@@ -67,7 +55,6 @@
           backup=yes
     notify:
       - update timezone
-    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
   - block:
 
@@ -94,16 +81,16 @@
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
   # Set this host as a central syslog collector
-  - name: Deploy rsyslog central configuration for global logging
-    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/99-central-server.conf dest=/etc/rsyslog.d/
+  - name: Deploy syslog-ng central configuration for global logging
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/central.conf dest=/etc/syslog-ng/conf.d/
     notify:
-        - restart rsyslog
+        - restart syslog-ng
 
   # Set this host as a central syslog collector
-  - name: Deploy rsyslog central configuration for nmon performance
-    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/20-nmon-performance.conf dest=/etc/rsyslog.d/
+  - name: Deploy syslog-ng central configuration for nmon performance
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/nmon-performance.conf dest=/etc/syslog-ng/conf.d/
     notify:
-        - restart rsyslog
+        - restart syslog-ng
 
   # Verify if Splunk Universal Forwarder is already installed
   - name: Check if Splunk Universal Forwarder path exists
@@ -145,7 +132,7 @@
     file: path="{{ splunk_installpath }}/splunkforwarder/etc/apps/{{ splunk_appname }}/local" owner=root state=directory mode=0755
 
   - name: Configure custom app {{ splunk_appname }} inputs.conf
-    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/inputs.conf dest="{{ splunk_installpath }}/splunkforwarder/etc/apps/{{ splunk_appname }}/local/"
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/inputs.conf dest="{{ splunk_installpath }}/splunkforwarder/etc/apps/{{ splunk_appname }}/local/"
           owner=root
           group=root
           mode=0644
@@ -157,15 +144,15 @@
 
   handlers:
 
-    - name: restart rsyslog
-      service: name=rsyslog state=restarted
+    - name: restart syslog-ng
+      service: name=syslog-ng state=restarted
 
     - name: update timezone
       command: dpkg-reconfigure --frontend noninteractive tzdata
 
 ###############################################################
 
-- hosts: rsyslog-clients
+- hosts: syslog-ng-clients
   become: yes
   become_method: sudo
 
@@ -180,22 +167,15 @@
 
   - block:
 
-    - name: Install rsyslog repo for Ubuntu
-
-      # Add repo
-      apt_repository: repo='ppa:adiscon/v8-stable' state=present
-      when: ansible_distribution == 'Ubuntu'
-
     - name: Update cache for Ubuntu
 
       # Update apt cache
       apt: update_cache=yes
 
-    - name: Update rsyslog for Ubuntu
+    - name: Install syslog-ng for Ubuntu
 
-      # Update package
-      # Note: Using apt module does not seem to update rsyslog package, updating using command
-      command: apt-get install -y rsyslog
+      # Install package
+      - apt: name=syslog-ng state=present
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
@@ -205,15 +185,10 @@
 
   - block:
 
-    - name: Install rsyslog repo for RHEL/CentOS
-
-      # Install repo file
-      get_url: url=http://rpms.adiscon.com/v8-stable/rsyslog.repo dest=/etc/yum.repos.d/
-
-    - name: Update rsyslog for RHEL/CentOS
+    - name: Install syslog-ng for RHEL/CentOS
 
       # Update package
-      yum: name=httpd state=latest
+      yum: name=syslog-ng state=latest
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
@@ -228,14 +203,12 @@
     notify:
       - update timezone
 
-    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  # Configure syslog-ng on this host: Send data to syslog-ng server, add syslog-ng repo, update and upgrade syslog-ng
 
-  # Configure rsyslog on this host: Send data to rsyslog server, add rsyslog repo, update and upgrade rsyslog
-
-  - name: Deploy rsyslog central configuration
-    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/01-central-client.conf dest=/etc/rsyslog.d/
+  - name: Deploy syslog-ng central configuration
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf dest=/etc/syslog-ng/conf.d/
     notify:
-        - restart rsyslog
+        - restart syslog-ng
 
   # NMON LOGGER installation
 
@@ -250,32 +223,32 @@
   # synchronize (rsync) is the fatest method, but is more complex to achieve without any trouble
   # default uses copy to facilitate first configuration deployments
 
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/
+    copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/nmon-logger dest=/etc/
             owner=nmon group=nmon mode=0755
 
-  # synchronize: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger dest=/etc/ rsync_path="sudo rsync" archive="yes" delete="yes" owner="no" group="no"
+  # synchronize: src={{ docroot }}/nmon-logger-syslog-ng/etc/nmon-logger dest=/etc/ rsync_path="sudo rsync" archive="yes" delete="yes" owner="no" group="no"
 
   - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
     file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
 
   - name: Deploy nmon-logger cron.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
+    copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/cron.d/nmon-logger dest=/etc/cron.d/
             owner=root group=root mode=0644
 
   - name: Deploy nmon-logger logrotate.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
+    copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
             owner=root group=root mode=0644
 
-  - name: Deploy nmon-logger rsyslog.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
+  - name: Deploy nmon-logger syslog-ng.d configuration
+    copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/syslog-ng.d/nmon-logger.conf dest=/etc/syslog-ng/conf.f/
             owner=root group=root mode=0644
     notify:
-        - restart rsyslog
+        - restart syslog-ng
 
   handlers:
 
-    - name: restart rsyslog
-      service: name=rsyslog state=restarted
+    - name: restart syslog-ng
+      service: name=syslog-ng state=restarted
 
     - name: update timezone
       command: dpkg-reconfigure --frontend noninteractive tzdata

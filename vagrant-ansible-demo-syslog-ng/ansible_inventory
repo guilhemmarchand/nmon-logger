@@ -1,0 +1,10 @@
+# ansible hosts
+
+# Configuration for rsyslog deployment demo, 1 syslog-ng collector, 2 syslog-ng clients
+
+[syslog-ng-servers]
+machine1 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
+
+[syslog-ng-clients]
+machine2 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2202 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
+machine3 ansible_ssh_host=127.0.0.1 ansible_ssh_port=2203 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
