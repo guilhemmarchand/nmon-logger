@@ -70,7 +70,7 @@ while read line ; do
 done
 
 # Python is the default choice, if it is not available launch the Perl version
-PYTHON=`which python` >/dev/null 2>&1
+PYTHON=`which python >/dev/null 2>&1`
 
 if [ $? -eq 0 ]; then
 
