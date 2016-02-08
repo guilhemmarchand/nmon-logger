@@ -21,7 +21,7 @@
   - block:
 
     - name: Install syslog-ng for Ubuntu
-      apt: apt-get install -y syslog-ng
+      apt: name=syslog-ng state=latest
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
@@ -32,7 +32,7 @@
   - block:
 
     - name: Install syslog-ng for RHEL/CentOS
-      apt: apt-get install -y syslog-ng
+      yum: name=syslog-ng state=latest
 
     - name: Install minimal Perl environment
       yum: name=perl state=latest
@@ -250,7 +250,7 @@
             owner=root group=root mode=0644
 
   - name: Deploy nmon-logger syslog-ng.d configuration
-    copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/syslog-ng.d/nmon-performance.conf dest=/etc/syslog-ng/conf.d/
+    copy: src={{ docroot }}/nmon-logger-syslog-ng/etc/syslog-ng/conf.d/nmon-logger.conf dest=/etc/syslog-ng/conf.d/
             owner=root group=root mode=0644
 
   # Last but not least, restart syslog-ng (using module service causes some trouble, let's use simple command)
