@@ -226,7 +226,7 @@
   # Ubuntu / Debian uses s_src as the default source for data
 
   - name: Deploy syslog-ng central configuration
-    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_ubuntu dest=/etc/syslog-ng/conf.d/
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_ubuntu dest=/etc/syslog-ng/conf.d/client.conf
     notify:
         - restart syslog-ng
 
@@ -235,7 +235,7 @@
   # centos / RHEL uses s_sys as the default source for data
 
   - name: Deploy syslog-ng central configuration
-    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_centos dest=/etc/syslog-ng/conf.d/
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_centos dest=/etc/syslog-ng/conf.d/client.conf
     notify:
         - restart syslog-ng
 
