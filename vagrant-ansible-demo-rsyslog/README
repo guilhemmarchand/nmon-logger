@@ -80,7 +80,7 @@ Decide if you want to run Ubuntu boxes, or CentOS boxes:
 - Ubuntu --> Ubuntu boxes is the default choice, you have nothing to do
 - CentOS --> Edit the VagrantFile, comment out the secondary "machine.vm.box" and comment the current line
 
-4.Start the Vagrant magic !
+4. Start the Vagrant magic !
 
 $ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-rsyslog
 $ vagrant up
@@ -149,6 +149,8 @@ $ cd /opt/splunk/etc/deploy-apps
 $ tar -xvzf /opt/splunk/etc/apps/nmon/resources/TA-nmon*.tar.gz
 
 And configure the deployment server to deploy to machine1 / machine2
+
+For more details, see: http://nmonsplunk.wikidot.com/documentation:installation:bydeployment:distributed "4. Configuring the deployment server to push the TA-nmon to Universal Forwarders"
 
 Et voilà !
 
