@@ -5,3 +5,6 @@
 
 # pycharm
 .idea
+
+# vagrant
+.vagrant
