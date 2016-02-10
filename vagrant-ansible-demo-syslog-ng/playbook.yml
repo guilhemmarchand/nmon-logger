@@ -31,6 +31,12 @@
 
   - block:
 
+    - name: Enable the EPEL repository (Extra Packages for Enterprise Linux)
+      yum: name=epel-release state=latest update_cache=yes
+
+    - name: Remove rsyslog package if installed
+      yum: name=rsyslog state=removed
+
     - name: Install syslog-ng for RHEL/CentOS
       yum: name=syslog-ng state=latest
 
@@ -188,16 +194,14 @@
 
   - block:
 
-    - name: Install syslog-ng repo for RHEL/CentOS
+    - name: Enable the EPEL repository (Extra Packages for Enterprise Linux)
+      yum: name=epel-release state=latest update_cache=yes
 
-      # Install repo file
-      get_url: url=http://rpms.adiscon.com/v8-stable/syslog-ng.repo dest=/etc/yum.repos.d/
+    - name: Remove rsyslog package if installed
+      yum: name=rsyslog state=removed
 
-    - name: Update syslog-ng for RHEL/CentOS
-
-      # Update package
-      # Note: Using yum module does not seem to update syslog-ng package, updating using command
-      command: yum install -y syslog-ng
+    - name: Install syslog-ng for RHEL/CentOS
+      yum: name=syslog-ng state=latest
 
     - name: Install minimal Perl environment
       yum: name=perl state=latest
@@ -219,10 +223,23 @@
 
   # Configure syslog-ng on this host: Send data to syslog-ng server, add syslog-ng repo, update and upgrade syslog-ng
 
+  # Ubuntu / Debian uses s_src as the default source for data
+
   - name: Deploy syslog-ng central configuration
-    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf dest=/etc/syslog-ng/conf.d/
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_ubuntu dest=/etc/syslog-ng/conf.d/
     notify:
         - restart syslog-ng
+
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+  # centos / RHEL uses s_sys as the default source for data
+
+  - name: Deploy syslog-ng central configuration
+    copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_centos dest=/etc/syslog-ng/conf.d/
+    notify:
+        - restart syslog-ng
+
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
   # NMON LOGGER installation
 
