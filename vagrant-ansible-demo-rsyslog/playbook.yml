@@ -6,7 +6,7 @@
 
   vars:
    - docroot: /opt/deployment/nmon-logger
-   - splunk_binpath: /opt/deployment/splunk_bin/splunk-universal-forwarder/splunkforwarder-6.3.3-f44afce176d0-Linux-x86_64.tgz
+   - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunkforwarder-*.tgz | head -1') }}"
    - splunk_installpath: /opt
    - splunk_appname: TA_syslog_nmon
    - splunk_indexer_adress: 192.168.33.1:9997
