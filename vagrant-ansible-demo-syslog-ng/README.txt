@@ -27,14 +27,13 @@ If you want to use Virtualbox as the provider (which i will recommend as it is f
 
 This package will create from scratch and totally automatically:
 
-- 2 virtual machines acting as active / active Rsyslog collectors, and running Splunk Universal Forwarder
+- 1 virtual machine acting as syslog-ng collector, and running Splunk Universal Forwarder
 
-- 2 virtual machines running the nmon-looger and sending their data to central rsyslog collectors
+- 2 virtual machines running the nmon-looger and sending their data to central syslog-ng collectors
 
---> machine1 : rsyslog collector running Splunk Universal Forwarder
---> machine2 : rsyslog collector running Splunk Universal Forwarder
---> machine3 : rsyslog client running the nmon-logger
---> machine4 : rsyslog client running the nmon-logger
+--> machine1 : syslog-ng collector running Splunk Universal Forwarder
+--> machine2 : syslog-ng client running the nmon-logger
+--> machine3 : syslog-ng client running the nmon-logger
 
 
 #######################
@@ -67,7 +66,7 @@ Decide if you want to run Ubuntu boxes, or CentOS boxes:
 
 4. Start the Vagrant magic !
 
-$ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-rsyslog
+$ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-syslog-ng
 $ vagrant up
 
 And wait for Vagrant to start the virtual machines, and finally Ansible will run the playbook:
@@ -86,7 +85,7 @@ And wait for Vagrant to start the virtual machines, and finally Ansible will run
 ==> machine1: Importing base box 'ubuntu/vivid64'...
 ==> machine1: Matching MAC address for NAT networking...
 ==> machine1: Checking if box 'ubuntu/vivid64' is up to date...
-==> machine1: Setting the name of the VM: vagrant-ansible-demo-rsyslog_machine1_1455144754566_36922
+==> machine1: Setting the name of the VM: vagrant-ansible-demo-syslog-ng_machine1_1455144754566_36922
 ==> machine1: Clearing any previously set forwarded ports...
 ==> machine1: Clearing any previously set network interfaces...
 ==> machine1: Preparing network interfaces based on configuration...
@@ -116,7 +115,7 @@ And wait for Vagrant to start the virtual machines, and finally Ansible will run
 ==> machine1: Setting hostname...
 ==> machine1: Configuring and enabling network interfaces...
 ==> machine1: Mounting shared folders...
-    machine1: /vagrant => /home/guilhem/Documents/git/nmon-logger/vagrant-ansible-demo-rsyslog
+    machine1: /vagrant => /home/guilhem/Documents/git/nmon-logger/vagrant-ansible-demo-syslog-ng
 
 ..............
 
@@ -128,12 +127,12 @@ Ok, there you go, you 4 machines ready and running.
 
 In your Splunk instance, download and install the Nmon Performance Monitor application: https://splunkbase.splunk.com/app/1753
 
-Optionally, you can set the Splunk deployment server of your instance to automatically deploy the TA-nmon package to machine1 / machine2 running the Splunk Universal Forwarder
+Optionally, you can set the Splunk deployment server of your instance to automatically deploy the TA-nmon package to machine1 running the Splunk Universal Forwarder
 
 $ cd /opt/splunk/etc/deploy-apps
 $ tar -xvzf /opt/splunk/etc/apps/nmon/resources/TA-nmon*.tar.gz
 
-And configure the deployment server to deploy to machine1 / machine2
+And configure the deployment server to deploy to machine1
 
 For more details, see: http://nmonsplunk.wikidot.com/documentation:installation:bydeployment:distributed "4. Configuring the deployment server to push the TA-nmon to Universal Forwarders"
 
