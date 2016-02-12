@@ -11,6 +11,7 @@
    - splunk_appname: TA_syslog_nmon
    - splunk_indexer_adress: 192.168.33.1:9997
    - splunk_deploymentserver_adress: 192.168.33.1:8089
+   - localzone: Europe/Paris
 
   tasks:
 
@@ -63,7 +64,7 @@
 
 # Configure time zone
   - name: Set timezone variables
-    copy: content='Europe/Paris'
+    copy: content='{{ localzone }}'
           dest=/etc/timezone
           owner=root
           group=root
@@ -172,6 +173,7 @@
 
   vars:
    - docroot: /opt/deployment/nmon-logger
+   - localzone: Europe/Paris
 
   tasks:
 
@@ -224,7 +226,7 @@
 
 # Configure time zone
   - name: Set timezone variables
-    copy: content='Europe/Paris'
+    copy: content='{{ localzone }}'
           dest=/etc/timezone
           owner=root
           group=root
