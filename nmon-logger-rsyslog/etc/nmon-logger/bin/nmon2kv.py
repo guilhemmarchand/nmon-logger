@@ -946,10 +946,9 @@ if config_run == 0:
 
                         # Write
                         config.write(line)
-                if kvdelim:
-                    config.write('", data="nmon_configuration"')
-                else:
-                    config.write(', data="nmon_configuration"')
+
+                # Write end of key=value and line return
+                config.write('"\n')
 
                 # Under 10 lines of data in BBB, estimate extraction is not complete
                 if BBB_count < 10:
