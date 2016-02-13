@@ -261,7 +261,7 @@ if [ ! -x "$NMON" ];then
 		for version in 4 5 6 7; do
 	
 			# search for rhel		
-			if grep "Red Hat Enterprise Linux Server release $version" /etc/redhat-release >/dev/null; then
+			if grep "Red Hat Entreprise Linux Server release $version" /etc/redhat-release >/dev/null; then
 		
 				linux_vendor="rhel"
 				linux_mainversion="$version"
