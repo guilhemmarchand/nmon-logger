@@ -250,8 +250,14 @@ if [ ! -x "$NMON" ];then
 		
 			NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
 		
+		# try the linux_vendor
+
+		elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor} ]; then
+
+			NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}"
+
 		fi
-		
+
 	# So bad, no os-release, probably old linux, things becomes a bit harder
 	
 	# rhel, starting rhel 6, the /etc/os-release should be available but we will check for older version to newer
