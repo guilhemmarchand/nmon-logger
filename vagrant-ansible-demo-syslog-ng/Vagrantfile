@@ -17,7 +17,7 @@ N = 3
     config.ssh.insert_key = false
 
     # Ubuntu 15.x
-    machine.vm.box = "ubuntu/vivid64"
+    machine.vm.box = "debian/jessie64"
 
     # CentOS 7
     # machine.vm.box = "centos/7"
