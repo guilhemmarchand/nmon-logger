@@ -85,8 +85,6 @@ Open your web browser and access to the virtual IP: https://192.168.33.100
 
 [![asciicast](https://asciinema.org/a/benu0f10r36njm8pntrbg7xoe.png)](https://asciinema.org/a/benu0f10r36njm8pntrbg7xoe?speed=15)
 
-![screen1](docs/screen1.png)
-Format: ![screen2](url)
+![screen1](vagrant-ansible-dmo-rsyslog/docs/screen1.png)
 
-![screen2](docs/screen2.png)
-Format: ![screen2](url)
+![screen2](vagrant-ansible-dmo-rsyslog/docs/screen2.png)
