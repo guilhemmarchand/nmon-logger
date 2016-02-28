@@ -1,0 +1,317 @@
+---
+
+############################## Splunk server ##############################
+
+- hosts: splunk
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+   - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunk-*.tgz | head -1') }}"
+   - splunk_installpath: /opt
+   - core_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/nmon-performance-monitor-for-unix-and-linux-systems_*.tgz | head -1') }}"
+   - TA_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/TA-nmon_*.tar.gz | head -1') }}"
+
+  tasks:
+
+  # Verify if Splunk is already installed
+  - name: Check if Splunk path exists
+    stat: path={{ splunk_installpath }}/splunk
+    register: check_splunk_path
+
+  - block:
+
+    - name: Create the system splunk account for splunk
+      user: name=splunk comment="system account for Splunk" state=present
+
+    # Copy and unarchive Splunk
+    - name: Copy and unarchive Splunk
+      unarchive: src={{ splunk_binpath }} dest={{ splunk_installpath }} owner=splunk group=splunk
+
+    # Start and accept licence (run async)
+    - name: Start Splunk and accept licence
+      command: "{{ splunk_installpath }}/splunk/bin/splunk start --answer-yes --no-prompt --accept-license"
+      async: 60
+      poll: 5
+      become: yes
+      become_user: splunk
+      ignore_errors: yes
+
+    # Enable boot-start
+    - name: Enable boot start for Splunk
+      command: "{{ splunk_installpath }}/splunk/bin/splunk enable boot-start -user splunk"
+      ignore_errors: yes
+
+    # Lower the minimal volume of free space required
+    - name: Lower the minimal free space required (default 5GB, set to 1 GB to fit VMs space)
+      command: "{{ splunk_installpath }}/splunk/bin/splunk set minfreemb 1000 -auth admin:changeme"
+      become: yes
+      become_user: splunk
+      ignore_errors: yes
+
+    # Enable peer
+    - name: Enable receiving port 9997
+      command: "{{ splunk_installpath }}/splunk/bin/splunk enable listen 9997 -auth admin:admin"
+      become: yes
+      become_user: splunk
+
+    # Deploy the core application
+    - name: Unarchive nmon performance core app
+      unarchive: src={{ core_archive }} dest=/opt/splunk/etc/apps
+      become: yes
+      become_user: splunk
+
+    # copy serverclass.conf
+    - name: Copy serverclass.conf
+      copy: src=serverclass.conf dest={{ splunk_installpath }}/splunk/etc/system/local/serverclass.conf owner=splunk group=splunk
+
+    # Apply outputs.conf for clients
+    - name: Apply outputs.conf for clients
+      copy: src=splunk_clients_config dest={{ splunk_installpath }}/splunk/etc/deployment-apps/ owner=splunk group=splunk
+
+    - name: Deploy the TA-nmon addon to the deployment server for clients deployment
+      unarchive: src="{{ TA_archive }}" dest=/opt/splunk/etc/deployment-apps/
+      become: yes
+      become_user: splunk
+
+    - name: Deploy the local/inputs.conf for rsyslog-server clients
+      copy: src=inputs.conf dest=/opt/splunk/etc/deployment-apps/TA-nmon/local/ owner=splunk group=splunk
+
+    # Restart
+    - name: Restart Splunk
+      command: /opt/splunk/bin/splunk restart
+      become: yes
+      become_user: splunk
+
+    # Wait for service startup
+    - name: Wait for Splunk startup
+      wait_for: port=8089 timeout=30
+      ignore_errors: yes
+
+    when: check_splunk_path.stat.exists == false
+
+############################## rsyslog-servers ##############################
+
+- hosts: rsyslog-server1 rsyslog-server2
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+   - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunkforwarder*.tgz | head -1') }}"
+   - splunk_installpath: /opt
+   - splunk_appname: TA_syslog_nmon
+   - splunk_deploymentserver_adress: splunk:8089
+
+  tasks:
+
+    #
+    # For Ubuntu
+    #
+
+  - block:
+
+    - name: Install rsyslog repo for Ubuntu
+
+      # Add repo
+      apt_repository: repo='ppa:adiscon/v8-stable' state=present
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Update cache for Ubuntu
+
+      # Update apt cache
+      apt: update_cache=yes
+
+    - name: Update rsyslog for Ubuntu
+
+      # Update package
+      # Note: Using apt module does not seem to update rsyslog package, updating using command
+      command: apt-get install -y rsyslog
+
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    #
+    # For RHEL / Centos
+    #
+
+  - block:
+
+    - name: Install rsyslog repo for RHEL/CentOS
+
+      # Install repo file
+      get_url: url=http://rpms.adiscon.com/v8-stable/rsyslog.repo dest=/etc/yum.repos.d/
+
+    - name: Update rsyslog for RHEL/CentOS
+
+      # Update package
+      # Note: Using yum module does not seem to update rsyslog package, updating using command
+      command: yum install -y rsyslog
+
+    - name: Install minimal Perl environment
+      yum: name=perl state=latest
+
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+  ###### Ubuntu uses the syslog user to write data from rsyslog ######
+  - block:
+
+    # Create remote hosts directory for logging
+    - name: Create the /var/log/remote-hosts directory (for Ubuntu/Debian with syslog owner)
+      file: path=/var/log/remote-hosts owner=syslog group=syslog state=directory mode=0755 recurse=no
+
+    # Create nmon performance directory for logging
+    - name: Create the /var/log/nmon-performance directory (for Ubuntu/Debian with syslog owner)
+      file: path=/var/log/nmon-performance owner=syslog group=syslog state=directory mode=0755 recurse=no
+
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+  ###### Redhat / CentOS uses root ######
+  - block:
+
+    # Create remote hosts directory for logging
+    - name: Create the /var/log/remote-hosts directory (for RHEL/CentOS with root owner)
+      file: path=/var/log/remote-hosts owner=root group=root state=directory mode=0755 recurse=no
+
+    # Create nmon performance directory for logging
+    - name: Create the /var/log/nmon-performance directory (for RHEL/CentOS with root owner)
+      file: path=/var/log/nmon-performance owner=root group=root state=directory mode=0755 recurse=no
+
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+  # Set this host as a central syslog collector
+  - name: Deploy rsyslog central configuration for global logging
+    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/99-central-server.conf dest=/etc/rsyslog.d/
+
+  # Set this host as a central syslog collector
+  - name: Deploy rsyslog central configuration for nmon performance
+    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/20-nmon-performance.conf dest=/etc/rsyslog.d/
+
+  # Verify if Splunk Universal Forwarder is already installed
+  - name: Check if Splunk Universal Forwarder path exists
+    stat: path={{ splunk_installpath }}/splunkforwarder
+    register: check_splunk_path
+
+  # Copy and unarchive Splunk Universal Forwarder if not present
+  - name: Copy and unarchive Splunk Universal Forwarder
+    unarchive: src={{ splunk_binpath }} dest={{ splunk_installpath }}
+    when: check_splunk_path.stat.exists == false
+
+  # Start and accept licence
+  - name: Start Splunk Universal Forwarder and accept licence
+    command: "{{ splunk_installpath }}/splunkforwarder/bin/splunk start --answer-yes --no-prompt --accept-license"
+    when: check_splunk_path.stat.exists == false
+
+  # Enable boot-start
+  - name: Enable boot start for Splunk Universal Forwarder
+    command: "{{ splunk_installpath }}/splunkforwarder/bin/splunk enable boot-start"
+    when: check_splunk_path.stat.exists == false
+
+  # Configure Splunk as a client of the deployment server
+  - name: Configure Splunk as client of the deployment server
+    command: "{{ splunk_installpath }}/splunkforwarder/bin/splunk set deploy-poll {{ splunk_deploymentserver_adress }} -auth admin:changeme"
+    ignore_errors: yes
+
+  # Finally restart Splunk
+  - name: Restart Splunk Universal Forwarder
+    command: "{{ splunk_installpath }}/splunkforwarder/bin/splunk restart"
+
+  # Last but not least, restart rsyslog (using module service causes some trouble, let's use simple command)
+  - name: Restart rsyslog
+    service: name=rsyslog state=restarted
+
+############################## rsyslog-clients ##############################
+
+- hosts: rsyslog-client1 rsyslog-client2
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+
+  tasks:
+
+    #
+    # For Ubuntu
+    #
+
+  - block:
+
+    - name: Install rsyslog repo for Ubuntu
+
+      # Add repo
+      apt_repository: repo='ppa:adiscon/v8-stable' state=present
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Update cache for Ubuntu
+
+      # Update apt cache
+      apt: update_cache=yes
+
+    - name: Update rsyslog for Ubuntu
+
+      # Update package
+      # Note: Using apt module does not seem to update rsyslog package, updating using command
+      command: apt-get install -y rsyslog
+
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    #
+    # For RHEL / Centos
+    #
+
+  - block:
+
+    - name: Install rsyslog repo for RHEL/CentOS
+
+      # Install repo file
+      get_url: url=http://rpms.adiscon.com/v8-stable/rsyslog.repo dest=/etc/yum.repos.d/
+
+    - name: Update rsyslog for RHEL/CentOS
+
+      # Update package
+      # Note: Using yum module does not seem to update rsyslog package, updating using command
+      command: yum install -y rsyslog
+
+    - name: Install minimal Perl environment
+      yum: name=perl state=latest
+
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+  # Configure rsyslog on this host: Send data to rsyslog server, add rsyslog repo, update and upgrade rsyslog
+
+  - name: Deploy rsyslog central configuration
+    copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/01-central-client.conf dest=/etc/rsyslog.d/
+
+  # NMON LOGGER installation
+
+  - name: Create the system nmon account if required
+    user: name=nmon comment="system account for nmon-logger" system=yes state=present
+
+  - name: Create the /var/log/nmon-logger directory if required
+    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=no
+
+  - name: Deploy nmon-logger binaries (/etc/nmon-logger)
+
+  # Deploy /etc/nmon-logger by uncompressing the nmon-logger.tar.gz
+    unarchive: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger.tar.gz dest=/etc/
+                owner=nmon group=nmon mode=0755
+
+  - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
+    file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
+
+  - name: Deploy nmon-logger cron.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
+            owner=root group=root mode=0644
+
+  - name: Deploy nmon-logger logrotate.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
+            owner=root group=root mode=0644
+
+  - name: Deploy nmon-logger rsyslog.d configuration
+    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
+            owner=root group=root mode=0644
+
+  # Last but not least, restart rsyslog (using module service causes some trouble, let's use simple command)
+  - name: Restart rsyslog
+    service: name=rsyslog state=restarted
