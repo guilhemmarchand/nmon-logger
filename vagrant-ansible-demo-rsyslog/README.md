@@ -45,18 +45,15 @@ Very easy !
 
 ### Clone this git repository
 
-`
-$ mkdir /opt/deployment
-$ git clone https://github.com/guilhemmarchand/nmon-logger.git
-`
+`$ mkdir /opt/deployment`
+
+`$ git clone https://github.com/guilhemmarchand/nmon-logger.git`
 
 ### Download Splunk and Splunk Universal Forwarder tgz archives
 
 --> Choose Linux 64 bits in tgz format (tar.gz)
 
-`
-$ mkdir /opt/deployment/splunk_bin
-`
+`$ mkdir /opt/deployment/splunk_bin`
 
 And copy the tgz archives here.
 
@@ -69,10 +66,9 @@ Decide if you want to run Ubuntu boxes, or CentOS boxes:
 
 ### Start the Vagrant magic !
 
-`
-$ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-rsyslog
-$ ./run.sh
-`
+`$ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-rsyslog`
+
+`$ ./run.sh`
 
 And wait for Vagrant to start the virtual machines, and finally Ansible will be run and to automatically deploy and configure the virtual env.
 
