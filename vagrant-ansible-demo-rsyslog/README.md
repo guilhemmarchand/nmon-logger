@@ -29,13 +29,13 @@ This package will create from scratch and totally automatically:
 
 * 2 virtual machines running the nmon-looger and sending their data to central rsyslog collectors
 
+`
 192.168.33.100  splunk
-
 192.168.33.101  rsyslog-server1
 192.168.33.102  rsyslog-server2
-
 192.168.33.103  rsyslog-client1
 192.168.33.104  rsyslog-client2
+`
 
 ## Start the virtual env
 
