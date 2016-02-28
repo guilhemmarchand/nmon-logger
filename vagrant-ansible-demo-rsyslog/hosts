@@ -1,0 +1,14 @@
+# /etc/hosts
+
+127.0.0.1   localhost
+
+# splunk
+192.168.33.100  splunk
+
+# rsyslog-servers
+192.168.33.101  rsyslog-server1
+192.168.33.102  rsyslog-server2
+
+# rsyslog-servers
+192.168.33.103  rsyslog-client1
+192.168.33.104  rsyslog-client2

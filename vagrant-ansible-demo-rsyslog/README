@@ -21,21 +21,28 @@ If you want to use Virtualbox as the provider (which i will recommend as it is f
 
 - Splunk Universal Forwarder compressed archive for Linux 64-bits (tgz) --> http://www.splunk.com/en_us/download/universal-forwarder.html
 
-- Splunk indexer or standalone Splunk instance that will receive data from virtual machines
+- Splunk compressed archive for Linux 64-bits (tgz) --> http://www.splunk.com/en_us/download/splunk-enterprise.html
 
-*** What does this package ? ***
+*** What does this package will do ? ***
 
 This package will create from scratch and totally automatically:
 
-- 2 virtual machines acting as active / active Rsyslog collectors, and running Splunk Universal Forwarder
+* 1 Splunk instance fully configured, with the Nmon Performance monitor application up & running
 
-- 2 virtual machines running the nmon-looger and sending their data to central rsyslog collectors
+* 2 virtual machines acting as active / active Rsyslog collectors, and running Splunk Universal Forwarder
 
---> machine1 : rsyslog collector running Splunk Universal Forwarder
---> machine2 : rsyslog collector running Splunk Universal Forwarder
---> machine3 : rsyslog client running the nmon-logger
---> machine4 : rsyslog client running the nmon-logger
+* 2 virtual machines running the nmon-looger and sending their data to central rsyslog collectors
 
+# splunk
+192.168.33.100  splunk
+
+# rsyslog-servers
+192.168.33.101  rsyslog-server1
+192.168.33.102  rsyslog-server2
+
+# rsyslog-servers
+192.168.33.103  rsyslog-client1
+192.168.33.104  rsyslog-client2
 
 #######################
 #### INSTALLATION: ####
@@ -50,13 +57,13 @@ This an installation proposal, you are free to customize configurations and step
 $ mkdir /opt/deployment
 $ git clone https://github.com/guilhemmarchand/nmon-logger.git
 
-2. Download the Splunk Universal Forwarder tgz archive
+2. Download Splunk and Splunk Universal Forwarder tgz archives
 
-Download from http://www.splunk.com/en_us/download/universal-forwarder.html the archive for Linux x86 64-bits in tgz format
+--> Choose Linux 64 bits in tgz format (tar.gz)
 
 $ mkdir /opt/deployment/splunk_bin
 
-And copy the tgz archive here.
+And copy the tgz archives here.
 
 3. Ubuntu or CentOS ?
 
@@ -68,87 +75,17 @@ Decide if you want to run Ubuntu boxes, or CentOS boxes:
 4. Start the Vagrant magic !
 
 $ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-rsyslog
-$ vagrant up
+$ ./run.sh
 
-And wait for Vagrant to start the virtual machines, and finally Ansible will run the playbook:
+And wait for Vagrant to start the virtual machines, and finally Ansible will be run and to automatically deploy and configure the virtual env.
 
-***************
+Ok, there you go, you have 5 machines ready and running.
 
-==> machine1: Box 'ubuntu/vivid64' could not be found. Attempting to find and install...
-    machine1: Box Provider: virtualbox
-    machine1: Box Version: >= 0
-==> machine1: Loading metadata for box 'ubuntu/vivid64'
-    machine1: URL: https://atlas.hashicorp.com/ubuntu/vivid64
-==> machine1: Adding box 'ubuntu/vivid64' (v20160203.0.0) for provider: virtualbox
-    machine1: Downloading: https://atlas.hashicorp.com/ubuntu/boxes/vivid64/versions/20160203.0.0/providers/virtualbox.box
-==> machine1: Box download is resuming from prior download progress
-==> machine1: Successfully added box 'ubuntu/vivid64' (v20160203.0.0) for 'virtualbox'!
-==> machine1: Importing base box 'ubuntu/vivid64'...
-==> machine1: Matching MAC address for NAT networking...
-==> machine1: Checking if box 'ubuntu/vivid64' is up to date...
-==> machine1: Setting the name of the VM: vagrant-ansible-demo-rsyslog_machine1_1455144754566_36922
-==> machine1: Clearing any previously set forwarded ports...
-==> machine1: Clearing any previously set network interfaces...
-==> machine1: Preparing network interfaces based on configuration...
-    machine1: Adapter 1: nat
-    machine1: Adapter 2: hostonly
-    machine1: Adapter 3: hostonly
-==> machine1: Forwarding ports...
-    machine1: 22 (guest) => 2222 (host) (adapter 1)
-==> machine1: Running 'pre-boot' VM customizations...
-==> machine1: Booting VM...
-==> machine1: Waiting for machine to boot. This may take a few minutes...
-    machine1: SSH address: 127.0.0.1:2222
-    machine1: SSH username: vagrant
-    machine1: SSH auth method: private key
-    machine1: Warning: Remote connection disconnect. Retrying...
-==> machine1: Machine booted and ready!
-==> machine1: Checking for guest additions in VM...
-    machine1: The guest additions on this VM do not match the installed version of
-    machine1: VirtualBox! In most cases this is fine, but in rare cases it can
-    machine1: prevent things such as shared folders from working properly. If you see
-    machine1: shared folder errors, please make sure the guest additions within the
-    machine1: virtual machine match the version of VirtualBox you have installed on
-    machine1: your host and reload your VM.
-    machine1:
-    machine1: Guest Additions Version: 4.3.36
-    machine1: VirtualBox Version: 5.0
-==> machine1: Setting hostname...
-==> machine1: Configuring and enabling network interfaces...
-==> machine1: Mounting shared folders...
-    machine1: /vagrant => /home/guilhem/Documents/git/nmon-logger/vagrant-ansible-demo-rsyslog
+5. Access Splunk:
 
-..............
+Open your web browser and access to the virtual IP: https://192.168.33.100
 
-***************
+login: admin
 
-Ok, there you go, you 4 machines ready and running.
-
-5. Splunk configuration:
-
-In your Splunk instance, download and install the Nmon Performance Monitor application: https://splunkbase.splunk.com/app/1753
-
-Optionally, you can set the Splunk deployment server of your instance to automatically deploy the TA-nmon package to machine1 / machine2 running the Splunk Universal Forwarder
-
-$ cd /opt/splunk/etc/deploy-apps
-$ tar -xvzf /opt/splunk/etc/apps/nmon/resources/TA-nmon*.tar.gz
-
-And configure the deployment server to deploy to machine1 / machine2
-
-For more details, see: http://nmonsplunk.wikidot.com/documentation:installation:bydeployment:distributed "4. Configuring the deployment server to push the TA-nmon to Universal Forwarders"
-
-Et voilà !
-
-
-
-
-
-
-
-
-
-
-
-
-
+password: changeme
 
