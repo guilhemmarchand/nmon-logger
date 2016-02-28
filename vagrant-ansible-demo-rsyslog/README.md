@@ -1,9 +1,9 @@
 
-# You can use this package to get a full working environment of an nmon-logger deployment using Vagrant ! Up in 5 minutes :-)
+# Instant virtual environment with Vagrant / Ansible
 
-**Requirements**
+You can use this package to get a full working environment of an nmon-logger deployment using Vagrant ! Up in 5 minutes :-)
 
-## You need to have:
+## Requirements:
 
 * Vagrant --> https://www.vagrantup.com/downloads.html
 
@@ -37,22 +37,26 @@ This package will create from scratch and totally automatically:
 192.168.33.103  rsyslog-client1
 192.168.33.104  rsyslog-client2
 
-## Installation
+## Start the virtual env
 
 Very easy !
 
-This an installation proposal, you are free to customize configurations and steps at your own risks :-)
+*This an installation proposal, you are free to customize configurations and steps at your own risks :-)*
 
 1. Clone this git repository
 
+`
 $ mkdir /opt/deployment
 $ git clone https://github.com/guilhemmarchand/nmon-logger.git
+`
 
 2. Download Splunk and Splunk Universal Forwarder tgz archives
 
 --> Choose Linux 64 bits in tgz format (tar.gz)
 
+`
 $ mkdir /opt/deployment/splunk_bin
+`
 
 And copy the tgz archives here.
 
@@ -65,8 +69,10 @@ Decide if you want to run Ubuntu boxes, or CentOS boxes:
 
 4. Start the Vagrant magic !
 
+`
 $ cd /opt/deployment/nmon-logger/vagrant-ansible-demo-rsyslog
 $ ./run.sh
+`
 
 And wait for Vagrant to start the virtual machines, and finally Ansible will be run and to automatically deploy and configure the virtual env.
 
@@ -76,9 +82,8 @@ Ok, there you go, you have 5 machines ready and running.
 
 Open your web browser and access to the virtual IP: https://192.168.33.100
 
-login: admin
-
-password: changeme
+* login: admin
+* password: changeme
 
 **See it in action:**
 
