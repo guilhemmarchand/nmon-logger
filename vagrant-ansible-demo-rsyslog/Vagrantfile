@@ -48,7 +48,10 @@ servers=[
 
 Vagrant.configure(2) do |config|
 
+    # Get's honored normally
     config.vm.synced_folder ".", "/vagrant", disabled: true
+    # But not the centos box
+    config.vm.synced_folder '.', '/home/vagrant/sync', disabled: true
 
     servers.each do |machine|
 

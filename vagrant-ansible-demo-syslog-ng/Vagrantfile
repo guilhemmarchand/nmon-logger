@@ -3,42 +3,78 @@
 
 # Vagrant multi machine configuration
 
+servers=[
+      {
+        :hostname => "splunk",
+        :ip => "192.168.33.100",
+        :box => "ubuntu/trusty64",
+        #:box => "centos/7",
+        :ram => 2048,
+        :cpu => 2
+      },
+      {
+        :hostname => "syslog-ng-server1",
+        :ip => "192.168.33.101",
+        :box => "ubuntu/trusty64",
+        #:box => "centos/7",
+        :ram => 512,
+        :cpu => 1
+      },
+      {
+        :hostname => "syslog-ng-client1",
+        :ip => "192.168.33.102",
+        :box => "ubuntu/trusty64",
+        #:box => "centos/7",
+        :ram => 512,
+        :cpu => 1
+      },
+      {
+        :hostname => "syslog-ng-client2",
+        :ip => "192.168.33.103",
+        :box => "ubuntu/trusty64",
+        #:box => "centos/7",
+        :ram => 512,
+        :cpu => 1
+      }
+]
+
 Vagrant.configure(2) do |config|
 
-  # Set memory explicitly
-  config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--memory", "256"]
-  end
+    # Get's honored normally
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+    # But not the centos box
+    config.vm.synced_folder '.', '/home/vagrant/sync', disabled: true
 
-# Start 3 nodes from machine1 to machine3
-N = 3
-(1..N).each do |machine_id|
-  config.vm.define "machine#{machine_id}" do |machine|
-    config.ssh.insert_key = false
+    servers.each do |machine|
 
-    # Ubuntu 15.x
-    machine.vm.box = "debian/jessie64"
+        config.vm.define machine[:hostname] do |node|
 
-    # CentOS 7
-    # machine.vm.box = "centos/7"
+            # Ubuntu
+            node.vm.box = "ubuntu/trusty64"
 
-    machine.vm.hostname = "machine#{machine_id}"
-    machine.vm.network "private_network", ip: "192.168.33.#{100+machine_id}"
+            # CentOS 7
+            #node.vm.box = "centos/7"
 
-    # Only execute once the Ansible provisioner,
-    # when all the machines are up and ready.
-    if machine_id == N
-      machine.vm.provision :ansible do |ansible|
-        # Disable default limit to connect to all the machines
-        ansible.limit = "all"
-        ansible.playbook = "playbook.yml"
-        ansible.inventory_path = "ansible_inventory"
-        #ansible.host_key_checking = false
-        #ansible.verbose = "v"
-      end
+            config.ssh.insert_key = false
+            node.vm.usable_port_range = (2200..2250)
+            node.vm.hostname = machine[:hostname]
+            node.vm.network "private_network", ip: machine[:ip]
+            node.vm.box = machine[:box]
+
+            node.vm.provider "virtualbox" do |vb|
+                vb.customize ["modifyvm", :id, "--memory", machine[:ram], "--cpus", machine[:cpu]]
+                vb.name = machine[:hostname]
+            end
+        end
+
     end
-  end
-end
 
+  config.vm.provision "ansible" do |ansible|
+    ansible.limit = "all"
+    ansible.playbook = "playbook.yml"
+    #ansible.inventory_path = "ansible_inventory"
+    #ansible.host_key_checking = false
+    #ansible.verbose = "v"
+  end
 
 end

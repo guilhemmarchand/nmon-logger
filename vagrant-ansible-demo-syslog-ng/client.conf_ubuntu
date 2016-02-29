@@ -1,5 +1,5 @@
 # Client configuration for central logging
 # log all syslog messages to remote syslog-ng server
 
-destination d_net { tcp("192.168.33.101" port(514) log_fifo_size(1000)); };
+destination d_net { tcp("syslog-ng-server1" port(514) log_fifo_size(1000)); };
 log { source(s_src); destination(d_net); };
