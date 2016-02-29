@@ -112,8 +112,15 @@
 
   - block:
 
-    - name: Install syslog-ng for Ubuntu
-      apt: name=syslog-ng state=latest
+      # Update apt cache
+    - name: Update apt cache
+      apt: update_cache=yes
+
+    - name: Remove rsyslog for Ubuntu/Debian
+      apt: name=rsyslog state=absent
+
+    - name: Install syslog-ng for Ubuntu/Debian
+      apt: name=syslog-ng install_recommends=yes force=yes state=latest
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
@@ -223,22 +230,15 @@
 
   - block:
 
-    - name: Install syslog-ng repo for Ubuntu
-
-      # Add repo
-      apt_repository: repo='ppa:adiscon/v8-stable' state=present
-      when: ansible_distribution == 'Ubuntu'
-
-    - name: Update cache for Ubuntu
-
       # Update apt cache
+    - name: Update apt cache
       apt: update_cache=yes
 
-    - name: Update syslog-ng for Ubuntu
+    - name: Remove rsyslog for Ubuntu/Debian
+      apt: name=rsyslog state=absent
 
-      # Update package
-      # Note: Using apt module does not seem to update syslog-ng package, updating using command
-      command: apt-get install -y syslog-ng
+    - name: Install syslog-ng for Ubuntu/Debian
+      apt: name=syslog-ng install_recommends=yes force=yes state=latest
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
