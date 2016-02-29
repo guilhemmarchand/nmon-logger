@@ -82,7 +82,8 @@ Open your web browser and access to the virtual IP: https://192.168.33.100
 
 **See it in action:**
 
-[![asciicast](https://asciinema.org/a/benu0f10r36njm8pntrbg7xoe.png)](https://asciinema.org/a/benu0f10r36njm8pntrbg7xoe?speed=15)
+[![asciicast](https://asciinema.org/a/7hkiyw43cistxg7192zux3mvr.png)](https://asciinema.org/a/7hkiyw43cistxg7192zux3mvr?speed=15)
+
 
 ![screen1](./docs/screen001.png)
 
