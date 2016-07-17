@@ -11,7 +11,7 @@
 # 2015/05/09, Guilhem Marchand: Rewrite of main program to fix main common troubles with nmon_helper.sh, be simple, effective
 # 2016/07/17, Guilhem Marchand: Mirror update of the TA-nmon
 
-# Version 1.0.0
+# Version 1.0.1
 
 # For AIX / Linux / Solaris
 
@@ -304,16 +304,16 @@ if [ ! -x "$NMON" ];then
             0 )
 
                 # Try the most accurate
-                if [ -f $APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_be ]; then
-                    NMON="$APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_be"
+                if [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_be ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_be"
 
                 # try the mainversion
-                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be ]; then
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+                elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
 
                 # try the linux_vendor
-                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_be ]; then
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_be"
+                elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_be ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_be"
 
                 fi
 
@@ -323,16 +323,16 @@ if [ ! -x "$NMON" ];then
             1 )
 
                 # Try the most accurate
-                if [ -f $APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_le ]; then
-                    NMON="$APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_le"
+                if [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_le ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_le"
 
                 # try the mainversion
-                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le ]; then
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+                elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
 
                 # try the linux_vendor
-                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_le ]; then
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_le"
+                elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_le ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_le"
 
                 fi
 
@@ -346,16 +346,16 @@ if [ ! -x "$NMON" ];then
         *)
 
                 # Try the most accurate
-                if [ -f $APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion} ]; then
-                    NMON="$APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}"
+                if [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion} ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}"
 
                 # try the mainversion
-                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion} ]; then
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+                elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion} ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
 
                 # try the linux_vendor
-                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor} ]; then
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}"
+                elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor} ]; then
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}"
 
                 fi
 
@@ -364,7 +364,21 @@ if [ ! -x "$NMON" ];then
         esac
 
 	# So bad, no os-release, probably old linux, things becomes a bit harder
-	
+
+	# centOS, OS and version detection
+    elif [ -f /etc/centos-release ]; then
+
+       for version in 5 6 7; do
+           if grep "CentOS release $version" /etc/centos-release >/dev/null; then
+
+               linux_vendor="centos"
+               linux_mainversion="$version"
+               NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+
+           fi
+
+        done
+
 	# rhel, starting rhel 6, the /etc/os-release should be available but we will check for older version to newer
 	# This shall not be updated in the future as the /etc/os-release is now available by default
 	elif [ -f /etc/redhat-release ]; then
@@ -389,13 +403,13 @@ if [ ! -x "$NMON" ];then
 
                     # Big endian
                     0 )
-                        NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+                        NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
 
 				    ;;
 
 				    # Little endian
 				    1)
-    				    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+    				    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
 				    ;;
 
 				    esac
@@ -404,7 +418,7 @@ if [ ! -x "$NMON" ];then
 
 				# Other arch
 				* )
-				    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+				    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
 
                 ;;
 
@@ -436,13 +450,13 @@ if [ ! -x "$NMON" ];then
 
                 # Big endian
                 0 )
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
 
                 ;;
 
                 # Little endian
                 1)
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
                 ;;
 
                 esac
@@ -451,7 +465,7 @@ if [ ! -x "$NMON" ];then
 
             # Other arch
             * )
-                NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+                NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
 
             ;;
 
@@ -466,9 +480,9 @@ if [ ! -x "$NMON" ];then
 
             # try the most accurate
             if [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}${linux_subversion} ]; then
-                    NMON=" ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}${linux_subversion}"
+                    NMON=" ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}${linux_subversion}"
             else
-                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+                    NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
             fi
 
 		fi
@@ -511,13 +525,13 @@ if [ ! -x "$NMON" ];then
 
                         # Big endian
                         0 )
-                            NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+                            NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
 
                         ;;
 
                         # Little endian
                         1)
-                            NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+                            NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
                         ;;
 
                         esac
@@ -526,7 +540,7 @@ if [ ! -x "$NMON" ];then
 
                     # Other arch
                     * )
-                        NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+                        NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
 
                     ;;
 
@@ -563,13 +577,13 @@ if [ ! -x "$NMON" ];then
 
                 # Big endian
                 0 )
-                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_be"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_be"
 
                 ;;
 
                 # Little endian
                 1)
-                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_le"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_le"
                 ;;
 
                 esac
@@ -578,7 +592,7 @@ if [ ! -x "$NMON" ];then
 
             # Other arch
             * )
-                NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}"
+                NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}"
 
             ;;
 
@@ -607,7 +621,7 @@ if [ ! -x "$NMON" ];then
 
 	if [ ! -x ${NMON} ]; then
 
-		if [ -x ${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH} ]; then
+		if [ -x ${APP}/bin/linux/generic/nmon_linux_${ARCH} ]; then
 
 			# Try switching to embedded generic
 
@@ -621,13 +635,13 @@ if [ ! -x "$NMON" ];then
 
                 # Big endian
                 0 )
-                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_be"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_be"
 
                 ;;
 
                 # Little endian
                 1)
-                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_le"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_le"
                 ;;
 
                 esac
@@ -636,7 +650,7 @@ if [ ! -x "$NMON" ];then
 
             # Other arch
             * )
-                NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}"
+                NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}"
 
             ;;
 

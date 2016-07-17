@@ -9,8 +9,10 @@
 # Date - Jan 2016
 
 # Jan 2015, Guilhem Marchand: Initial version
+# 2016/07/17, Guilhem Marchand: Change expected structure message log level to WARN
 
-# Version 1.0.0
+# Version 1.0.1
+#
 
 # For AIX / Linux / Solaris
 
@@ -48,7 +50,7 @@ if ! [ -d ${NMON_BIN} ]; then
 fi
 
 if ! [ -d ${NMON_VAR}/var/nmon_repository ]; then
-    echo "`date`, ${HOST} ERROR, Could not find expected directory structure, please first start the nmon_helper.sh
+    echo "`date`, ${HOST} WARN, Could not find expected directory structure, please first start the nmon_helper.sh
      script"
 	exit 1
 fi

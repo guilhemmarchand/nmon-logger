@@ -7,32 +7,24 @@ servers=[
       {
         :hostname => "splunk",
         :ip => "192.168.33.100",
-        :box => "ubuntu/trusty64",
-        #:box => "centos/7",
         :ram => 2048,
         :cpu => 2
       },
       {
         :hostname => "syslog-ng-server1",
         :ip => "192.168.33.101",
-        :box => "ubuntu/trusty64",
-        #:box => "centos/7",
         :ram => 512,
         :cpu => 1
       },
       {
         :hostname => "syslog-ng-client1",
         :ip => "192.168.33.102",
-        :box => "ubuntu/trusty64",
-        #:box => "centos/7",
         :ram => 512,
         :cpu => 1
       },
       {
         :hostname => "syslog-ng-client2",
         :ip => "192.168.33.103",
-        :box => "ubuntu/trusty64",
-        #:box => "centos/7",
         :ram => 512,
         :cpu => 1
       }
@@ -49,17 +41,24 @@ Vagrant.configure(2) do |config|
 
         config.vm.define machine[:hostname] do |node|
 
-            # Ubuntu
-            node.vm.box = "ubuntu/trusty64"
-
-            # CentOS 7
-            #node.vm.box = "centos/7"
-
             config.ssh.insert_key = false
             node.vm.usable_port_range = (2200..2250)
             node.vm.hostname = machine[:hostname]
             node.vm.network "private_network", ip: machine[:ip]
-            node.vm.box = machine[:box]
+
+            # This will be applied to all vms
+
+            # Ubuntu
+            # node.vm.box = "ubuntu/trusty64"
+
+            # Debian 8.2
+            node.vm.box = "boxcutter/debian82"
+
+            # CentOS 7
+            # node.vm.box = "boxcutter/centos72"
+
+            # CentOS 6
+            # node.vm.box = "boxcutter/centos67"
 
             node.vm.provider "virtualbox" do |vb|
                 vb.customize ["modifyvm", :id, "--memory", machine[:ram], "--cpus", machine[:cpu]]
