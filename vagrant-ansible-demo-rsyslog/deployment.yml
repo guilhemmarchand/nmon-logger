@@ -99,7 +99,7 @@
 
   vars:
    - docroot: /opt/deployment/nmon-logger
-   - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunkforwarder*.tgz | head -1') }}"
+   - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunkforwarder-*-Linux-x86_64.tgz | head -1') }}"
    - splunk_installpath: /opt
    - splunk_appname: TA_syslog_nmon
    - splunk_deploymentserver_adress: splunk:8089
