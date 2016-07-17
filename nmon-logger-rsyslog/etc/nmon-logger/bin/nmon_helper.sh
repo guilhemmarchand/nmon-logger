@@ -9,6 +9,7 @@
 # Date - June 2014
 
 # 2015/05/09, Guilhem Marchand: Rewrite of main program to fix main common troubles with nmon_helper.sh, be simple, effective
+# 2016/07/17, Guilhem Marchand: Mirror update of the TA-nmon
 
 # Version 1.0.0
 
@@ -52,6 +53,20 @@ APP_VAR=$NMON_HOME
 # Which type of OS are we running
 UNAME=`uname`
 
+# Linux binaries are stored in the bin/linux.tgz archive file
+# At first startup only, if the linux directory does not exist, extract the binaries archive file
+case $UNAME in
+
+Linux )
+
+if [ ! -d ${APP}/bin/linux ]; then
+    cd ${APP}/bin
+    tar -xzpf linux.tgz
+fi
+
+;;
+esac
+
 # set defaults values for interval and snapshot and source nmon.conf
 
 # Refresh interval in seconds, Nmon will this value to refresh data each X seconds
@@ -63,7 +78,7 @@ interval="60"
 snapshot="120"
 
 # AIX common options default, will be overwritten by nmon.conf (unless the file would not be available)
-AIX_options="-f -T -A -d -K -L -M -P -^ -p"
+AIX_options="-f -T -A -d -K -L -M -P -O -W -S -^ -p"
 
 # Linux max devices (-d option), default to 1500
 Linux_devices="1500"
@@ -72,6 +87,15 @@ Linux_devices="1500"
 # by default, the nmon_helper.sh script will use any nmon binary found in PATH
 # Set to "1" to give the priority to embedded nmon binaries
 Linux_embedded_nmon_priority="0"
+
+# Change the limit for processes and disks capture of nmon for Linux
+# In default configuration, nmon will capture most of the process table by capturing main consuming processes
+# You can set nmon to an unlimited number of processes to be captured, and the entire process table will be captured.
+# Note this will affect the number of disk devices captured by setting it to an unlimited number.
+# This will also increase the volume of data to be generated and may require more cpu overhead to process nmon data
+# The default configuration uses the default mode (limited capture), you can set bellow the limit number of capture to unlimited mode
+# Change to "1" to set capture of processes and disks to no limit mode
+Linux_unlimited_capture="0"
 
 # endtime_margin defines the time in seconds before a new nmon process will be started
 # in default configuration, a new process will be spawned 240 seconds before the current process ends
@@ -199,23 +223,53 @@ if [ ! -x "$NMON" ];then
 	
 		ARCH_NAME="power_64" ;; # powerpc 64 bits	
 
-	ppp64le )
-	
-		ARCH_NAME="power_64le" ;; # powerpc 64 bits little endian	
-
-	ppp64be )
-	
-		ARCH_NAME="power_64be" ;; # powerpc 64 bits big endian
-
 	s390 )
-	
-		ARCH_NAME="mainframe_32" ;; # s390 32 bits mainframe	
+
+		ARCH_NAME="mainframe_32" ;; # s390 32 bits mainframe
 
 	s390x )
-	
-		ARCH_NAME="mainframe_64" ;; # s390x 64 bits mainframe	
+
+		ARCH_NAME="mainframe_64" ;; # s390x 64 bits mainframe
+
+    arm* )
+
+        ARCH_NAME="arm" ;; # arm architecture
 	
 	esac
+
+	### PowerLinux specific ###
+
+	# On PowerLinux arch, some OS can run in Big Endian while most will run in Little Endian
+    # On a Little Endian system, the following command will return "1" for a Little Endian arch
+
+    # See this nice article: https://www.mainline.com/linux-on-power-to-be-or-not-to-be-why-should-i-care
+    # And specifically "Ubuntu is LE only; SLES 11 is BE only; SLES 12 is LE only; RedHat 6.x is BE only; RedHat 7.1 has two distributions – one LE, the other BE"
+
+    # For convenience, all powerLinux binaries are suffixed by "_le" or "_be"
+
+    case $ARCH in
+
+    ppp32 | ppp64 )
+
+        # Assign default to Little Endian in case of failure
+        BYTE_ORDER_STATUS="1"
+        BYTE_ORDER="le"
+
+        BYTE_ORDER_STATUS=`echo I | tr -d [:space:] | od -to2 | head -n1 | awk '{print $2}' | cut -c6`
+        case ${BYTE_ORDER_STATUS} in
+
+        0 )
+        # Big Endian
+            BYTE_ORDER="be" ;;
+
+        # Little Endian
+        1 )
+            BYTE_ORDER="le" ;;
+
+        esac
+
+    ;;
+    esac
 
 	# Initialize linux_vendor
 	linux_vendor=""
@@ -233,30 +287,81 @@ if [ ! -x "$NMON" ];then
 
 		# Great, let's try to find the better binary for that system
 	
-		linux_vendor=`grep '^ID=' $OSRELEASE | awk -F= '{print $2}' | sed 's/\"//g'`	# The Linux distribution
-		linux_mainversion=`grep '^VERSION_ID=' $OSRELEASE | awk -F'"' '{print $2}' | awk -F'.' '{print $1}'`	# The main release (eg. rhel 7) 	
+		linux_vendor=`grep '^ID=' $OSRELEASE | awk -F= '{print $2}' | sed 's/\"//g' | sed 's/ //g'`	# The Linux distribution
+		linux_mainversion=`grep '^VERSION_ID=' $OSRELEASE | awk -F'"' '{print $2}' | awk -F'.' '{print $1}'`	# The main release (eg. rhel 7)
 		linux_subversion=`grep '^VERSION_ID=' $OSRELEASE | awk -F'"' '{print $2}' | awk -F'.' '{print $2}'`	# The sub level release (eg. "1" from rhel 7.1)
-		linux_fullversion=`grep '^VERSION_ID=' $OSRELEASE | awk -F'"' '{print $2}' | sed 's/\.//g'`	# Concatenated version of the release (eg. 71 for rhel 7.1)	
-	
-		# Try the most accurate
-		
-		if [ -f $APP/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion} ]; then
-		
-			NMON="$APP/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}"
-			
-		# try the mainversion
-		
-		elif [ -f ${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion} ]; then
-		
-			NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
-		
-		# try the linux_vendor
+		linux_fullversion=`grep '^VERSION_ID=' $OSRELEASE | awk -F'"' '{print $2}' | sed 's/\.//g'`	# Concatenated version of the release (eg. 71 for rhel 7.1)
 
-		elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor} ]; then
+        case $ARCH in
 
-			NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}"
+        # PowerLinux
+        ppp32 | ppp64 )
 
-		fi
+            # Manage Big / Little Endian arch
+            case ${BYTE_ORDER} in
+
+            # Big Endian
+            0 )
+
+                # Try the most accurate
+                if [ -f $APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_be ]; then
+                    NMON="$APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_be"
+
+                # try the mainversion
+                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be ]; then
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+
+                # try the linux_vendor
+                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_be ]; then
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_be"
+
+                fi
+
+            ;;
+
+            # Little Endian
+            1 )
+
+                # Try the most accurate
+                if [ -f $APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_le ]; then
+                    NMON="$APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}_le"
+
+                # try the mainversion
+                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le ]; then
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+
+                # try the linux_vendor
+                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_le ]; then
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}_le"
+
+                fi
+
+            ;;
+
+            esac
+
+        ;;
+
+        # All other arch
+        *)
+
+                # Try the most accurate
+                if [ -f $APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion} ]; then
+                    NMON="$APP_VAR/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_fullversion}"
+
+                # try the mainversion
+                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion} ]; then
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+
+                # try the linux_vendor
+                elif [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor} ]; then
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}"
+
+                fi
+
+        ;;
+
+        esac
 
 	# So bad, no os-release, probably old linux, things becomes a bit harder
 	
@@ -264,15 +369,47 @@ if [ ! -x "$NMON" ];then
 	# This shall not be updated in the future as the /etc/os-release is now available by default
 	elif [ -f /etc/redhat-release ]; then
 
+        # Redhat has some version for PowerLinux that can be Little or Big endian
+
 		for version in 4 5 6 7; do
-	
-			# search for rhel		
-			if grep "Red Hat Entreprise Linux Server release $version" /etc/redhat-release >/dev/null; then
-		
+
+			# search for rhel
+			if grep "Red Hat Enterprise Linux Server release $version" /etc/redhat-release >/dev/null; then
+
 				linux_vendor="rhel"
 				linux_mainversion="$version"
-				NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
-				
+
+                case $ARCH in
+
+                # PowerLinux
+                ppp32 | ppp64 )
+
+                    # Manage Big / Little Endian arch
+                    case ${BYTE_ORDER} in
+
+                    # Big endian
+                    0 )
+                        NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+
+				    ;;
+
+				    # Little endian
+				    1)
+    				    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+				    ;;
+
+				    esac
+
+				;;
+
+				# Other arch
+				* )
+				    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+
+                ;;
+
+                esac
+
 			fi
 			
 		done
@@ -282,20 +419,58 @@ if [ ! -x "$NMON" ];then
 	
 		# sles
 		
-		if grep "SUSE Linux Entreprise Server" /etc/SuSE-release >/dev/null; then
-		
+		if grep "SUSE Linux Enterprise Server" /etc/SuSE-release >/dev/null; then
+
 			linux_vendor="sles"
 			# Get the main version only
 			linux_mainversion=`grep 'VERSION =' /etc/SuSE-release | sed 's/ //g' | awk -F= '{print $2}' | awk -F. '{print $1}'`
-			NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
-		
-		elif 	grep "openSUSE" /etc/SuSE-release >/dev/null; then
-		
+            linux_subversion=`grep 'PATCHLEVEL =' /etc/SuSE-release | sed 's/ //g' | awk -F= '{print $2}' | awk -F. '{print $1}'`
+
+            case $ARCH in
+
+            # PowerLinux
+            ppp32 | ppp64 )
+
+                # Manage Big / Little Endian arch
+                case ${BYTE_ORDER} in
+
+                # Big endian
+                0 )
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+
+                ;;
+
+                # Little endian
+                1)
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+                ;;
+
+                esac
+
+            ;;
+
+            # Other arch
+            * )
+                NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+
+            ;;
+
+            esac
+
+		elif grep "openSUSE" /etc/SuSE-release >/dev/null; then
+
 			linux_vendor="opensuse"
 			# Get the main version only
 			linux_mainversion=`grep 'VERSION =' /etc/SuSE-release | sed 's/ //g' | awk -F= '{print $2}' | awk -F. '{print $1}'`
-			NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
-					
+            linux_subversion=`grep 'PATCHLEVEL =' /etc/SuSE-release | sed 's/ //g' | awk -F= '{print $2}' | awk -F. '{print $1}'`
+
+            # try the most accurate
+            if [ -f ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}${linux_subversion} ]; then
+                    NMON=" ${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}${linux_subversion}"
+            else
+                    NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+            fi
+
 		fi
 	
 	elif [ -f /etc/issue ]; then
@@ -319,13 +494,43 @@ if [ ! -x "$NMON" ];then
 
 		elif grep "Ubuntu" /etc/issue >/dev/null; then
 
-			for version in 6 7 8 9 10 11 12 13 14; do
-	
+			for version in 6 7 8 9 10 11 12 13 14 15; do
+
 				if grep "Ubuntu $version" /etc/issue >/dev/null; then
-		
+
 					linux_vendor="ubuntu"
 					linux_mainversion="$version"
-					NMON="${APP}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+
+                    case $ARCH in
+
+                    # PowerLinux
+                    ppp32 | ppp64 )
+
+                        # Manage Big / Little Endian arch
+                        case ${BYTE_ORDER} in
+
+                        # Big endian
+                        0 )
+                            NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_be"
+
+                        ;;
+
+                        # Little endian
+                        1)
+                            NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}_le"
+                        ;;
+
+                        esac
+
+                    ;;
+
+                    # Other arch
+                    * )
+                        NMON="${APP_VAR}/bin/linux/${linux_vendor}/nmon_${ARCH_NAME}_${linux_vendor}${linux_mainversion}"
+
+                    ;;
+
+                    esac
 
 				fi
 		
@@ -345,26 +550,97 @@ if [ ! -x "$NMON" ];then
 		which nmon >/dev/null 2>&1
 		
 		if [ $? -eq 0 ]; then
-		
 			NMON=`which nmon 2>&1`
-		
 		else
-		
-			# Try switching to embedded generic
-			NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}"
-	
-		fi	
-	
+
+            case $ARCH in
+
+            # PowerLinux
+            ppp32 | ppp64 )
+
+                # Manage Big / Little Endian arch
+                case ${BYTE_ORDER} in
+
+                # Big endian
+                0 )
+                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_be"
+
+                ;;
+
+                # Little endian
+                1)
+                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_le"
+                ;;
+
+                esac
+
+            ;;
+
+            # Other arch
+            * )
+                NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}"
+
+            ;;
+
+            esac
+
+		fi
+    ;;
+
+    *)
+        if [ ! -x ${NMON} ]; then
+
+            # Look for local binary in PATH
+            which nmon >/dev/null 2>&1
+
+            if [ $? -eq 0 ]; then
+                    NMON=`which nmon 2>&1`
+            fi
+
+        fi
+
+    ;;
+
 	esac
 
 	# Finally verify we have a binary that exists and is executable
-	
+
 	if [ ! -x ${NMON} ]; then
 
-		if [ -x ${APP}/bin/linux/generic/nmon_linux_${ARCH} ]; then
-		
+		if [ -x ${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH} ]; then
+
 			# Try switching to embedded generic
-			NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}"
+
+            case $ARCH in
+
+            # PowerLinux
+            ppp32 | ppp64 )
+
+                # Manage Big / Little Endian arch
+                case ${BYTE_ORDER} in
+
+                # Big endian
+                0 )
+                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_be"
+
+                ;;
+
+                # Little endian
+                1)
+                    NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}_le"
+                ;;
+
+                esac
+
+            ;;
+
+            # Other arch
+            * )
+                NMON="${APP_VAR}/bin/linux/generic/nmon_linux_${ARCH}"
+
+            ;;
+
+            esac
 
 		else
 			
@@ -652,7 +928,7 @@ esac
 # - Linux: Add the "-N" option if you want to extract NFS Statistics (NFS V2/V3/V4)
 # - AIX: Add the "-N" option for NFS V2/V3, "-NN" for NFS V4
 
-# For AIX, the default command options line "-f -T -A -d -K -L -M -P -^" includes: (see http://www-01.ibm.com/support/knowledgecenter/ssw_aix_61/com.ibm.aix.cmds4/nmon.htm)
+# For AIX, the default command options line "-f -T -A -d -K -L -M -P -O -W -S -^" includes: (see http://www-01.ibm.com/support/knowledgecenter/ssw_aix_61/com.ibm.aix.cmds4/nmon.htm)
 
 # AIX options can be managed using local/nmon.conf, do not modify options here
 
@@ -662,6 +938,9 @@ esac
 # of the corresponding data structure. The memory dump is readable and can be used when the command is recording the data.
 # -L	Includes the large page analysis section.
 # -M	Includes the MEMPAGES section in the recording file. The MEMPAGES section displays detailed memory statistics per page size.
+# -O    Includes the Shared Ethernet adapter (SEA) VIOS sections in the recording file.
+# -W    Includes the WLM sections into the recording file.
+# -S	Includes WLM sections with subclasses in the recording file.
 # -P	Includes the Paging Space section in the recording file.
 # -T	Includes the top processes in the output and saves the command-line arguments into the UARG section. You cannot specify the -t, -T, or -Y flags with each other.
 # -^	Includes the Fiber Channel (FC) sections.
@@ -720,9 +999,22 @@ SunOS )
 Linux )
 
 	if [ ${Linux_NFS} -eq 1 ]; then
-		nmon_command="${NMON} -f -T -d ${Linux_devices} -N -s ${interval} -c ${snapshot} -p"
+
+        # Verify the limit configuration for processes and disks capture
+	    if [ ${Linux_unlimited_capture} -eq 1 ]; then
+	        nmon_command="${NMON} -f -T -N -s ${interval} -c ${snapshot} -I -1 -p"
+        else
+            nmon_command="${NMON} -f -T -d ${Linux_devices} -N -s ${interval} -c ${snapshot} -p"
+        fi
+
 	else
-		nmon_command="${NMON} -f -T -d ${Linux_devices} -s ${interval} -c ${snapshot} -p"
+
+        # Verify the limit configuration for processes and disks capture
+	    if [ ${Linux_unlimited_capture} -eq 1 ]; then
+	        nmon_command="${NMON} -f -T -s ${interval} -c ${snapshot} -I -1 -p"
+        else
+		    nmon_command="${NMON} -f -T -d ${Linux_devices} -s ${interval} -c ${snapshot} -p"
+        fi
 	fi
 ;;
 
@@ -789,11 +1081,30 @@ else
 		EPOCHTEST="946684800"
 		PIDAGE=$EPOCHTEST
 
-		# Use perl to get PID file age in seconds (perl will be portable to every system)
-		perl -e "\$mtime=(stat(\"$PIDFILE\"))[9]; \$cur_time=time();  print \$cur_time - \$mtime;" > ${APP_VAR}/nmon_helper.sh.tmp.$$
-	
+        # Verify Perl availability (Perl will be more commonly available than Python)
+        PERL=`which perl >/dev/null 2>&1`
+
+        if [ $? -eq 0 ]; then
+
+            # Use Perl to get PID file age in seconds
+            perl -e "\$mtime=(stat(\"$PIDFILE\"))[9]; \$cur_time=time();  print \$cur_time - \$mtime;" > ${APP_VAR}/nmon_helper.sh.tmp.$$
+
+        else
+
+            # Use Python to get PID file age in seconds
+            python -c "import os; import time; now = time.strftime(\"%s\"); print(int(int(now)-(os.path.getmtime('$PIDFILE'))))" > ${APP_VAR}/nmon_helper.sh.tmp.$$
+
+        fi
+
 		PIDAGE=`cat ${APP_VAR}/nmon_helper.sh.tmp.$$`
 		rm ${APP_VAR}/nmon_helper.sh.tmp.$$
+
+        case $PIDAGE in
+        "")
+                echo "`date`, ${HOST} WARN: failed to eval the age of the current pid file, gaps may occur between nmon processes run."
+                PIDAGE=0
+                ;;
+        esac
 
 		# Estimate the end time of current Nmon binary less 4 minutes (enough time for new nmon process to start collecting)
 		# Use expr for portability with sh
