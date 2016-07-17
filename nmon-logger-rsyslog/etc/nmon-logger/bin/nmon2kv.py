@@ -27,6 +27,8 @@
 # Releases Notes:
 
 # - Jan 2014, V1.0.0: Guilhem Marchand, Initial version
+# - 07/17/2016, V1.0.1: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
 # Load libs
 
@@ -42,9 +44,10 @@ import logging
 import cStringIO
 import platform
 import optparse
+import socket
 
 # Converter version
-nmon2csv_version = '1.0.0'
+nmon2csv_version = '1.0.1'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -67,8 +70,8 @@ static_section = ["CPUnn", "CPU_ALL", "FILE", "MEM", "PAGE", "MEMNEW", "MEMUSE",
 # Some specific sections per OS
 Solaris_static_section = ["PROCSOL"]
 
-# Some specific sections per OS
-AIX_static_section = ["LPAR", "POOLS"]
+# Some specfic sections for micro partitions (AIX or Power Linux)
+LPAR_static_section = ["LPAR", "POOLS"]
 
 # This is the TOP section which contains Performance data of top processes
 # It has a specific structure and requires specific treatment
@@ -103,6 +106,9 @@ solaris_dynamic_various = ["DISKSVCTM", "DISKWAITTM"]
 
 # AIX only dynamic sections
 AIX_dynamic_various = ["SEA", "SEAPACKET", "SEACHPHY"]
+
+# AIX Workload Management
+AIX_WLM = ["WLMCPU", "WLMMEM", "WLMBIO"]
 
 #################################################
 #      Variables
@@ -148,6 +154,14 @@ parser.add_option('-o', '--nmon_var', action='store', type='string', dest='nmon_
 opmodes = ['auto', 'realtime', 'colddata']
 parser.add_option('-m', '--mode', action='store', type='choice', dest='mode', choices=opmodes,
                   help='sets the operation mode (Default: %default); supported modes: ' + ', '.join(opmodes))
+parser.add_option('--use_fqdn', action='store_true', dest='use_fqdn', help='Use the host fully qualified '
+                                                                           'domain name (fqdn) as the '
+                                                                           'hostname value instead of the'
+                                                                           ' value returned by nmon.\n'
+                                                                           '**CAUTION:** This option must not be used'
+                                                                           ' when managing nmon data generated out'
+                                                                           ' of Splunk'
+                                                                           ' (eg. central repositories)')
 jsonmodes = ['pretty', 'dump']
 parser.add_option('-j', '--json_mode', action='store', type='string', dest='json_mode',
                   help='sets the output mode for json data (Default: %default, options: dump / pretty)')
@@ -170,6 +184,12 @@ if options.debug:
     debug = True
 else:
     debug = False
+
+# Set hostname mode
+if options.use_fqdn:
+    use_fqdn = True
+else:
+    use_fqdn = False
 
 # Set kv delimitor
 if options.nokvdelim:
@@ -418,10 +438,19 @@ OStype = "Unknown"
 for line in data:
 
     # Set HOSTNAME
-    host = re.match(r'^(AAA),(host),(.+)\n', line)
-    if host:
-        HOSTNAME = host.group(3)
-        logging.info("HOSTNAME:" + str(HOSTNAME))
+
+    # if the option --use_fqdn has been set, use the fully qualified domain name by the running OS
+    # The value will be equivalent to the stdout of the os "hostname -f" command
+    # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
+    if use_fqdn:
+        host=socket.getfqdn()
+        if host:
+            HOSTNAME = host
+    else:
+        host = re.match(r'^(AAA),(host),(.+)\n', line)
+        if host:
+            HOSTNAME = host.group(3)
+            print("HOSTNAME:", HOSTNAME)
 
     # Set VERSION
     version = re.match(r'^(AAA),(version),(.+)\n', line)
@@ -1399,10 +1428,9 @@ def standard_section_fn(section):
 for section in static_section:
     standard_section_fn(section)
 
-# These are AIX specific static sections, search for this only if Nmon file comes from AIX, or if the OStype
-# couldn't be identified
-if OStype in ("AIX", "Unknown"):
-    for section in AIX_static_section:
+# These sections are specific for Micro Partitions, can be AIX or PowerLinux
+if OStype in ("AIX", "Linux", "Unknown"):
+    for section in LPAR_static_section:
         standard_section_fn(section)
 
 # Solaris specific
@@ -2279,6 +2307,8 @@ for section in dynamic_section2:
 # Run
 if OStype in ("AIX", "Unknown"):
     for section in AIX_dynamic_various:
+        dynamic_section_fn(section)
+    for section in AIX_WLM:
         dynamic_section_fn(section)
 
 ###################

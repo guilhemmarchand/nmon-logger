@@ -147,26 +147,26 @@
   - block:
 
     # Create remote hosts directory for logging
-    - name: Create the /var/log/remote-hosts directory (for Ubuntu/Debian with syslog owner)
+    - name: Create the /var/log/remote-hosts directory (for Ubuntu with syslog owner)
       file: path=/var/log/remote-hosts owner=syslog group=syslog state=directory mode=0755 recurse=no
 
     # Create nmon performance directory for logging
-    - name: Create the /var/log/nmon-performance directory (for Ubuntu/Debian with syslog owner)
+    - name: Create the /var/log/nmon-performance directory (for Ubuntu with syslog owner)
       file: path=/var/log/nmon-performance owner=syslog group=syslog state=directory mode=0755 recurse=no
 
-    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+    when: ansible_distribution == 'Ubuntu'
 
   - block:
 
     # Create remote hosts directory for logging
-    - name: Create the /var/log/remote-hosts directory (for RHEL/CentOS with root owner)
+    - name: Create the /var/log/remote-hosts directory (for RHEL/CentOS/Debian with root owner)
       file: path=/var/log/remote-hosts owner=root group=root state=directory mode=0755 recurse=no
 
     # Create nmon performance directory for logging
-    - name: Create the /var/log/nmon-performance directory (for RHEL/CentOS with root owner)
+    - name: Create the /var/log/nmon-performance directory (for RHEL/CentOS/Debian with root owner)
       file: path=/var/log/nmon-performance owner=root group=root state=directory mode=0755 recurse=no
 
-    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution == 'Debian'
 
   # Set this host as a central syslog collector
   - name: Deploy syslog-ng central configuration for global logging

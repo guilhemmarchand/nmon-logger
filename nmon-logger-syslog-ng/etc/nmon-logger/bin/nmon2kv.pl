@@ -27,8 +27,10 @@
 # Releases Notes:
 
 # - Jan 2014, V1.0.0: Guilhem Marchand, Initial version
+# - 07/17/2016, V1.0.1: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
-$version = "1.0.0";
+$version = "1.0.1";
 
 use Time::Local;
 use Time::HiRes;
@@ -49,6 +51,7 @@ $result = GetOptions(
     "mode=s"      => \$OPMODE,       # string
     "nmon_var=s" => \$NMON_VAR,    # string
     "version"     => \$VERSION,      # flag
+    "use_fqdn" => \$USE_FQDN,    # flag
     "help"        => \$help,         # flag
     "debug"       => \$DEBUG,        # flag
 );
@@ -73,6 +76,8 @@ This script has been designed to read the nmon file from stdin. (eg. cat <my fil
 Available options are:
 
 --mode <realtime | colddata> :Force the script to consider the data as cold data (nmon process has over) or real time data (nmon is running)
+--use_fqdn :Use the host fully qualified domain name (fqdn) as the hostname value instead of the value returned by nmon.
+**CAUTION:** This option must not be used when managing nmon data generated out of Splunk (eg. central repositories)
 --nmon_var <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
 --debug :Activate debugging mode for testing purposes
 --version :Show current program version \n
@@ -99,8 +104,8 @@ Available options are:
 # Some specific sections per OS
 @Solaris_static_section = ("PROCSOL");
 
-# Some specific sections per OS
-@AIX_static_section = ( "LPAR", "POOLS" );
+# Some specfic sections for micro partitions (AIX or Power Linux)
+@LPAR_static_section = ( "LPAR", "POOLS" );
 
 # This is the TOP section which contains Performance data of top processes
 # It has a specific structure and requires specific treatment
@@ -141,6 +146,9 @@ Available options are:
 
 # AIX only dynamic sections
 @AIX_dynamic_various = ( "SEA", "SEAPACKET", "SEACHPHY" );
+
+# AIX Workload Management
+@AIX_WLM = ( "WLMCPU", "WLMMEM", "WLMBIO" );
 
 #################################################
 ## 	Your Customizations Go Here
@@ -291,8 +299,17 @@ while ( defined( my $l = <FILE> ) ) {
     chomp $l;
 
     # Set HOSTNAME
-    if ( ( rindex $l, "AAA,host," ) > -1 ) {
-        ( my $t1, my $t2, $HOSTNAME ) = split( ",", $l );
+    # if the option --use_fqdn has been set, use the fully qualified domain name by the running OS
+    # The value will be equivalent to the stdout of the os "hostname -f" command
+    # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
+
+    if ($USE_FQDN) {
+        chomp( $HOSTNAME = `hostname -f` );
+    }
+    else {
+        if ( ( rindex $l, "AAA,host," ) > -1 ) {
+            ( my $t1, my $t2, $HOSTNAME ) = split( ",", $l );
+        }
     }
 
     # Set VERSION
@@ -930,10 +947,10 @@ foreach $FILENAME (@nmon_files) {
 
     }    # end foreach
 
-    # AIX Specific
-    if ( $OStype eq "AIX" || $OStype eq "Unknown" ) {
+    # These sections are specific for Micro Partitions, can be AIX or PowerLinux
+    if ( $OStype eq "AIX" || $OStype eq "Linux" || $OStype eq "Unknown" ) {
 
-        foreach $key (@AIX_static_section) {
+        foreach $key (@LPAR_static_section) {
             $BASEFILENAME =
 "$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
             $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
@@ -1743,6 +1760,17 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
     if ( $OStype eq "AIX" || $OStype eq "Unknown" ) {
 
         foreach $key (@AIX_dynamic_various) {
+            $BASEFILENAME =
+"$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
+            $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
+
+            &variable_sections_insert($key);
+            $now = time();
+            $now = $now - $start;
+
+        }
+
+        foreach $key (@AIX_WLM) {
             $BASEFILENAME =
 "$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
             $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
