@@ -78,6 +78,12 @@
     - name: Deploy the local/inputs.conf for rsyslog-server clients
       copy: src=inputs.conf dest=/opt/splunk/etc/deployment-apps/TA-nmon/local/ owner=splunk group=splunk
 
+    # Deploy the indexes.conf
+    - name: Copy local directory for nmon configuration
+      copy: src=local dest={{ splunk_installpath }}/splunk/etc/apps/nmon/ owner=splunk group=splunk
+      become: yes
+      become_user: splunk
+
     # Restart
     - name: Restart Splunk
       command: /opt/splunk/bin/splunk restart
