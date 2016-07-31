@@ -11,7 +11,7 @@
    - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunk-*.tgz | head -1') }}"
    - splunk_installpath: /opt
    - core_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/nmon-performance-monitor-for-unix-and-linux-systems_*.tgz | head -1') }}"
-   - TA_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/TA-nmon_*.tar.gz | head -1') }}"
+   - TA_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/TA-nmon_*.tgz | head -1') }}"
 
   tasks:
 
