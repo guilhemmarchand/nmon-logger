@@ -29,6 +29,8 @@
 # - Jan 2014, V1.0.0: Guilhem Marchand, Initial version
 # - 07/17/2016, V1.0.1: Guilhem Marchand:
 #                                          - Mirror update of the TA-nmon
+# - 08/21/2016, V1.0.2: Guilhem Marchand:
+#                                          - Adding addon type and version, minor correction
 
 # Load libs
 
@@ -47,7 +49,7 @@ import optparse
 import socket
 
 # Converter version
-nmon2csv_version = '1.0.1'
+nmon2csv_version = '1.0.2'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -274,6 +276,18 @@ if is_windows:
 else:
     CONFIG_DIR = APP_VAR
 
+# bin directory
+APP = "/etc/nmon-logger"
+APP_CONF_FILE = APP + "/default/app.conf"
+
+# get addon version
+addon_version = "Unknown"
+with open(APP_CONF_FILE, "r") as f:
+    for line in f:
+        addon_version_match = re.match(r'version\s*=\s*([\d|\.]*)', line)
+        if addon_version_match:
+            addon_version = addon_version_match.group(1)
+
 #################################################
 #      Functions
 #################################################
@@ -398,7 +412,15 @@ msg = "nmon2csv:" + currenttime() + " Reading NMON data: " + str(nbr_lines) + " 
 logging.info(msg)
 
 # Show Splunk Root Directory
-msg = 'Splunk Root Directory ($NMON_VAR): ' + str(NMON_VAR)
+msg = 'Var Root Directory ($NMON_VAR): ' + str(NMON_VAR)
+logging.info(msg)
+
+# Show addon type
+msg = "addon type: " + str(APP)
+logging.info(msg)
+
+# Show application version
+msg = "addon version: " + str(addon_version)
 logging.info(msg)
 
 # Show program version
@@ -450,7 +472,7 @@ for line in data:
         host = re.match(r'^(AAA),(host),(.+)\n', line)
         if host:
             HOSTNAME = host.group(3)
-            print("HOSTNAME:", HOSTNAME)
+            logging.info("HOSTNAME:", str(HOSTNAME))
 
     # Set VERSION
     version = re.match(r'^(AAA),(version),(.+)\n', line)
