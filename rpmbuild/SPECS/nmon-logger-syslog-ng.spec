@@ -43,7 +43,7 @@ mkdir -p $RPM_BUILD_ROOT/var/log/nmon-logger
 install -m 700 etc/cron.d/nmon-logger $RPM_BUILD_ROOT/etc/cron.d/
 install -m 700 etc/logrotate.d/nmon-logger $RPM_BUILD_ROOT/etc/logrotate.d/
 install -m 700 etc/nmon-logger/default/nmon.conf $RPM_BUILD_ROOT/etc/nmon-logger/default/
-install -m 700 etc/syslog-ng.d/conf.d/nmon-logger.conf $RPM_BUILD_ROOT/etc/syslog-ng.d/conf.d/
+install -m 700 etc/syslog-ng/conf.d/nmon-logger.conf $RPM_BUILD_ROOT/etc/syslog-ng/conf.d/
 install -m 700 etc/nmon-logger/bin/linux.tgz $RPM_BUILD_ROOT/etc/nmon-logger/bin/
 install -m 700 etc/nmon-logger/bin/nmon* $RPM_BUILD_ROOT/etc/nmon-logger/bin/
 %post
@@ -79,5 +79,5 @@ rm -rf %{_topdir}/BUILD/%{name}
 /etc/cron.d/nmon-logger
 /etc/logrotate.d/nmon-logger
 %attr(0755, nmon, nmon) /etc/nmon-logger
-/etc/syslog-ng.d/20-nmon-logger.conf
+/etc/syslog-ng/conf.d/nmon-logger.conf
 %attr(0755, nmon, nmon) /var/log/nmon-logger
