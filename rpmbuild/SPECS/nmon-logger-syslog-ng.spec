@@ -35,8 +35,8 @@ mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger
 mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger/default
 mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger/bin
-mkdir -p $RPM_BUILD_ROOT/etc/syslog-ng.d
-mkdir -p $RPM_BUILD_ROOT/etc/syslog-ng.d/conf.d
+mkdir -p $RPM_BUILD_ROOT/etc/syslog-ng
+mkdir -p $RPM_BUILD_ROOT/etc/syslog-ng/conf.d
 mkdir -p $RPM_BUILD_ROOT/var/log/nmon-logger
 
 # put the files in to the relevant directories.
