@@ -313,28 +313,30 @@
   - name: Deploy rsyslog central configuration
     copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/01-central-client.conf dest=/etc/rsyslog.d/
 
+  # NMON LOGGER installation
+
+  # For RPM
+
   - block:
 
-    # NMON LOGGER installation
-
-    - name: Copy current rpm package to /tmp
+    - name: Copy current rpm package to /tmp (for rpm based OS)
       copy: src={{ rpm_binpath }} dest=/tmp/
               owner=root group=root mode=0644
 
-    - name: Install nmon-logger rpm package
+    - name: Install nmon-logger rpm package (for rpm based OS)
       yum: name=/tmp/{{ rpm_binname }} state=present
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
+  # For DEB
+
   - block:
 
-    # NMON LOGGER installation
-
-    - name: Copy current deb package to /tmp
+    - name: Copy current deb package to /tmp (for deb based OS)
       copy: src={{ deb_binpath }} dest=/tmp/
               owner=root group=root mode=0644
 
-    - name: Install nmon-logger deb package
+    - name: Install nmon-logger deb package (for deb based OS)
       apt: name=/tmp/{{ deb_binname }} state=present
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
