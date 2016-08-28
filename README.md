@@ -21,7 +21,12 @@ limitations under the License.
 **nmon-logger** is a package that implements the excellent Nigel's Performance Monitor for AIX / Linux and sarmon for Solaris.
 Using this package will provide you out of the box performance and configuration logging of your systems, and will use syslog to transport these data to your central syslog servers.
 
+*For more information about Nmon for Linux, see*: http://nmon.sourceforge.net/pmwiki.php
 
+The **nmon-logger** package is provided for the 2 major syslog solutions:
+
+* rsyslog, starting with version 8
+* syslog-ng
 
 ###################################
 #### Notes about this package: ####
