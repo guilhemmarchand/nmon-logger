@@ -7,6 +7,7 @@ echo Creating the nmon service account
 echo
 mkdir /var/log/nmon-logger
 chmod 0755 /var/log/nmon-logger
+chown nmon:nmon /var/log/nmon-logger
 chown -R nmon:root /etc/nmon-logger
 chmod -R 0755 /etc/nmon-logger
 chmod 0644 /etc/cron.d/nmon-logger
