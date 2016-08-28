@@ -31,27 +31,3 @@
 
   - name: Update hosts file
     action: template src={{ template_hosts }} dest=/etc/hosts
-
-############################## Perl dependency ##############################
-
-  - block:
-
-    - name: Install perl minimal for CentOS 6.x
-      yum: name=perl state=latest update_cache=yes
-
-    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6") or (ansible_distribution == "Fedora")
-
-############################## Perl Time/HiRes dependency ##############################
-
-  - block:
-
-    - name: Install perl-Time-HiRes for CentOS 6.x
-      yum: name=perl-Time-HiRes state=latest
-
-    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
-
-############################## nmon dev dependencies for Oracle Linux / CentOS ##############################
-
-  handlers:
-    - name: update tzdata
-      command: /usr/sbin/dpkg-reconfigure -f noninteractive tzdata
