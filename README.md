@@ -1,6 +1,6 @@
-Performance Monitor for Unix and Linux Systems
+# Performance Monitor for Unix and Linux Systems
 
-Copyright 2016 Guilhem Marchand	
+Copyright 2014 Guilhem Marchand
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-The documentation for Nmon Performance Monitor is available online at:
+## Welcome in nmon-logger, syslog logger for Nmon
 
-http://nmonsplunk.wikidot.com
+### What does nmon-logger ?
 
-To get support:
+**nmon-logger** is a package that implements the excellent Nigel's Performance Monitor for AIX / Linux and sarmon for Solaris.
+Using this package will provide you out of the box performance and configuration logging of your systems, and will use syslog to transport these data to your central syslog servers.
 
-http://nmonsplunk.wikidot.com/about-support
+
 
 ###################################
 #### Notes about this package: ####
