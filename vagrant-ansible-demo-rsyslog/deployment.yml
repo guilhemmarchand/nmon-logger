@@ -1,5 +1,25 @@
 ---
 
+############################## All ##############################
+
+- hosts: all
+  become: yes
+  become_method: sudo
+
+  tasks:
+
+  - name: restart machine
+    shell: sleep 2 && shutdown -r now "Ansible updates triggered"
+    async: 3
+    poll: 0
+    become: yes
+    become_method: sudo
+    ignore_errors: true
+
+  - name: waiting for server to come back
+    local_action: wait_for host={{ inventory_hostname }} state=started
+    become: no
+
 ############################## Splunk server ##############################
 
 - hosts: splunk
@@ -234,6 +254,10 @@
 
   vars:
    - docroot: /opt/deployment/nmon-logger
+   - rpm_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-rsyslog-*.rpm | head -1') }}"
+   - rpm_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-rsyslog-*.rpm | head -1 | xargs basename') }}"
+   - deb_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-*.deb | head -1') }}"
+   - deb_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-*.deb | head -1 | xargs basename') }}"
 
   tasks:
 
@@ -289,35 +313,28 @@
   - name: Deploy rsyslog central configuration
     copy: src={{ docroot }}/vagrant-ansible-demo-rsyslog/01-central-client.conf dest=/etc/rsyslog.d/
 
-  # NMON LOGGER installation
+  - block:
 
-  - name: Create the system nmon account if required
-    user: name=nmon comment="system account for nmon-logger" system=yes state=present
+    # NMON LOGGER installation
 
-  - name: Create the /var/log/nmon-logger directory if required
-    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=no
+    - name: Copy current rpm package to /tmp
+      copy: src={{ rpm_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
 
-  - name: Deploy nmon-logger binaries (/etc/nmon-logger)
+    - name: Install nmon-logger rpm package
+      yum: name=/tmp/{{ rpm_binname }} state=present
 
-  # Deploy /etc/nmon-logger by uncompressing the nmon-logger.tar.gz
-    unarchive: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger.tar.gz dest=/etc/
-                owner=nmon group=nmon mode=0755
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
-  - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
-    file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
+  - block:
 
-  - name: Deploy nmon-logger cron.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
-            owner=root group=root mode=0644
+    # NMON LOGGER installation
 
-  - name: Deploy nmon-logger logrotate.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
-            owner=root group=root mode=0644
+    - name: Copy current deb package to /tmp
+      copy: src={{ deb_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
 
-  - name: Deploy nmon-logger rsyslog.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
-            owner=root group=root mode=0644
+    - name: Install nmon-logger deb package
+      yum: name=/tmp/{{ deb_binname }} state=present
 
-  # Last but not least, restart rsyslog (using module service causes some trouble, let's use simple command)
-  - name: Restart rsyslog
-    service: name=rsyslog state=restarted
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
