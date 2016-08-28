@@ -78,67 +78,31 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
 
 **Using these package will create full operational installation of Splunk, Nmon Performance monitor application, rsyslog/syslog-ng and nmon-logger in a totally automated process, up out of the box in less than 10 minutes !**
 
+### Packages content
 
-###################################
-#### Notes about this package: ####
-###################################
+#### nmon-logger-rsyslog:
 
-This package is expected to be used with the Nmon Performance monitor for a deployment with no Universal Forwarders for end clients.
-For this to be achievied, syslog can be used as the transport layer. 
+::
 
-*** For rsyslog: ***
+    etc/
+        cron.d/nmon-logger
+        logrotate.d/nmon-logger
+        nmon-logger/
+            bin/(various)
+            default/nmon.conf
+            default/app.conf
+        rsyslog.d/20-nmon-logger.conf
 
-See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:rsyslog
+#### nmon-logger-syslog-ng:
 
-*** For syslog-ng: ***
+::
 
-See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:syslog-ng
-
-###################################
-### Project:			###
-###################################
-
-Using rsyslog:
-
-Unix / Linux --> nmon-logger --> local rsyslog --> rsyslog file monitoring --> rsyslog collector --> Splunk
-
-Using syslog-ng:
-
-Unix / Linux --> nmon-logger --> local syslog-ng --> syslog-ng file monitoring --> syslog-ng collector --> Splunk
-
-###################################
-### Requirements:               ###
-###################################
-
-- rsyslog v8.x minimum OR syslog-ng v3.x
-
-- Perl (minimal)
-
-- Python 2.7.x or Perl can be used for nmon processing steps
-
-- Systems lacking Python 2.7.x interpreter requires Perl WITH Time::HiRes module available
-
-###################################
-### Content:                    ###
-###################################
-
-### nmon-logger-rsyslog: ###
-
-etc/
-    cron.d/nmon-logger
-    logrotate.d/nmon-logger
-    nmon-logger/
-		bin/(various)
-		default/nmon.conf
-    rsyslog.d/20-nmon-logger.conf
-
-### nmon-logger-syslog-ng: ###
-
-etc/
-    cron.d/nmon-logger
-    logrotate.d/nmon-logger
-    nmon-logger/
-                bin/(various)
-                default/nmon.conf
-    syslog-ng/conf.d/nmon-logger.conf
+    etc/
+        cron.d/nmon-logger
+        logrotate.d/nmon-logger
+        nmon-logger/
+                    bin/(various)
+                    default/nmon.conf
+                    default/app.conf
+        syslog-ng/conf.d/nmon-logger.conf
 
