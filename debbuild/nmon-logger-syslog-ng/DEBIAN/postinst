@@ -1,14 +1,15 @@
 #!/bin/bash
 
 echo
-if [ `ps -fu nmon | grep -v 'PID' | wc -l` -ne 0 ]; then echo "Killing running nmon processes:"; echo "**** list of running processes: ****"; echo `ps -fu nmon | grep '/etc/nmon-logger'`; ps -fu nmon | grep '/etc/nmon-logger/bin/linux' | awk '{print $2}' | xargs kill; fi
-echo "Removing /etc/nmon-logger remaining files."; rm -rf /etc/nmon-logger
-echo "Removing /var/log/nmon-logger remaining files."; rm -rf /var/log/nmon-logger
-echo "Removing nmon user account"; userdel nmon
-echo Restarting syslog-ng service:
-service syslog-ng restart
+echo Creating the nmon service account
+/usr/sbin/useradd -g nmon -r -d /etc/nmon-logger -s /sbin/nologin nmon
 echo
-echo Nmon logger has been successfully uninstalled.
+echo Restarting rsyslog service:
+service rsyslog restart
+echo
+echo Nmon logger has been successfully installed. Within next minutes, the performance and configuration data collection will start automatically.
+echo Please check the content of "/var/log/nmon-logger/"
+echo You will also find a new process running under nmon account, you can get the current list of running processes for the nmon account: "ps -fu nmon"
 echo
 
 exit 0
