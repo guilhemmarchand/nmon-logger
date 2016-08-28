@@ -23,10 +23,61 @@ Using this package will provide you out of the box performance and configuration
 
 *For more information about Nmon for Linux, see*: http://nmon.sourceforge.net/pmwiki.php
 
-The **nmon-logger** package is provided for the 2 major syslog solutions:
+**The nmon-logger package is provided for the 2 major syslog solutions:**
 
-* rsyslog, starting with version 8
-* syslog-ng
+* rsyslog, starting with version 8: **nmon-logger-rsyslog**
+* syslog-ng: **nmon-logger-syslog-ng**
+
+**The nmon-logger package is provided as:**
+
+* rpm package in the "**rpm**" directory, for Linux OS based on Redhat package manager
+* deb package in the "**deb**" directory, for Linux OS based on Debian package manager
+* raw files, to be implemented manually on any Linux OS
+
+**What about OS compatibility ?**
+
+nmon-logger packages are widely tested against:
+
+* CentOS
+* Debian
+* Ubuntu
+
+**What about dependencies ?**
+
+*Very few dependencies are required:*
+
+* rsyslog (minimal version 8) for nmon-logger-rsyslog / syslog-ng for nmon-logger-syslog-ng
+* Python 2.7.x or any 2.x superior **OR** Perl with module Time:HiRes installed
+
+**What to do with nmon-logger ?**
+
+The nmon-logger package has been technically designed to be use with the **Nmon Performance Monitor application for Splunk Enterprise**, see: https://github.com/guilhemmarchand/nmon-for-splunk
+Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data which is application independent, so it is technically possible to analyse these data with any other modern data analytic solution.
+
+**Deployment scenarios:**
+
+*Documented deployment scenarios are available here:*
+
+* nmon-logger-rsyslog: http://nmon-for-splunk.readthedocs.io/en/latest/rsyslog_deployment.html
+
+* nmon-logger-syslog-ng: http://nmon-for-splunk.readthedocs.io/en/latest/syslogng_deployment.html
+
+**What about Vagrant and Ansible directories ?**
+
+*To easily the nmon-logger / Nmon Performance Monitor for Splunk Enterprise solution, you will find 2 packages implementing Vagrant, VirtualBox and Ansible automation:*
+
+* vagrant-ansible-demo-rsyslog
+
+* vagrant-ansible-demo-syslog-ng
+
+*Requirements*:
+
+* vagrant, see: https://www.vagrantup.com/downloads.html
+
+* Oracle VirtualBox: https://www.virtualbox.org/wiki/Downloads
+
+**Using these package will create full operational installation of Splunk, Nmon Performance monitor application, rsyslog/syslog-ng and nmon-logger in a totally automated process, up out of the box in less than 10 minutes !**
+
 
 ###################################
 #### Notes about this package: ####
