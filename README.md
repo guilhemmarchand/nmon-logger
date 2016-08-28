@@ -76,13 +76,11 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
 
 * Oracle VirtualBox: https://www.virtualbox.org/wiki/Downloads
 
-**Using these package will create full operational installation of Splunk, Nmon Performance monitor application, rsyslog/syslog-ng and nmon-logger in a totally automated process, up out of the box in less than 10 minutes !**
+**Using these package will create a fully operational installation of Splunk, Nmon Performance monitor application, rsyslog/syslog-ng and nmon-logger in a totally automated process, up in less than 10 minutes !**
 
 ### Packages content
 
 #### nmon-logger-rsyslog:
-
-::
 
     etc/
         cron.d/nmon-logger
@@ -94,8 +92,6 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
         rsyslog.d/20-nmon-logger.conf
 
 #### nmon-logger-syslog-ng:
-
-::
 
     etc/
         cron.d/nmon-logger
