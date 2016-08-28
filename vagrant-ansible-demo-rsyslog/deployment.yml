@@ -335,6 +335,6 @@
               owner=root group=root mode=0644
 
     - name: Install nmon-logger deb package
-      yum: name=/tmp/{{ deb_binname }} state=present
+      apt: name=/tmp/{{ deb_binname }} state=present
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
