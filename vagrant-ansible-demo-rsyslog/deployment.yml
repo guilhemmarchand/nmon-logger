@@ -256,8 +256,10 @@
    - docroot: /opt/deployment/nmon-logger
    - rpm_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-rsyslog-*.rpm | head -1') }}"
    - rpm_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-rsyslog-*.rpm | head -1 | xargs basename') }}"
-   - deb_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-*.deb | head -1') }}"
-   - deb_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-*.deb | head -1 | xargs basename') }}"
+   - deb_debian_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-debian-*.deb | head -1') }}"
+   - deb_debian_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-debian-*.deb | head -1 | xargs basename') }}"
+   - deb_ubuntu_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-ubuntu-*.deb | head -1') }}"
+   - deb_ubuntu_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-ubuntu-*.deb | head -1 | xargs basename') }}"
 
   tasks:
 
@@ -328,15 +330,28 @@
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
-  # For DEB
+  # For Debian
 
   - block:
 
-    - name: Copy current deb package to /tmp (for deb based OS)
-      copy: src={{ deb_binpath }} dest=/tmp/
+    - name: Copy current deb package to /tmp (for Debian OS)
+      copy: src={{ deb_debian_binpath }} dest=/tmp/
               owner=root group=root mode=0644
 
     - name: Install nmon-logger deb package (for deb based OS)
-      apt: name=/tmp/{{ deb_binname }} state=present
+      apt: name=/tmp/{{ deb_debian_binname }} state=present
 
-    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+    when: ansible_distribution == 'Debian'
+
+  # For Debian
+
+  - block:
+
+    - name: Copy current deb package to /tmp (for Ubuntu based OS)
+      copy: src={{ deb_debian_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
+
+    - name: Install nmon-logger deb package (for deb based OS)
+      apt: name=/tmp/{{ deb_debian_binname }} state=present
+
+    when: ansible_distribution == 'Ubuntu'
