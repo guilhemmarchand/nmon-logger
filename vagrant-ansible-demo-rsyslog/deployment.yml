@@ -339,7 +339,7 @@
               owner=root group=root mode=0644
 
     - name: Install nmon-logger deb package (for deb based OS)
-      apt: name=/tmp/{{ deb_debian_binname }} state=present
+      apt: deb=/tmp/{{ deb_debian_binname }} state=present
 
     when: ansible_distribution == 'Debian'
 
@@ -352,6 +352,6 @@
               owner=root group=root mode=0644
 
     - name: Install nmon-logger deb package (for deb based OS)
-      apt: name=/tmp/{{ deb_ubuntu_binname }} state=present
+      apt: deb=/tmp/{{ deb_ubuntu_binname }} state=present
 
     when: ansible_distribution == 'Ubuntu'

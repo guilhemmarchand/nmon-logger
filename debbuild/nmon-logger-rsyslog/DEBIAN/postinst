@@ -1,6 +1,9 @@
 #!/bin/bash
 
 echo
+echo Creating the nmon service account
+/usr/sbin/useradd -g nmon -r -d /etc/nmon-logger -s /sbin/nologin nmon
+echo
 echo Restarting rsyslog service:
 service rsyslog restart
 echo
