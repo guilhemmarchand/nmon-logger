@@ -11,7 +11,7 @@ chown root:root /etc/cron.d/nmon-logger; chmod 0644 /etc/cron.d/nmon-logger
 chown root:root /etc/logrotate.d/nmon-logger; chmod 0644 /etc/logrotate.d/nmon-logger
 chown root:root /etc/syslog-ng/conf.d/nmon-logger.conf; chmod 0644 /etc/syslog-ng/conf.d/nmon-logger.conf
 echo Restarting rsyslog service:
-service rsyslog restart
+/etc/init.d/rsyslog restart
 echo
 echo Nmon logger has been successfully installed. Within next minutes, the performance and configuration data collection will start automatically.
 echo Please check the content of "/var/log/nmon-logger/"
