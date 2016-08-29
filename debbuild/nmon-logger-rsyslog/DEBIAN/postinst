@@ -6,10 +6,14 @@ echo Creating the nmon service account
 /usr/sbin/useradd -g nmon -r -d /etc/nmon-logger -s /sbin/nologin nmon
 echo
 mkdir /var/log/nmon-logger; chmod 0755 /var/log/nmon-logger; chown nmon:nmon /var/log/nmon-logger
-chown -R nmon:root /etc/nmon-logger; chmod -R 0755 /etc/nmon-logger
+chown -R nmon:nmon /etc/nmon-logger; chmod -R 0755 /etc/nmon-logger
 chown root:root /etc/cron.d/nmon-logger; chmod 0644 /etc/cron.d/nmon-logger
 chown root:root /etc/logrotate.d/nmon-logger; chmod 0644 /etc/logrotate.d/nmon-logger
 chown root:root /etc/rsyslog.d/20-nmon-logger.conf; chmod 0644 /etc/rsyslog.d/20-nmon-logger.conf
+for log in nmon_collect.log nmon_configdata.log nmon_processing.log nmon_perfdata.log; do
+touch /var/log/nmon-logger/$log
+chown nmon:nmon /var/log/nmon-logger/$log
+done
 echo Restarting rsyslog service:
 /etc/init.d/rsyslog restart
 echo
