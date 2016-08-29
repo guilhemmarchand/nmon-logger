@@ -67,8 +67,8 @@ Vagrant.configure(2) do |config|
             # Ubuntu
             node.vm.box = "ubuntu/trusty64"
 
-            # Debian 8.2
-            # node.vm.box = "boxcutter/debian82"
+            # Debian 8
+            # node.vm.box = "debian/jessie64"
 
             # CentOS 7
             # node.vm.box = "boxcutter/centos72"
