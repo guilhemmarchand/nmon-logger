@@ -2,7 +2,7 @@
 
 ############################## All ##############################
 
-- hosts: all
+- hosts: none
   become: yes
   become_method: sudo
 
