@@ -145,9 +145,6 @@
     - name: Install syslog-ng for RHEL/CentOS
       yum: name=syslog-ng state=latest
 
-    - name: Install minimal Perl environment
-      yum: name=perl state=latest
-
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
   - block:
@@ -266,9 +263,6 @@
 
     - name: Install syslog-ng for RHEL/CentOS
       yum: name=syslog-ng state=latest
-
-    - name: Install minimal Perl environment
-      yum: name=perl state=latest
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
