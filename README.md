@@ -102,8 +102,8 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
         cron.d/nmon-logger
         logrotate.d/nmon-logger
         nmon-logger/
-                    bin/(various)
-                    default/nmon.conf
-                    default/app.conf
+            bin/(various)
+            default/nmon.conf
+            default/app.conf
         syslog-ng/conf.d/nmon-logger.conf
 
