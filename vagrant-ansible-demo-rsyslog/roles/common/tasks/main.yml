@@ -1,0 +1,52 @@
+---
+
+- name: Create swapfile
+  command: dd if=/dev/zero of={{ swap_path }} bs={{ dd_bs_size_mb }}M count={{ swap_count }} creates={{ swap_path }}
+  register: write_swapfile
+
+- name: Set swapfile permissions
+  file: path={{ swap_path }} mode=600
+
+- name: Build swapfile
+  command: mkswap {{ swap_path }}
+  register: create_swapfile
+  when: write_swapfile.changed
+
+- name: Enable swapfile
+  command: swapon {{ swap_path }}
+  when: create_swapfile.changed
+
+- name: Add swapfile to /etc/fstab
+  lineinfile: dest=/etc/fstab line="{{ swap_path }}   none    swap    sw    0   0" state=present
+
+- name: Disable THP
+  lineinfile: dest=/etc/rc.local state=present insertbefore=exit\s0 line="echo never > /sys/kernel/mm/transparent_hugepage/enabled"
+
+- name: Disable THP defrag
+  lineinfile: dest=/etc/rc.local state=present insertbefore=exit\s0 line="echo never > /sys/kernel/mm/transparent_hugepage/defrag"
+
+# ulimits settings,
+# https://answers.splunk.com/answers/223838/why-are-my-ulimits-settings-not-being-respected-on.html
+- name: Increasing ulimits open files and number of processes (nofile / nproc)
+  blockinfile:
+    dest: /etc/security/limits.conf
+    state: present
+    insertbefore: '#\sEnd\sof\sfile'
+    content: |
+      * hard nofile 20240
+      * soft nofile 10240
+      * hard nproc  100000
+      * soft nproc  100000
+
+- name: Adding load of ulimit from pam.d (Ubuntu/Debian)
+  blockinfile:
+    dest: /etc/pam.d/common-session
+    state: present
+    insertbefore: '#\send\sof\spam-auth-update\sconfig'
+    content: |
+      # Ensure we load ulimits set in /etc/security.limits.conf
+      session required pam_limits.so
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Disable atime in fstab
+  replace: dest=/etc/fstab regexp="(.*\/\s*ext4\s*)defaults(\s.*)" replace="\1defaults,noatime\2"

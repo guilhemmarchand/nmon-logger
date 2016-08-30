@@ -8,20 +8,18 @@
    - template_hosts: "hosts"
    - localzone: Europe/Paris
 
+# Run roles
+  roles:
+    - common
+
   tasks:
 
 ############################## Set Timezone ##############################
 
 # Configure time zone
   - name: Set timezone variables for Debian / Ubuntu
-    copy: content='{{ localzone }}'
-          dest=/etc/timezone
-          owner=root
-          group=root
-          mode=0644
-          backup=yes
-    notify:
-      - update timezone
+    file: src=/usr/share/zoneinfo/{{ localzone }} dest=/etc/localtime owner=root group=root state=link force=yes
+    notify: update tzdata
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
   - block:
@@ -33,23 +31,3 @@
 
   - name: Update hosts file
     action: template src={{ template_hosts }} dest=/etc/hosts
-
-############################## Perl dependency ##############################
-
-  - block:
-
-    - name: Install perl minimal for CentOS 6.x
-      yum: name=perl state=latest update_cache=yes
-
-    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6") or (ansible_distribution == "Fedora")
-
-############################## Perl Time/HiRes dependency ##############################
-
-  - block:
-
-    - name: Install perl-Time-HiRes for CentOS 6.x
-      yum: name=perl-Time-HiRes state=latest
-
-    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
-
-############################## nmon dev dependencies for Oracle Linux / CentOS ##############################

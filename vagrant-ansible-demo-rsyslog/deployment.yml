@@ -154,10 +154,23 @@
       # Note: Using yum module does not seem to update rsyslog package, updating using command
       command: yum install -y rsyslog
 
-    - name: Install minimal Perl environment
-      yum: name=perl state=latest
-
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+  ############################## Perl dependency ##############################
+  - block:
+
+    - name: Install perl minimal for CentOS 6.x
+      yum: name=perl state=latest update_cache=yes
+
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
+
+  ############################## Perl Time/HiRes dependency ##############################
+  - block:
+
+    - name: Install perl-Time-HiRes for CentOS 6.x
+      yum: name=perl-Time-HiRes state=latest
+
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
 
   ###### Ubuntu uses the syslog user to write data from rsyslog ######
   - block:
@@ -234,6 +247,12 @@
 
   vars:
    - docroot: /opt/deployment/nmon-logger
+   - rpm_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-rsyslog-*.rpm | head -1') }}"
+   - rpm_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-rsyslog-*.rpm | head -1 | xargs basename') }}"
+   - deb_debian_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-debian-*.deb | head -1') }}"
+   - deb_debian_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-debian-*.deb | head -1 | xargs basename') }}"
+   - deb_ubuntu_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-ubuntu-*.deb | head -1') }}"
+   - deb_ubuntu_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-rsyslog-ubuntu-*.deb | head -1 | xargs basename') }}"
 
   tasks:
 
@@ -279,10 +298,23 @@
       # Note: Using yum module does not seem to update rsyslog package, updating using command
       command: yum install -y rsyslog
 
-    - name: Install minimal Perl environment
-      yum: name=perl state=latest
-
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+  ############################## Perl dependency ##############################
+  - block:
+
+    - name: Install perl minimal for CentOS 6.x
+      yum: name=perl state=latest update_cache=yes
+
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
+
+  ############################## Perl Time/HiRes dependency ##############################
+  - block:
+
+    - name: Install perl-Time-HiRes for CentOS 6.x
+      yum: name=perl-Time-HiRes state=latest
+
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
 
   # Configure rsyslog on this host: Send data to rsyslog server, add rsyslog repo, update and upgrade rsyslog
 
@@ -291,33 +323,41 @@
 
   # NMON LOGGER installation
 
-  - name: Create the system nmon account if required
-    user: name=nmon comment="system account for nmon-logger" system=yes state=present
+  # For RPM
 
-  - name: Create the /var/log/nmon-logger directory if required
-    file: path=/var/log/nmon-logger owner=nmon state=directory mode=0755 recurse=no
+  - block:
 
-  - name: Deploy nmon-logger binaries (/etc/nmon-logger)
+    - name: Copy current rpm package to /tmp (for rpm based OS)
+      copy: src={{ rpm_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
 
-  # Deploy /etc/nmon-logger by uncompressing the nmon-logger.tar.gz
-    unarchive: src={{ docroot }}/nmon-logger-rsyslog/etc/nmon-logger.tar.gz dest=/etc/
-                owner=nmon group=nmon mode=0755
+    - name: Install nmon-logger rpm package (for rpm based OS)
+      yum: name=/tmp/{{ rpm_binname }} state=present
 
-  - name: Set owner and group owner for nmon-logger binaries (/etc/nmon-logger)
-    file: path=/etc/nmon-logger owner="nmon" group="nmon" recurse="yes"
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
-  - name: Deploy nmon-logger cron.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/cron.d/nmon-logger dest=/etc/cron.d/
-            owner=root group=root mode=0644
+  # For Debian
 
-  - name: Deploy nmon-logger logrotate.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/logrotate.d/nmon-logger dest=/etc/logrotate.d/
-            owner=root group=root mode=0644
+  - block:
 
-  - name: Deploy nmon-logger rsyslog.d configuration
-    copy: src={{ docroot }}/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf dest=/etc/rsyslog.d/
-            owner=root group=root mode=0644
+    - name: Copy current deb package to /tmp (for Debian OS)
+      copy: src={{ deb_debian_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
 
-  # Last but not least, restart rsyslog (using module service causes some trouble, let's use simple command)
-  - name: Restart rsyslog
-    service: name=rsyslog state=restarted
+    - name: Install nmon-logger deb package (for deb based OS)
+      apt: deb=/tmp/{{ deb_debian_binname }} state=present
+
+    when: ansible_distribution == 'Debian'
+
+  # For Debian
+
+  - block:
+
+    - name: Copy current deb package to /tmp (for Ubuntu based OS)
+      copy: src={{ deb_ubuntu_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
+
+    - name: Install nmon-logger deb package (for deb based OS)
+      apt: deb=/tmp/{{ deb_ubuntu_binname }} state=present
+
+    when: ansible_distribution == 'Ubuntu'
