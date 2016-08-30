@@ -56,6 +56,7 @@ The nmon-logger package has embedded binaries for most Linux OS on various proce
 **What to do with nmon-logger ?**
 
 The nmon-logger package has been designed to be used with the **Nmon Performance Monitor application for Splunk Enterprise**, see: https://github.com/guilhemmarchand/nmon-for-splunk
+
 Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data which is application independent, so it is technically possible to analyse these data with any other modern data analytic solution.
 
 **Deployment scenarios:**
