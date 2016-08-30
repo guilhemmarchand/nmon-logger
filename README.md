@@ -1,6 +1,6 @@
 # Performance Monitor for Unix and Linux Systems
 
-Copyright 2014 Guilhem Marchand
+Copyright 2014-2016 Guilhem Marchand
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ The nmon-logger package has embedded binaries for most Linux OS on various proce
 
 **What to do with nmon-logger ?**
 
-The nmon-logger package has been technically designed to be use with the **Nmon Performance Monitor application for Splunk Enterprise**, see: https://github.com/guilhemmarchand/nmon-for-splunk
+The nmon-logger package has been designed to be used with the **Nmon Performance Monitor application for Splunk Enterprise**, see: https://github.com/guilhemmarchand/nmon-for-splunk
 Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data which is application independent, so it is technically possible to analyse these data with any other modern data analytic solution.
 
 **Deployment scenarios:**
@@ -68,7 +68,7 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
 
 **What about Vagrant and Ansible directories ?**
 
-*To easily the nmon-logger / Nmon Performance Monitor for Splunk Enterprise solution, you will find 2 packages implementing Vagrant, VirtualBox and Ansible automation:*
+*To easily test the nmon-logger / Nmon Performance Monitor for Splunk Enterprise solution, you will find 2 packages implementing Vagrant, VirtualBox and Ansible automation:*
 
 * vagrant-ansible-demo-rsyslog
 
