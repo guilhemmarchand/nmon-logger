@@ -1,0 +1,6 @@
+---
+
+swap_path: /var/swap
+dd_bs_size_mb: 1
+swap_count: 1024
+
