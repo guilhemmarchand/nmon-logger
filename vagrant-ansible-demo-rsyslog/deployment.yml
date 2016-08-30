@@ -154,9 +154,6 @@
       # Note: Using yum module does not seem to update rsyslog package, updating using command
       command: yum install -y rsyslog
 
-    - name: Install minimal Perl environment
-      yum: name=perl state=latest
-
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
   ###### Ubuntu uses the syslog user to write data from rsyslog ######
@@ -284,9 +281,6 @@
       # Update package
       # Note: Using yum module does not seem to update rsyslog package, updating using command
       command: yum install -y rsyslog
-
-    - name: Install minimal Perl environment
-      yum: name=perl state=latest
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
