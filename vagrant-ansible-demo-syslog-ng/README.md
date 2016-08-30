@@ -61,6 +61,7 @@ And copy the tgz archives here.
 Decide if you want to run Ubuntu boxes, or CentOS boxes:
 
 - Ubuntu --> Ubuntu boxes is the default choice, you have nothing to do
+- Debian --> Edit the VagrantFile, comment out the secondary "machine.vm.box" and comment the current line
 - CentOS --> Edit the VagrantFile, comment out the secondary "machine.vm.box" and comment the current line
 
 ### Start the Vagrant magic !
