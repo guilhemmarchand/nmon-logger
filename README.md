@@ -164,8 +164,3 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
 #### log files rotation (logrotate)
 
 *Finally, the logrotate daemon will take care of achieving log files rotation and reloading rsyslog/syslog-ng at the end of the file rotation process*
-
-
-
-
-
