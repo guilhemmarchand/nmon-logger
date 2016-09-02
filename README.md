@@ -83,7 +83,7 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
 
 **Using these package will create a fully operational installation of Splunk, Nmon Performance monitor application, rsyslog/syslog-ng and nmon-logger in a totally automated process, up in less than 10 minutes !**
 
-### Packages content
+### Quick description of packages content
 
 #### nmon-logger-rsyslog:
 
@@ -107,3 +107,30 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
             default/app.conf
         syslog-ng/conf.d/nmon-logger.conf
 
+### How it works and what to expect with the nmon-logger
+
+*1 minute after you installed the nmon-logger package, the data collection will automatically start on the host, which can be observed by nmon user processes:*
+
+    ps -fu nmon
+    UID        PID  PPID  C STIME TTY          TIME CMD
+    nmon      5454     1  0 21:27 ?        00:00:00 /etc/nmon-logger/bin/linux/ubuntu/nmon_x86_64_ubuntu14 -f -T -d 1500 -s 60 -c 120 -p
+
+*nmon processes management is achieved by the nmon_helper.sh script, scheduled by cron in the nmon-logger cron.d file:*
+ 
+    /etc/cron.d/nmon-logger 
+    # The nmon_helper.sh is responsible for nmon binary launch and requires arguments: <arg1: binaries path> <arg2: log path>
+    */1 * * * * nmon /etc/nmon-logger/bin/nmon_helper.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_collect.log 2>&1
+
+*nmon files are stored in "/var/log/nmon-logger/var/nmon_repository/":*
+ 
+    ls -ltr /var/log/nmon-logger/var/nmon_repository/
+    total 36
+    -rw-rw-r-- 1 nmon nmon 33639 Sep  2 21:34 rsyslog-client1_160902_2127.nmon
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
