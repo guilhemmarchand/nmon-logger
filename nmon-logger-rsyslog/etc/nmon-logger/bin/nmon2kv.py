@@ -468,6 +468,7 @@ for line in data:
         host=socket.getfqdn()
         if host:
             HOSTNAME = host
+            logging.info("HOSTNAME:" + str(HOSTNAME))
     else:
         host = re.match(r'^(AAA),(host),(.+)\n', line)
         if host:
