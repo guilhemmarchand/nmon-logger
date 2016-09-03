@@ -62,6 +62,11 @@
       become: yes
       become_user: splunk
 
+    - name: Unarchive TA-nmon for Splunk instance
+      unarchive: src="{{ TA_archive }}" dest=/opt/splunk/etc/apps
+      become: yes
+      become_user: splunk
+
     # copy serverclass.conf
     - name: Copy serverclass.conf
       copy: src=serverclass.conf dest={{ splunk_installpath }}/splunk/etc/system/local/serverclass.conf owner=splunk group=splunk
