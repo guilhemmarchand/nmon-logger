@@ -10,8 +10,9 @@
 
 # 2015/05/09, Guilhem Marchand: Rewrite of main program to fix main common troubles with nmon_helper.sh, be simple, effective
 # 2016/07/17, Guilhem Marchand: Mirror update of the TA-nmon
+# 2016/09/01, Guilhem Marchand: Mirror update of the TA-nmon
 
-# Version 1.0.1
+# Version 1.0.2
 
 # For AIX / Linux / Solaris
 
@@ -1012,24 +1013,32 @@ SunOS )
 
 Linux )
 
-	if [ ${Linux_NFS} -eq 1 ]; then
+    # Since 1.2.47, Linux_unlimited_capture feature has changed
+    # For historical reason, and in case the old activation value (1) has been set in local/nmon.conf, manage it.
+    case ${Linux_unlimited_capture} in
+    "1")
+        Linux_unlimited_capture="-1" ;;
+    esac
+
+    if [ ${Linux_NFS} -eq 1 ]; then
 
         # Verify the limit configuration for processes and disks capture
-	    if [ ${Linux_unlimited_capture} -eq 1 ]; then
-	        nmon_command="${NMON} -f -T -N -s ${interval} -c ${snapshot} -I -1 -p"
-        else
+        if [ ${Linux_unlimited_capture} -eq 0 ]; then
             nmon_command="${NMON} -f -T -d ${Linux_devices} -N -s ${interval} -c ${snapshot} -p"
+        else
+
+            nmon_command="${NMON} -f -T -N -s ${interval} -c ${snapshot} -I ${Linux_unlimited_capture} -p"
         fi
 
-	else
+    else
 
         # Verify the limit configuration for processes and disks capture
-	    if [ ${Linux_unlimited_capture} -eq 1 ]; then
-	        nmon_command="${NMON} -f -T -s ${interval} -c ${snapshot} -I -1 -p"
+        if [ ${Linux_unlimited_capture} -eq 0 ]; then
+            nmon_command="${NMON} -f -T -d ${Linux_devices} -s ${interval} -c ${snapshot} -p"
         else
-		    nmon_command="${NMON} -f -T -d ${Linux_devices} -s ${interval} -c ${snapshot} -p"
+            nmon_command="${NMON} -f -T -s ${interval} -c ${snapshot} -I ${Linux_unlimited_capture} -p"
         fi
-	fi
+    fi
 ;;
 
 esac

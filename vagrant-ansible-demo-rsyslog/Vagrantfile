@@ -7,40 +7,30 @@ servers=[
       {
         :hostname => "splunk",
         :ip => "192.168.33.100",
-        #:box => "ubuntu/trusty64",
-        :box => "boxcutter/centos64",
         :ram => 2048,
         :cpu => 2
       },
       {
         :hostname => "rsyslog-server1",
         :ip => "192.168.33.101",
-        #:box => "ubuntu/trusty64",
-        :box => "boxcutter/centos64",
         :ram => 512,
         :cpu => 1
       },
       {
         :hostname => "rsyslog-server2",
         :ip => "192.168.33.102",
-        #:box => "ubuntu/trusty64",
-        :box => "boxcutter/centos64",
         :ram => 512,
         :cpu => 1
       },
       {
         :hostname => "rsyslog-client1",
         :ip => "192.168.33.103",
-        #:box => "ubuntu/trusty64",
-        :box => "boxcutter/centos64",
         :ram => 512,
         :cpu => 1
       },
       {
         :hostname => "rsyslog-client2",
         :ip => "192.168.33.104",
-        #:box => "ubuntu/trusty64",
-        :box => "boxcutter/centos64",
         :ram => 512,
         :cpu => 1
       }
