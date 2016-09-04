@@ -468,11 +468,12 @@ for line in data:
         host=socket.getfqdn()
         if host:
             HOSTNAME = host
+            logging.info("HOSTNAME:" + str(HOSTNAME))
     else:
         host = re.match(r'^(AAA),(host),(.+)\n', line)
         if host:
             HOSTNAME = host.group(3)
-            logging.info("HOSTNAME:", str(HOSTNAME))
+            logging.info("HOSTNAME:" + str(HOSTNAME))
 
     # Set VERSION
     version = re.match(r'^(AAA),(version),(.+)\n', line)

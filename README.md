@@ -83,7 +83,7 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
 
 **Using these package will create a fully operational installation of Splunk, Nmon Performance monitor application, rsyslog/syslog-ng and nmon-logger in a totally automated process, up in less than 10 minutes !**
 
-### Packages content
+### Quick description of packages content
 
 #### nmon-logger-rsyslog:
 
@@ -107,3 +107,60 @@ Therefore, the nmon-logger package uses rsyslog / syslog-ng to transfer data whi
             default/app.conf
         syslog-ng/conf.d/nmon-logger.conf
 
+### How it works and what to expect with the nmon-logger
+
+#### nmon data generation, parsing and logging
+
+*1 minute after you installed the nmon-logger package, the data collection will automatically start on the host, which can be observed by nmon user processes:*
+
+    ps -fu nmon
+    UID        PID  PPID  C STIME TTY          TIME CMD
+    nmon      5454     1  0 21:27 ?        00:00:00 /etc/nmon-logger/bin/linux/ubuntu/nmon_x86_64_ubuntu14 -f -T -d 1500 -s 60 -c 120 -p
+
+*nmon processes management is achieved by the nmon_helper.sh script, scheduled by cron in the nmon-logger cron.d file:*
+ 
+    /etc/cron.d/nmon-logger 
+    # The nmon_helper.sh is responsible for nmon binary launch and requires arguments: <arg1: binaries path> <arg2: log path>
+    */1 * * * * nmon /etc/nmon-logger/bin/nmon_helper.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_collect.log 2>&1
+
+*nmon files are stored in "/var/log/nmon-logger/var/nmon_repository/":*
+ 
+    ls -ltr /var/log/nmon-logger/var/nmon_repository/
+    total 36
+    -rw-rw-r-- 1 nmon nmon 33639 Sep  2 21:34 rsyslog-client1_160902_2127.nmon
+
+*The activity (formerly "nmon_collecy") of nmon_helper.sh is logged in:*
+
+    /var/log/nmon-logger/nmon_collect.log
+ 
+*Every minute, the nmon_manage.sh will read and send the nmon file to parsers if required, scheduled by cron.d:*
+
+    # The nmon_manage.sh is responsible for launching nmon kv converter and requires arguments: <arg1: binaries path> <arg2: log path>
+    */1 * * * * nmon /etc/nmon-logger/bin/nmon_manage.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_processing.log 2>&1
+
+*The parsing activity (formerly "nmon_processing") is logged in:*
+ 
+    /var/log/nmon-logger/nmon_processing.log
+ 
+*Parsers will generate configuration data (formerly "nmon_config") and performance data (formerly "nmon_performance") in a key=value format in:*
+
+    /var/log/nmon-logger/nmon_configdata.log
+
+    /var/log/nmon-logger/nmon_perfdata.log
+
+*Every 5 minutes the nmon_cleaner.sh script will run and manage nmon files retention, it is scheduled by cron.d:*
+
+    # The nmon_cleaner.sh is responsible for nmon files cleaning and requires arguments: <arg1: binaries path> <arg2: log path>
+    */5 * * * * nmon sleep 30; /etc/nmon-logger/bin/nmon_cleaner.sh /etc/nmon-logger /var/log/nmon-logger >> /var/log/nmon-logger/nmon_clean.log 2>&1
+
+*Its activity is logged in:*
+
+    /var/log/nmon-logger/nmon_clean.log
+
+#### syslog forwarding
+
+*Using rsyslog or syslog-ng file monitoring facilities, the content of these log files is permanently monitored and forwarded to your remote syslog servers*
+
+#### log files rotation (logrotate)
+
+*Finally, the logrotate daemon will take care of achieving log files rotation and reloading rsyslog/syslog-ng at the end of the file rotation process*

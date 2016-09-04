@@ -49,9 +49,6 @@ cd ~/nmon-logger
 rm debbuild/nmon-logger-rsyslog/etc/rsyslog.d/*
 cp nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf_debian debbuild/nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf
 
-# Copy logger config for Debian
-cp /tmp/20-nmon-logger.conf_debian nmon-logger-rsyslog/etc/rsyslog.d/20-nmon-logger.conf
-
 # Enter build
 cd ~/nmon-logger/debbuild
 
