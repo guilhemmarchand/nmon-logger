@@ -31,6 +31,9 @@
 #                                          - Mirror update of the TA-nmon
 # - 08/21/2016, V1.0.2: Guilhem Marchand:
 #                                          - Adding addon type and version, minor correction
+# - 10/19/2016, V1.0.3: Guilhem Marchand:
+#                                          - Mirror update from TA-nmon, see:
+#                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
 
 # Load libs
 
@@ -49,7 +52,7 @@ import optparse
 import socket
 
 # Converter version
-nmon2csv_version = '1.0.2'
+nmon2csv_version = '1.0.3'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -1320,7 +1323,7 @@ def standard_section_fn(section):
 
                         if realtime:
 
-                            if ZZZZ_epochtime > last_epoch_filter:
+                            if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                                 # increment
                                 count += 1
@@ -1627,7 +1630,7 @@ def top_section_fn(section):
 
                     if realtime:
 
-                        if ZZZZ_epochtime > last_epoch_filter:
+                        if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                             # increment
                             count += 1
@@ -1908,7 +1911,7 @@ def uarg_section_fn(section):
 
                     if realtime:
 
-                        if ZZZZ_epochtime > last_epoch_filter:
+                        if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                             # increment
                             count += 1
@@ -2139,7 +2142,7 @@ def dynamic_section_fn(section):
 
                     if realtime:
 
-                        if ZZZZ_epochtime > last_epoch_filter:
+                        if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                             # increment
                             count += 1
@@ -2514,7 +2517,7 @@ def solaris_wlm_section_fn(section):
 
                     if realtime:
 
-                        if ZZZZ_epochtime > last_epoch_filter:
+                        if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                             # increment
                             count += 1
