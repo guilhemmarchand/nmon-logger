@@ -29,8 +29,10 @@
 # - Jan 2014, V1.0.0: Guilhem Marchand, Initial version
 # - 07/17/2016, V1.0.1: Guilhem Marchand:
 #                                          - Mirror update of the TA-nmon
+# - 2017/06/01, V1.0.2: Guilhem Marchand:
+#                                          - Mirror update from TA-nmon
 
-$version = "1.0.1";
+$version = "1.0.2";
 
 use Time::Local;
 use Time::HiRes;
@@ -126,6 +128,14 @@ Available options are:
 @dynamic_vars2 = (
     "IOADAPT", "NETERROR", "NET",      "NETPACKET", "JFSFILE", "JFSINODE",
     "FCREAD",  "FCWRITE",  "FCXFERIN", "FCXFEROUT"
+);
+
+# disks extended statistics (DG*)
+@disk_extended_section = (
+    "DGBUSY",   "DGREAD",       "DGWRITE",     "DGSIZE",
+    "DGXFER",   "DGREADS",      "DGREADMERGE", "DGREADSERV",
+    "DGWRITES", "DGWRITEMERGE", "DGWRITESERV", "DGINFLIGHT",
+    "DGIOTIME", "DGBACKLOG"
 );
 
 # Sections of Performance Monitors for Solaris
@@ -1227,7 +1237,7 @@ foreach $FILENAME (@nmon_files) {
             }
 
             # If we wrote more than the header
-            if ( $count > 1 ) {
+            if ( $count >= 1 ) {
 
                 if ( $sanity_check == 0 ) {
 
@@ -1650,7 +1660,7 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
                 }
 
                 # If we wrote more than the header
-                if ( $count > 1 ) {
+                if ( $count >= 1 ) {
 
                     if ( $sanity_check == 0 ) {
 
@@ -1743,6 +1753,21 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
     # Dynamic Sections with no increment
 
     foreach $key (@dynamic_vars2) {
+
+        # First pass with standard keys
+        $BASEFILENAME =
+"$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
+        $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
+
+        &variable_sections_insert($key);
+        $now = time();
+        $now = $now - $start;
+
+    }
+
+    # Disks extended stats
+
+    foreach $key (@disk_extended_section) {
 
         # First pass with standard keys
         $BASEFILENAME =
@@ -2329,7 +2354,7 @@ qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpu
     }
 
     else {
-        if ( $count > 1 ) {
+        if ( $count >= 1 ) {
             print "$key section: Wrote $count lines\n";
             print ID_REF "$key section: Wrote $count lines\n";
 
@@ -2623,7 +2648,7 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
     }
 
     else {
-        if ( $count > 1 ) {
+        if ( $count >= 1 ) {
             print "$key section: Wrote $count lines\n";
             print ID_REF "$key section: Wrote $count lines\n";
 
@@ -2919,7 +2944,7 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
     }
 
     else {
-        if ( $count > 1 ) {
+        if ( $count >= 1 ) {
             print "$key section: Wrote $count lines\n";
             print ID_REF "$key section: Wrote $count lines\n";
 

@@ -34,6 +34,8 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
+# - # 2017/06/01, V1.0.4: Guilhem Marchand:
+#                                          - Mirror update from TA-nmon
 
 # Load libs
 
@@ -52,7 +54,7 @@ import optparse
 import socket
 
 # Converter version
-nmon2csv_version = '1.0.3'
+nmon2csv_version = '1.0.4'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -97,6 +99,10 @@ dynamic_section1 = ["DISKBUSY", "DISKBSIZE", "DISKREAD", "DISKWRITE", "DISKXFER"
 # Sections of Performance Monitors with "device" notion, data needs to be transposed by time to be fully exploitable
 dynamic_section2 = ["IOADAPT", "NETERROR", "NET", "NETPACKET", "JFSFILE", "JFSINODE", "FCREAD", "FCWRITE", "FCXFERIN",
                     "FCXFEROUT"]
+
+# disks extended statistics (DG*)
+disk_extended_section = ["DGBUSY", "DGREAD", "DGWRITE", "DGSIZE", "DGXFER", "DGREADS", "DGREADMERGE", "DGREADSERV",
+                  "DGWRITES", "DGWRITEMERGE", "DGWRITESERV", "DGINFLIGHT", "DGIOTIME", "DGBACKLOG"]
 
 # Sections of Performance Monitors for Solaris
 
@@ -2324,6 +2330,14 @@ for subsection in dynamic_section1:
 ###################
 
 for section in dynamic_section2:
+    dynamic_section_fn(section)
+
+###################
+# disk extended stats
+###################
+
+# disks extended statistics
+for section in disk_extended_section:
     dynamic_section_fn(section)
 
 ###################

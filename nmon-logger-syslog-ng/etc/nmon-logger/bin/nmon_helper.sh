@@ -11,8 +11,9 @@
 # 2015/05/09, Guilhem Marchand: Rewrite of main program to fix main common troubles with nmon_helper.sh, be simple, effective
 # 2016/07/17, Guilhem Marchand: Mirror update of the TA-nmon
 # 2016/09/01, Guilhem Marchand: Mirror update of the TA-nmon
+# 2017/06/01, Guilhem Marchand: Mirror update of the TA-nmon
 
-# Version 1.0.2
+# Version 1.0.3
 
 # For AIX / Linux / Solaris
 
@@ -102,6 +103,12 @@ Linux_unlimited_capture="0"
 # in default configuration, a new process will be spawned 240 seconds before the current process ends
 # see nmon.conf (this value will be overwritten by nmon.conf)
 endtime_margin="240"
+
+# Linux disks extended statistics (see nmon.conf)
+Linux_disk_dg_enable="1"
+
+# Name of the DG group file
+Linux_disk_dg_group="auto"
 
 # source default nmon.conf
 if [ -f $APP/default/nmon.conf ]; then
@@ -578,13 +585,13 @@ if [ ! -x "$NMON" ];then
 
                 # Big endian
                 0 )
-                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_be"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH_NAME}_be"
 
                 ;;
 
                 # Little endian
                 1)
-                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_le"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH_NAME}_le"
                 ;;
 
                 esac
@@ -593,7 +600,7 @@ if [ ! -x "$NMON" ];then
 
             # Other arch
             * )
-                NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}"
+                NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH_NAME}"
 
             ;;
 
@@ -636,13 +643,13 @@ if [ ! -x "$NMON" ];then
 
                 # Big endian
                 0 )
-                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_be"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH_NAME}_be"
 
                 ;;
 
                 # Little endian
                 1)
-                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}_le"
+                    NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH_NAME}_le"
                 ;;
 
                 esac
@@ -651,7 +658,7 @@ if [ ! -x "$NMON" ];then
 
             # Other arch
             * )
-                NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH}"
+                NMON="${APP}/bin/linux/generic/nmon_linux_${ARCH_NAME}"
 
             ;;
 
@@ -729,10 +736,34 @@ case $UNAME in
 	;;
 
 	Linux )
-		${nmon_command} > ${PIDFILE}
+
+	    # Activation of Linux disks extended stats generate a message in stdout
+	    # We don't want this as we need to retrieve the pid from nmon output
+	    # However, we also want to analyse the return code, so we can't filter out in only one operation
+		${nmon_command} > ${APP_VAR}/nmon_output.txt
 		if [ $? -ne 0 ]; then
 			echo "`date`, ${HOST} ERROR, nmon binary returned a non 0 code while trying to start, please verify error traces in splunkd log (missing shared libraries?)"
 		fi
+
+		# Store the PID file (very last line of nmon output)
+		if [ -f ${APP_VAR}/nmon_output.txt ]; then
+		    awk 'END{print}' ${APP_VAR}/nmon_output.txt > ${PIDFILE}
+	    fi
+
+        # old nmon versions might not be compatible with disks extended stats, or the group file does not exist
+        # In such a case, echo a WARN, remove the option and last chance start
+        if grep 'opening disk group file' ${APP_VAR}/nmon_output.txt >/dev/null; then
+
+            echo "`date`, ${HOST} WARN, nmon disks extended statistics cannot be collected, either this nmon version is not compatible or the disk group file does not exist, see ${APP_VAR}/nmon_output.txt"
+    	    ${nmon_command}=`echo ${nmon_command} | sed "s/-g ${Linux_disk_dg_group} -D//g"`
+	        ${nmon_command} > ${PIDFILE}
+
+            if [ $? -ne 0 ]; then
+			    echo "`date`, ${HOST} ERROR, nmon binary returned a non 0 code while trying to start, please verify error traces in splunkd log (missing shared libraries?)"
+		    fi
+
+        fi
+
 	;;
 
 	SunOS )
@@ -1020,25 +1051,27 @@ Linux )
         Linux_unlimited_capture="-1" ;;
     esac
 
-    if [ ${Linux_NFS} -eq 1 ]; then
+    # Set the default Linux minimal args list
+    Linux_nmon_args="-f -T -s ${interval} -c ${snapshot} -d ${Linux_devices}"
 
-        # Verify the limit configuration for processes and disks capture
-        if [ ${Linux_unlimited_capture} -eq 0 ]; then
-            nmon_command="${NMON} -f -T -d ${Linux_devices} -N -s ${interval} -c ${snapshot} -p"
-        else
+    case ${Linux_NFS} in
+    "1" )
+        Linux_default_args="$Linux_nmon_args -N" ;;
+    esac
 
-            nmon_command="${NMON} -f -T -N -s ${interval} -c ${snapshot} -I ${Linux_unlimited_capture} -p"
-        fi
+    case ${Linux_unlimited_capture} in
+    "-1" )
+        Linux_nmon_args="$Linux_nmon_args -I ${Linux_unlimited_capture}" ;;
+    esac
 
-    else
+    case ${Linux_disk_dg_enable} in
+    "1" )
+        Linux_nmon_args="$Linux_nmon_args -g auto -D" ;;
+    esac
 
-        # Verify the limit configuration for processes and disks capture
-        if [ ${Linux_unlimited_capture} -eq 0 ]; then
-            nmon_command="${NMON} -f -T -d ${Linux_devices} -s ${interval} -c ${snapshot} -p"
-        else
-            nmon_command="${NMON} -f -T -s ${interval} -c ${snapshot} -I ${Linux_unlimited_capture} -p"
-        fi
-    fi
+    # Set the nmon command for Linux
+    nmon_command="${NMON} $Linux_nmon_args -p"
+
 ;;
 
 esac
