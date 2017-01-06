@@ -195,14 +195,10 @@
   # Set this host as a central syslog collector
   - name: Deploy syslog-ng central configuration for global logging
     copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/central.conf dest=/etc/syslog-ng/conf.d/
-    notify:
-        - restart syslog-ng
 
   # Deploy syslog-ng configuration for nmon-performance
   - name: Deploy syslog-ng central configuration for nmon performance
     copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/nmon-performance.conf dest=/etc/syslog-ng/conf.d/
-    notify:
-        - restart syslog-ng
 
   # Verify if Splunk Universal Forwarder is already installed
   - name: Check if Splunk Universal Forwarder path exists
@@ -309,8 +305,6 @@
 
   - name: Deploy syslog-ng central configuration
     copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_ubuntu dest=/etc/syslog-ng/conf.d/client.conf
-    notify:
-        - restart syslog-ng
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
@@ -318,8 +312,6 @@
 
   - name: Deploy syslog-ng central configuration
     copy: src={{ docroot }}/vagrant-ansible-demo-syslog-ng/client.conf_centos dest=/etc/syslog-ng/conf.d/client.conf
-    notify:
-        - restart syslog-ng
 
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
@@ -350,3 +342,7 @@
       apt: deb=/tmp/{{ deb_binname }} state=present
 
     when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+  # Last but not least, restart syslog-ng (using module service causes some trouble, let's use simple command)
+  - name: Restart syslog-ng
+    command: service syslog-ng restart
