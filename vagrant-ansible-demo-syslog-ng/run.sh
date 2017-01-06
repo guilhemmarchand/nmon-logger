@@ -2,7 +2,6 @@
 
 # Don't check for known_host
 export ANSIBLE_HOST_KEY_CHECKING=False
-export VAGRANT_HOME=`pwd`
 
 echo "****************** Starting vagrant VMs: ******************"
 vagrant up

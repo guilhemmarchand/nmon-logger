@@ -31,6 +31,7 @@
 #                                          - Mirror update of the TA-nmon
 # - 2017/06/01, V1.0.2: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
+#                                          - Fix per section last epoch not working properly
 
 $version = "1.0.2";
 
@@ -1253,11 +1254,8 @@ foreach $FILENAME (@nmon_files) {
                         # Open keyref for writing in create mode
                         open( f, ">$keyref" );
 
-                        if ($DEBUG) {
-
-                            # save configuration extraction
-                            print f "last_epoch: $ZZZZ_epochtime \n";
-                        }
+                        # save configuration extraction
+                        print f "last_epoch: $ZZZZ_epochtime \n";
 
                     }
 
@@ -1676,11 +1674,8 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
                             # Open keyref for writing in create mode
                             open( f, ">$keyref" );
 
-                            if ($DEBUG) {
-
-                                # save configuration extraction
-                                print f "last_epoch: $ZZZZ_epochtime \n";
-                            }
+                            # save configuration extraction
+                            print f "last_epoch: $ZZZZ_epochtime \n";
 
                         }
 
@@ -2367,11 +2362,8 @@ qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpu
                 # Open keyref for writing in create mode
                 open( f, ">$keyref" );
 
-                if ($DEBUG) {
-
-                    # save configuration extraction
-                    print f "last_epoch: $ZZZZ_epochtime \n";
-                }
+                # save configuration extraction
+                print f "last_epoch: $ZZZZ_epochtime \n";
 
             }
 
@@ -2661,11 +2653,8 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
                 # Open keyref for writing in create mode
                 open( f, ">$keyref" );
 
-                if ($DEBUG) {
-
-                    # save configuration extraction
-                    print f "last_epoch: $ZZZZ_epochtime \n";
-                }
+                # save configuration extraction
+                print f "last_epoch: $ZZZZ_epochtime \n";
 
             }
 
@@ -2957,11 +2946,8 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
                 # Open keyref for writing in create mode
                 open( f, ">$keyref" );
 
-                if ($DEBUG) {
-
-                    # save configuration extraction
-                    print f "last_epoch: $ZZZZ_epochtime \n";
-                }
+                # save configuration extraction
+                print f "last_epoch: $ZZZZ_epochtime \n";
 
             }
 

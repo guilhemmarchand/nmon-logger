@@ -6,7 +6,7 @@
 
   vars:
    - template_hosts: "hosts"
-   - localzone: Europe/Paris
+   - localzone: Europe/London
 
 # Run roles
   roles:
@@ -16,18 +16,30 @@
 
 ############################## Set Timezone ##############################
 
-# Configure time zone
+# Configure time zone, only update whenever required
+
+  - name: Check the current timezone
+    shell: 'timedatectl status | grep "zone" | sed -e "s/^[ ]*Time zone: \(.*\) (.*)$/\1/g"'
+    register: timezone_value
+
+  # Store the host timezone
+  - set_fact: timezone_value={{ timezone_value.stdout }}
+
   - name: Set timezone variables for Debian / Ubuntu
     file: src=/usr/share/zoneinfo/{{ localzone }} dest=/etc/localtime owner=root group=root state=link force=yes
     notify: update tzdata
-    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and timezone_value!="{{ localzone }}"
 
-  - block:
-
-    - name: Set timezone for CentOS / RHEL / Fedora
-      file: src=/usr/share/zoneinfo/{{ localzone }}  dest=/etc/localtime state=link force=yes
-
-    when: ansible_distribution != 'Debian' or ansible_distribution != 'Ubuntu'
+  - name: Set timezone variables for CentOS / RHEL / Fedora
+    file: src=/usr/share/zoneinfo/{{ localzone }}  dest=/etc/localtime state=link force=yes
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and timezone_value!="{{ localzone }}"
 
   - name: Update hosts file
     action: template src={{ template_hosts }} dest=/etc/hosts
+
+############################## handlers ##############################
+
+  handlers:
+
+    - name: update tzdata
+      command: dpkg-reconfigure --frontend noninteractive tzdata
