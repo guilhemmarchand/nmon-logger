@@ -37,6 +37,16 @@
   - name: Update hosts file
     action: template src={{ template_hosts }} dest=/etc/hosts
 
+############################## Various ##############################
+
+# Currently centOs box seem to have trouble mounting up private network interface with static ips
+# https://github.com/mitchellh/vagrant/issues/5590
+# here is a workaround
+
+  - name: ensure all interfaces are up
+    service: name=network enabled=yes state=restarted
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+
 ############################## handlers ##############################
 
   handlers:
