@@ -78,13 +78,13 @@ if [ $? -eq 0 ]; then
 	python_subversion=`python --version 2>&1`
 
 	case $python_subversion in
-	
+
 	*" 2.7"*)
 		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py ${userargs} ;;
-		
+
 	*)
 		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl ${userargs} ;;
-	
+
 	esac
 
 else

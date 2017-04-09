@@ -44,6 +44,7 @@ install -m 700 etc/cron.d/nmon-logger $RPM_BUILD_ROOT/etc/cron.d/
 install -m 700 etc/logrotate.d/nmon-logger $RPM_BUILD_ROOT/etc/logrotate.d/
 install -m 700 etc/nmon-logger/default/nmon.conf $RPM_BUILD_ROOT/etc/nmon-logger/default/
 install -m 700 etc/nmon-logger/default/app.conf $RPM_BUILD_ROOT/etc/nmon-logger/default/
+install -m 700 etc/nmon-logger/default/nmonparser_config.json $RPM_BUILD_ROOT/etc/nmon-logger/default/
 install -m 700 etc/rsyslog.d/20-nmon-logger.conf $RPM_BUILD_ROOT/etc/rsyslog.d/
 install -m 700 etc/nmon-logger/bin/linux.tgz $RPM_BUILD_ROOT/etc/nmon-logger/bin/
 install -m 700 etc/nmon-logger/bin/nmon2* $RPM_BUILD_ROOT/etc/nmon-logger/bin/

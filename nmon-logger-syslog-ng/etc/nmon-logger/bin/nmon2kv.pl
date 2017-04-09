@@ -32,8 +32,10 @@
 # - 2017/06/01, V1.0.2: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
 #                                          - Fix per section last epoch not working properly
+# - # 2017/09/04, V1.0.4: Guilhem Marchand:
+#                                          - Mirror update from TA-nmon
 
-$version = "1.0.3";
+$version = "1.0.4";
 
 use Time::Local;
 use Time::HiRes;
@@ -2085,15 +2087,26 @@ sub config_extract {
     # Get nmon/server settings (search string, return column, delimiter)
     $AIXVER   = &get_setting( "AIX",      2, "," );
     $HOSTNAME = &get_setting( "host",     2, "," );
-    $DATE     = &get_setting( "AAA,date", 2, "," );
-    $TIME     = &get_setting( "AAA,time", 2, "," );
+    $DATE = &get_setting( "AAA,date", 2, "," );
+    $TIME = &get_setting( "AAA,time", 2, "," );
 
-    if ( $AIXVER eq "-1" ) {
-        $SN = $HOSTNAME;    # Probably a Linux host
-    }
-    else {
+    # for AIX
+    if ( $AIXVER ne "-1" ) {
         $SN = &get_setting( "systemid", 4, "," );
-        $SN = ( split( /\s+/, $SN ) )[0];    # "systemid IBM,SN ..."
+        $SN = ( split( /\s+/, $SN ) )[0];                # "systemid IBM,SN ..."
+    }
+    # for Power Linux
+    else {
+        $SN = &get_setting( "serial_number", 4, "," );
+        $SN = ( split( /\s+/, $SN ) )[0];                # "serial_number=IBM,SN ..."
+    }
+
+    # undeterminated
+    if ( $SN eq "-1" ) {
+        $SN = $HOSTNAME;
+    }
+    elsif ( $SN eq "" ) {
+        $SN = $HOSTNAME;
     }
 
     # write event header
@@ -3175,12 +3188,23 @@ sub get_nmon_data {
     $STARTTIME = &get_setting( "AAA,time", 2, "," );
     ( $HR, $MIN ) = split( /\:/, $STARTTIME );
 
-    if ( $AIXVER eq "-1" ) {
-        $SN = $HOSTNAME;                                 # Probably a Linux host
-    }
-    else {
+    # for AIX
+    if ( $AIXVER ne "-1" ) {
         $SN = &get_setting( "systemid", 4, "," );
         $SN = ( split( /\s+/, $SN ) )[0];                # "systemid IBM,SN ..."
+    }
+    # for Power Linux
+    else {
+        $SN = &get_setting( "serial_number", 4, "," );
+        $SN = ( split( /\s+/, $SN ) )[0];                # "serial_number=IBM,SN ..."
+    }
+
+    # undeterminated
+    if ( $SN eq "-1" ) {
+        $SN = $HOSTNAME;
+    }
+    elsif ( $SN eq "" ) {
+        $SN = $HOSTNAME;
     }
 
     $TYPE = &get_setting( "^BBBP.*Type", 3, "," );

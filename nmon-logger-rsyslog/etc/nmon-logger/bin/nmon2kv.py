@@ -34,7 +34,7 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
-# - # 2017/06/01, V1.0.4: Guilhem Marchand:
+# - # 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
 
 # Load libs
@@ -161,7 +161,7 @@ sanity_check = "-1"
 
 parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog '+nmon2csv_version)
 
-parser.set_defaults(nmon_var='/var/log/nmon-logger', mode='auto', json_mode='pretty', dumpargs=False)
+parser.set_defaults(nmon_var='/var/log/nmon-logger', mode='auto', dumpargs=False)
 
 parser.add_option('-o', '--nmon_var', action='store', type='string', dest='nmon_var',
                   help='sets the output Home directory for Nmon (Default: %default)')
@@ -176,9 +176,6 @@ parser.add_option('--use_fqdn', action='store_true', dest='use_fqdn', help='Use 
                                                                            ' when managing nmon data generated out'
                                                                            ' of Splunk'
                                                                            ' (eg. central repositories)')
-jsonmodes = ['pretty', 'dump']
-parser.add_option('-j', '--json_mode', action='store', type='string', dest='json_mode',
-                  help='sets the output mode for json data (Default: %default, options: dump / pretty)')
 parser.add_option('--nokvdelim', action='store_true', dest='nokvdelim', default=False, help='Deactivate delimitor for '
                                                                                        'kv value (activated '
                                                                                        'by default)')
