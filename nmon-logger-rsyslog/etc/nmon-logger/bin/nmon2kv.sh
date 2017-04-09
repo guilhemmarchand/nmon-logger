@@ -58,11 +58,11 @@ nmon_temp=${TMP_DIR}/nmon2kv.temp.$$
 ####################################################################
 
 # Store arguments sent to script
-userarg1=$1
-userarg2=$2
+userargs=$@
 
-NMON_BIN=${userarg1}
-NMON_VAR=${userarg2}
+# Directories definition
+NMON_BIN="/etc/nmon-logger"
+NMON_VAR="/var/log/nmon-logger"
 
 # Store stdin
 while read line ; do
@@ -78,18 +78,18 @@ if [ $? -eq 0 ]; then
 	python_subversion=`python --version 2>&1`
 
 	case $python_subversion in
-	
+
 	*" 2.7"*)
-		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py --nmon_var ${NMON_VAR} ;;
-		
+		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py ${userargs} ;;
+
 	*)
-		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl --nmon_var ${NMON_VAR} ;;
-	
+		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl ${userargs} ;;
+
 	esac
 
 else
 
-	cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl --nmon_var ${NMON_VAR}
+	cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl ${userargs}
 
 fi
 

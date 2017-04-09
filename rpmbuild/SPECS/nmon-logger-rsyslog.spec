@@ -35,6 +35,7 @@ mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger
 mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger/default
 mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger/bin
+mkdir -p $RPM_BUILD_ROOT/etc/nmon-logger/bin/nmon_external_cmd
 mkdir -p $RPM_BUILD_ROOT/etc/rsyslog.d
 mkdir -p $RPM_BUILD_ROOT/var/log/nmon-logger
 
@@ -45,7 +46,11 @@ install -m 700 etc/nmon-logger/default/nmon.conf $RPM_BUILD_ROOT/etc/nmon-logger
 install -m 700 etc/nmon-logger/default/app.conf $RPM_BUILD_ROOT/etc/nmon-logger/default/
 install -m 700 etc/rsyslog.d/20-nmon-logger.conf $RPM_BUILD_ROOT/etc/rsyslog.d/
 install -m 700 etc/nmon-logger/bin/linux.tgz $RPM_BUILD_ROOT/etc/nmon-logger/bin/
-install -m 700 etc/nmon-logger/bin/nmon* $RPM_BUILD_ROOT/etc/nmon-logger/bin/
+install -m 700 etc/nmon-logger/bin/nmon2* $RPM_BUILD_ROOT/etc/nmon-logger/bin/
+install -m 700 etc/nmon-logger/bin/nmon_cleaner* $RPM_BUILD_ROOT/etc/nmon-logger/bin/
+install -m 700 etc/nmon-logger/bin/nmon_helper.sh $RPM_BUILD_ROOT/etc/nmon-logger/bin/
+install -m 700 etc/nmon-logger/bin/fifo_* $RPM_BUILD_ROOT/etc/nmon-logger/bin/
+install -m 700 etc/nmon-logger/bin/nmon_external_cmd/*.sh $RPM_BUILD_ROOT/etc/nmon-logger/bin/nmon_external_cmd/
 %post
 echo
 echo Restarting rsyslog service:

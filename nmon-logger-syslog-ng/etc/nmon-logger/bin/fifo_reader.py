@@ -28,7 +28,7 @@ handler.setFormatter(formatter)
 logging.root.addHandler(handler)
 
 # APP_VAR directory
-APP_VAR = '/var/log/nmon/var'
+APP_VAR = '/var/log/nmon-logger/var'
 if not os.path.exists(APP_VAR):
     logging.info(
         'The application var directory does not exist yet, we are not ready to start')

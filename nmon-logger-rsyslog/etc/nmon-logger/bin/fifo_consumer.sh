@@ -28,7 +28,7 @@ UNAME=`uname`
 temp_file="/tmp/fifo_consumer.sh.$$"
 
 # APP path discovery
-APP = "/etc/nmon-logger"
+APP="/etc/nmon-logger"
 
 # Verify Perl availability (Perl will be more commonly available than Python)
 PERL=`which perl >/dev/null 2>&1`
@@ -72,16 +72,16 @@ FIFO=$1
 # consume fifo
 
 # realtime
-nmon_config=/var/log/nmon/var/nmon_repository/$FIFO/nmon_config.dat
-nmon_header=/var/log/nmon/var/nmon_repository/$FIFO/nmon_header.dat
-nmon_timestamp=/var/log/nmon/var/nmon_repository/$FIFO/nmon_timestamp.dat
-nmon_data=/var/log/nmon/var/nmon_repository/$FIFO/nmon_data.dat
+nmon_config=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_config.dat
+nmon_header=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_header.dat
+nmon_timestamp=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_timestamp.dat
+nmon_data=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_data.dat
 
 # rotated
-nmon_config_rotated=/var/log/nmon/var/nmon_repository/$FIFO/nmon_config.dat.rotated
-nmon_header_rotated=/var/log/nmon/var/nmon_repository/$FIFO/nmon_header.dat.rotated
-nmon_timestamp_rotated=/var/log/nmon/var/nmon_repository/$FIFO/nmon_timestamp.dat.rotated
-nmon_data_rotated=/var/log/nmon/var/nmon_repository/$FIFO/nmon_data.dat.rotated
+nmon_config_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_config.dat.rotated
+nmon_header_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_header.dat.rotated
+nmon_timestamp_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_timestamp.dat.rotated
+nmon_data_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_data.dat.rotated
 
 # manage rotated data if existing, prevent any data loss
 
@@ -96,14 +96,14 @@ if [ -s $nmon_config_rotated ] && [ -s $nmon_header_rotated ] && [ -s $nmon_data
         # and the parser will raise an error
         if [ -f $nmon_timestamp_rotated ]; then
             tail -1 $nmon_timestamp_rotated >$temp_file
-            cat $nmon_config_rotated $nmon_header_rotated $temp_file $nmon_data_rotated | /etc/nmon-logger/bin/nmon2kv.sh --mode realtime
+            cat $nmon_config_rotated $nmon_header_rotated $temp_file $nmon_data_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
         fi
     else
-        cat $nmon_config_rotated $nmon_header_rotated $nmon_data_rotated | /etc/nmon-logger/bin/nmon2kv.sh --mode realtime
+        cat $nmon_config_rotated $nmon_header_rotated $nmon_data_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
     fi
 
     # remove rotated
-    rm -f /var/log/nmon/var/nmon_repository/$FIFO/*.dat_rotated
+    rm -f /var/log/nmon-logger/var/nmon_repository/$FIFO/*.dat_rotated
 
 fi
 

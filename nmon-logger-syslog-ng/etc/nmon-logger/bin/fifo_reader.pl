@@ -69,7 +69,7 @@ if ( !-d "$APP" ) {
 }
 
 # var directory
-my $APP_VAR     = "/var/log/nmon";
+my $APP_VAR     = "/var/log/nmon-logger";
 
 if ( !-d "$APP_VAR" ) {
     print(

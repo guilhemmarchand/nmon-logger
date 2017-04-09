@@ -161,7 +161,7 @@ sanity_check = "-1"
 
 parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog '+nmon2csv_version)
 
-parser.set_defaults(nmon_var='/var/log/nmon', mode='auto', json_mode='pretty', dumpargs=False)
+parser.set_defaults(nmon_var='/var/log/nmon-logger', mode='auto', json_mode='pretty', dumpargs=False)
 
 parser.add_option('-o', '--nmon_var', action='store', type='string', dest='nmon_var',
                   help='sets the output Home directory for Nmon (Default: %default)')
