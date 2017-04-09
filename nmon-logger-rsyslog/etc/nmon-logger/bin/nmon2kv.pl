@@ -50,7 +50,7 @@ use File::Copy;
 # Default values
 
 my $OPMODE    = "";
-my $NMON_VAR = "/var/log/nmon";
+my $NMON_VAR = "/var/log/nmon-logger";
 
 $result = GetOptions(
     "mode=s"      => \$OPMODE,       # string
