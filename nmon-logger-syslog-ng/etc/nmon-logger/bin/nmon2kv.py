@@ -1440,6 +1440,10 @@ if OStype in ("Solaris", "Unknown"):
     for section in Solaris_static_section:
         standard_section_fn(section)
 
+    # nmon external
+    for section in nmon_external:
+        standard_section_fn(section)
+
 ###################
 # TOP section: has a specific structure with uncommon fields, needs to be treated separately
 ###################
@@ -2298,6 +2302,14 @@ if OStype in ("AIX", "Unknown"):
         dynamic_section_fn(section)
     for section in AIX_WLM:
         dynamic_section_fn(section)
+
+###################
+# nmon external transposed
+###################
+
+# nmon external with transposition
+for section in nmon_external_transposed:
+    dynamic_section_fn(section)
 
 ###################
 # Solaris Sections : data requires to be transposed to be exploitable within Splunk

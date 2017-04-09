@@ -1067,6 +1067,17 @@ foreach $FILENAME (@nmon_files) {
 
     }    # end foreach
 
+    foreach $key (@nmon_external) {
+        $BASEFILENAME =
+"$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
+        $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
+
+        &static_sections_insert($key);
+        $now = time();
+        $now = $now - $start;
+
+    }    # end foreach
+
     # These sections are specific for Micro Partitions, can be AIX or PowerLinux
     if ( $OStype eq "AIX" || $OStype eq "Linux" || $OStype eq "Unknown" ) {
 
@@ -1945,6 +1956,19 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
         # Other dynamics
 
         foreach $key (@solaris_dynamic_various) {
+            $BASEFILENAME =
+"$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
+            $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
+
+            &variable_sections_insert($key);
+            $now = time();
+            $now = $now - $start;
+
+        }
+
+        # nmon external with transposition
+
+        foreach $key (@nmon_external_transposed) {
             $BASEFILENAME =
 "$OUTPUT_DIR/${HOSTNAME}_${nmon_day}_${nmon_month}_${nmon_year}_${nmon_hour}${nmon_minute}${nmon_second}_${key}_${bytes}_${csv_timestamp}.nmon.csv";
             $keyref = "$HOSTNAME_VAR/" . "${HOSTNAME}.${key}_lastepoch.txt";
