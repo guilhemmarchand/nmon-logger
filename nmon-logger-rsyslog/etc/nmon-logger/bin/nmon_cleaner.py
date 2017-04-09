@@ -99,17 +99,11 @@ else:
 # Guest Operation System type
 ostype = platform.system().lower()
 
-# If running Windows OS (used for directory identification)
-is_windows = re.match(r'^win\w+', (platform.system().lower()))
-
 # Python version
 python_version = platform.python_version()
 
 # Config data repository
-if is_windows:
-    NMON_DIR = nmon_home + '\\var\\nmon_repository\\'
-else:
-    NMON_DIR = nmon_home + '/var//nmon_repository/'
+NMON_DIR = nmon_home + '/var//nmon_repository/'
 
 # Check Nmon Home
 if not os.path.isdir(nmon_home):

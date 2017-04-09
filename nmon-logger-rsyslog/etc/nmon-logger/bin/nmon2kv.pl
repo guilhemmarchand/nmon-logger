@@ -33,7 +33,7 @@
 #                                          - Mirror update from TA-nmon
 #                                          - Fix per section last epoch not working properly
 
-$version = "1.0.2";
+$version = "1.0.3";
 
 use Time::Local;
 use Time::HiRes;
@@ -95,71 +95,54 @@ Available options are:
 #################################################
 
 # Customizations goes here:
-
 # Sections of Performance Monitors with standard dynamic header but no "device" notion that would require the data to be transposed
 # You can add or remove any section depending on your needs
-@static_vars = (
-    "CPUnn",    "CPU_ALL",  "FILE", "MEM",      "PAGE",     "MEMNEW",
-    "MEMUSE",   "PROC",     "VM",   "NFSSVRV2", "NFSSVRV3", "NFSSVRV4",
-    "NFSCLIV2", "NFSCLIV3", "NFSCLIV4"
-);
+@static_vars = "";
 
 # Some specific sections per OS
-@Solaris_static_section = ("PROCSOL");
+@Solaris_static_section = "";
 
 # Some specfic sections for micro partitions (AIX or Power Linux)
-@LPAR_static_section = ( "LPAR", "POOLS" );
+@LPAR_static_section = "";
 
 # This is the TOP section which contains Performance data of top processes
 # It has a specific structure and requires specific treatment
-@top_vars = ("TOP");
+@top_vars = "";
 
 # This is the UARG section which contains full command line arguments with some other information such as PID, user, group and so on
 # It has a specific structure and requires specific treatment
-@uarg_vars = ("UARG");
+@uarg_vars = "";
 
 # Sections of Performance Monitors with Dynamic header (eg. device context) and that can be incremented (DISKBUSY1...)
-@dynamic_vars1 = (
-    "DISKBSIZE", "DISKBUSY", "DISKREAD", "DISKWRITE",
-    "DISKXFER",  "DISKRIO",  "DISKWIO",  "DISKREADSERV",
-    "DISKWRITESERV"
-);
+@dynamic_vars1 = "";
 
 # Sections that won't be incremented
-@dynamic_vars2 = (
-    "IOADAPT", "NETERROR", "NET",      "NETPACKET", "JFSFILE", "JFSINODE",
-    "FCREAD",  "FCWRITE",  "FCXFERIN", "FCXFEROUT"
-);
+@dynamic_vars2 = "";
 
 # disks extended statistics (DG*)
-@disk_extended_section = (
-    "DGBUSY",   "DGREAD",       "DGWRITE",     "DGSIZE",
-    "DGXFER",   "DGREADS",      "DGREADMERGE", "DGREADSERV",
-    "DGWRITES", "DGWRITEMERGE", "DGWRITESERV", "DGINFLIGHT",
-    "DGIOTIME", "DGBACKLOG"
-);
+@disk_extended_section = "";
 
 # Sections of Performance Monitors for Solaris
 
 # Zone, Project, Task... performance
-@solaris_WLM = (
-    "WLMPROJECTCPU", "WLMZONECPU", "WLMTASKCPU", "WLMUSERCPU",
-    "WLMPROJECTMEM", "WLMZONEMEM", "WLMTASKMEM", "WLMUSERMEM"
-);
+@solaris_WLM = "";
 
 # Veritas Storage Manager
-@solaris_VxVM = (
-    "VxVMREAD", "VxVMWRITE", "VxVMXFER", "VxVMBSIZE",
-    "VxVMBUSY", "VxVMSVCTM", "VxVMWAITTM"
-);
+@solaris_VxVM = "";
 
-@solaris_dynamic_various = ( "DISKSVCTM", "DISKWAITTM" );
+@solaris_dynamic_various = "";
 
 # AIX only dynamic sections
-@AIX_dynamic_various = ( "SEA", "SEAPACKET", "SEACHPHY" );
+@AIX_dynamic_various = "";
 
 # AIX Workload Management
-@AIX_WLM = ( "WLMCPU", "WLMMEM", "WLMBIO" );
+@AIX_WLM = "";
+
+# nmon external
+@nmon_external = "";
+
+# nmon external with transposition of data
+@nmon_external_transposed = "";
 
 #################################################
 ## 	Your Customizations Go Here
@@ -191,7 +174,125 @@ if ( !-d "$NMON_VAR" ) {
 }
 
 # Empty init APP
-my $APP = "";
+my $APP = "/etc/nmon-logger";
+
+# load configuration from json config file
+# the config_file json may exist in default or local (if customized)
+# this will define the list of nmon section we want to extract
+
+if ( -e "$APP/local/nmonparser_config.json" ) {
+    $json_config = "$APP/local/nmonparser_config.json";
+}
+else {
+    $json_config = "$APP/default/nmonparser_config.json";
+}
+
+open( $json, "< $json_config" )
+  or die "ERROR: Can't open $json_config : $!";
+
+    while (<$json>) {
+        chomp($_);
+
+        $_ =~ s/\"//g; #remove quotes
+        $_ =~ s/\,\s/,/g; #remove comma space
+
+        # static_section
+        if ($_ =~ /^\s*static_section:\[([\w\,\s]*)\],{0,}$/) {
+            @static_vars = split(',', $1);
+        }
+
+        # Solaris_static_section
+        if ($_ =~ /^\s*Solaris_static_section:\[([\w\,\s]*)\],{0,}$/) {
+            @Solaris_static_section = split(',', $1);
+        }
+
+        # LPAR_static_section
+        if ($_ =~ /^\s*LPAR_static_section:\[([\w\,\s]*)\],{0,}$/) {
+            @LPAR_static_section = split(',', $1);
+        }
+
+        # top_section
+        if ($_ =~ /^\s*top_section:\[([\w\,\s]*)\],{0,}$/) {
+            @top_vars = split(',', $1);
+        }
+
+        # uarg_section
+        if ($_ =~ /^\s*uarg_section:\[([\w\,\s]*)\],{0,}$/) {
+            @uarg_vars = split(',', $1);
+        }
+
+        # dynamic_section1
+        if ($_ =~ /^\s*dynamic_section1:\[([\w\,\s]*)\],{0,}$/) {
+            @dynamic_vars1 = split(',', $1);
+        }
+
+        # dynamic_section2
+        if ($_ =~ /^\s*dynamic_section2:\[([\w\,\s]*)\],{0,}$/) {
+            @dynamic_vars2 = split(',', $1);
+        }
+
+        # disk_extended_section
+        if ($_ =~ /^\s*disk_extended_section:\[([\w\,\s]*)\],{0,}$/) {
+            @disk_extended_section = split(',', $1);
+        }
+
+        # solaris_WLM
+        if ($_ =~ /^\s*solaris_WLM:\[([\w\,\s]*)\],{0,}$/) {
+            @solaris_WLM = split(',', $1);
+        }
+
+        # solaris_VxVM
+        if ($_ =~ /^\s*solaris_VxVM:\[([\w\,\s]*)\],{0,}$/) {
+            @solaris_VxVM = split(',', $1);
+        }
+
+        # solaris_dynamic_various
+        if ($_ =~ /^\s*solaris_dynamic_various:\[([\w\,\s]*)\],{0,}$/) {
+            @solaris_dynamic_various = split(',', $1);
+        }
+
+        # AIX_dynamic_various
+        if ($_ =~ /^\s*AIX_dynamic_various:\[([\w\,\s]*)\],{0,}$/) {
+            @AIX_dynamic_various = split(',', $1);
+        }
+
+        # AIX_WLM
+        if ($_ =~ /^\s*AIX_WLM:\[([\w\,\s]*)\],{0,}$/) {
+            @AIX_WLM = split(',', $1);
+        }
+
+        # nmon_external
+        if ($_ =~ /^\s*nmon_external:\[([\w\,\s]*)\],{0,}$/) {
+            @nmon_external = split(',', $1);
+        }
+
+        # nmon_external
+        if ($_ =~ /^\s*nmon_external_transposed:\[([\w\,\s]*)\],{0,}$/) {
+            @nmon_external_transposed = split(',', $1);
+        }
+
+    }
+
+close $json;
+
+# Identify the Technical Add-on version
+my $APP_CONF_FILE = "$APP/default/app.conf";
+my $addon_version = "Unknown";
+
+if ( -e $APP_CONF_FILE ) {
+
+    # Open
+    open FILE, '+<', "$APP_CONF_FILE" or die "$time ERROR:$!\n";
+
+    while ( defined( my $l = <FILE> ) ) {
+        chomp $l;
+
+        # If SN is undetermined, set it equal to HOSTNAME
+        if ( $l =~ m/version\s*=\s*([\d|\.]*)/ ) {
+            $addon_version = $1;
+        }
+    }
+}
 
 # var main directory
 my $APP_VAR = "$NMON_VAR/var";
@@ -467,6 +568,12 @@ foreach $FILENAME (@nmon_files) {
 
     # Show program version
     print "nmon2kv version: $version \n";
+
+    # Show addon type
+    print "addon type: $APP \n";
+
+    # Show application version
+    print "addon version: $addon_version \n";
 
     # Show OS guest
     print "Guest Operating System: $^O\n";

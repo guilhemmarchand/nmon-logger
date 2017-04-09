@@ -52,9 +52,10 @@ import cStringIO
 import platform
 import optparse
 import socket
+import json
 
 # Converter version
-nmon2csv_version = '1.0.4'
+nmon2csv_version = '1.0.5'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -66,60 +67,62 @@ nmon2csv_version = '1.0.4'
 #      Parameters
 #################################################
 
-# Customizations goes here:
+# The nmon sections to be proceeded is not anymore statically defined
+# The sections are now defined through the nmonparser_config.json file located eith in default or local
 
 # Sections of Performance Monitors with standard dynamic header but no "device" notion that would require the data
 # to be transposed.
 # You can add or remove any section depending on your needs
-static_section = ["CPUnn", "CPU_ALL", "FILE", "MEM", "PAGE", "MEMNEW", "MEMUSE", "PROC", "VM", "NFSSVRV2",
-                  "NFSSVRV3", "NFSSVRV4", "NFSCLIV2", "NFSCLIV3", "NFSCLIV4"]
+static_section = ""
 
 # Some specific sections per OS
-Solaris_static_section = ["PROCSOL"]
+Solaris_static_section = ""
 
 # Some specfic sections for micro partitions (AIX or Power Linux)
-LPAR_static_section = ["LPAR", "POOLS"]
+LPAR_static_section = ""
 
 # This is the TOP section which contains Performance data of top processes
 # It has a specific structure and requires specific treatment
-top_section = ["TOP"]
+top_section = ""
 
 # This is the UARG section which contains full command line arguments with some other information such as PID, user,
 # group and so on.
 # It has a specific structure and requires specific treatment
-uarg_section = ["UARG"]
+uarg_section = ""
 
 # Sections of Performance Monitors with "device" notion, data needs to be transposed by time to be fully exploitable
 # This particular section will check for up to 10 subsection per Performance Monitor
 # By default, Nmon create a new subsection (add an increment from 1 to x) per step of 150 devices
 # 1500 devices (disks) will be taken in charge in default configuration
-dynamic_section1 = ["DISKBUSY", "DISKBSIZE", "DISKREAD", "DISKWRITE", "DISKXFER", "DISKRIO", "DISKWIO", "DISKREADSERV",
-                    "DISKWRITESERV"]
+dynamic_section1 = ""
 
 # Sections of Performance Monitors with "device" notion, data needs to be transposed by time to be fully exploitable
-dynamic_section2 = ["IOADAPT", "NETERROR", "NET", "NETPACKET", "JFSFILE", "JFSINODE", "FCREAD", "FCWRITE", "FCXFERIN",
-                    "FCXFEROUT"]
+dynamic_section2 = ""
 
 # disks extended statistics (DG*)
-disk_extended_section = ["DGBUSY", "DGREAD", "DGWRITE", "DGSIZE", "DGXFER", "DGREADS", "DGREADMERGE", "DGREADSERV",
-                  "DGWRITES", "DGWRITEMERGE", "DGWRITESERV", "DGINFLIGHT", "DGIOTIME", "DGBACKLOG"]
+disk_extended_section = ""
 
 # Sections of Performance Monitors for Solaris
 
 # Zone, Project, Task... performance
-solaris_WLM = ["WLMPROJECTCPU", "WLMZONECPU", "WLMTASKCPU", "WLMUSERCPU", "WLMPROJECTMEM", "WLMZONEMEM", "WLMTASKMEM",
-               "WLMUSERMEM"]
+solaris_WLM = ""
 
 # Veritas Storage Manager
-solaris_VxVM = ["VxVMREAD", "VxVMWRITE", "VxVMXFER", "VxVMBSIZE", "VxVMBUSY", "VxVMSVCTM", "VxVMWAITTM"]
+solaris_VxVM = ""
 
-solaris_dynamic_various = ["DISKSVCTM", "DISKWAITTM"]
+solaris_dynamic_various = ""
 
 # AIX only dynamic sections
-AIX_dynamic_various = ["SEA", "SEAPACKET", "SEACHPHY"]
+AIX_dynamic_various = ""
 
 # AIX Workload Management
-AIX_WLM = ["WLMCPU", "WLMMEM", "WLMBIO"]
+AIX_WLM = ""
+
+# nmon_external
+nmon_external = ""
+
+# nmon external with transposition of data
+nmon_external_transposed = ""
 
 #################################################
 #      Variables
@@ -211,17 +214,11 @@ else:
 # Guest Operation System type
 ostype = platform.system().lower()
 
-# If running Windows OS (used for directory identification)
-is_windows = re.match(r'^win\w+', (platform.system().lower()))
-
 # Current date
 now = time.strftime("%d-%m-%Y %H:%M:%S")
 
 # Current date in epoch time
-if is_windows:
-    now_epoch = time.time()
-else:
-    now_epoch = time.strftime("%s")
+now_epoch = time.strftime("%s")
 
 # timestamp used to name csv files
 csv_timestamp = time.strftime("%Y%m%d%H%M%S")
@@ -244,10 +241,7 @@ if not os.path.exists(NMON_VAR):
         sys.exit(1)
 
 # APP_VAR directory
-if is_windows:
-    APP_VAR = NMON_VAR + '\\var'
-else:
-    APP_VAR = NMON_VAR + '/var'
+APP_VAR = NMON_VAR + '/var'
 if not os.path.exists(APP_VAR):
     os.mkdir(APP_VAR)
 
@@ -256,38 +250,53 @@ if not os.path.exists(APP_VAR):
 # Splunk when using a custom archive mode, launches twice the custom script
 
 # Supplementary note: Since V1.1.0, the ID_REF is overwritten if running real time mode
-if is_windows:
-    ID_REF = APP_VAR + '\\id_reference.txt'
-else:
-    ID_REF = APP_VAR + '/id_reference.txt'
+ID_REF = APP_VAR + '/id_reference.txt'
 
 # Config Reference file
-if is_windows:
-    CONFIG_REF = APP_VAR + '\\config_reference.txt'
-else:
-    CONFIG_REF = APP_VAR + '/config_reference.txt'
+CONFIG_REF = APP_VAR + '/config_reference.txt'
 
 # BBB extraction flag
-if is_windows:
-    BBB_FLAG = APP_VAR + '\\BBB_status.flag'
-else:
-    BBB_FLAG = APP_VAR + '/BBB_status.flag'
+BBB_FLAG = APP_VAR + '/BBB_status.flag'
 
 # CSV Perf data repository
-if is_windows:
-    DATA_DIR = APP_VAR
-else:
-    DATA_DIR = APP_VAR
+DATA_DIR = APP_VAR
 
 # CSV output repository
-if is_windows:
-    CONFIG_DIR = APP_VAR
-else:
-    CONFIG_DIR = APP_VAR
+CONFIG_DIR = APP_VAR
 
 # bin directory
 APP = "/etc/nmon-logger"
+
+# app.conf
 APP_CONF_FILE = APP + "/default/app.conf"
+
+# load configuration from json config file
+# the config_file json may exist in default or local (if customized)
+# this will define the list of nmon section we want to extract
+
+if os.path.isfile(APP + "/local/nmonparser_config.json"):
+    nmonparser_config = APP + "/local/nmonparser_config.json"
+else:
+    nmonparser_config = APP + "/default/nmonparser_config.json"
+
+with open(nmonparser_config) as nmonparser_config_json:
+    config_json = json.load(nmonparser_config_json)
+
+static_section = config_json['static_section']
+Solaris_static_section = config_json['Solaris_static_section']
+LPAR_static_section = config_json['LPAR_static_section']
+top_section = config_json['top_section']
+uarg_section = config_json['uarg_section']
+dynamic_section1 = config_json['dynamic_section1']
+dynamic_section2 = config_json['dynamic_section2']
+disk_extended_section = config_json['disk_extended_section']
+solaris_WLM = config_json['solaris_WLM']
+solaris_VxVM = config_json['solaris_VxVM']
+solaris_dynamic_various = config_json['solaris_dynamic_various']
+AIX_dynamic_various = config_json['AIX_dynamic_various']
+AIX_WLM = config_json['AIX_WLM']
+nmon_external = config_json['nmon_external']
+nmon_external_transposed = config_json['nmon_external_transposed']
 
 # get addon version
 addon_version = "Unknown"
@@ -433,7 +442,7 @@ msg = "addon version: " + str(addon_version)
 logging.info(msg)
 
 # Show program version
-msg = "nmon2csv version: " + str(nmon2csv_version)
+msg = "nmon2kv version: " + str(nmon2csv_version)
 logging.info(msg)
 
 # Show type of OS we are running
@@ -491,10 +500,10 @@ for line in data:
         logging.info("NMON VERSION:" + str(VERSION))
 
     # Set SN
-    sn = re.match(r'^(BBB.+)(systemid.+)(IBM,)(\w+)(.+)\n', line)
+    sn = re.match(r'^BBB\w*,[^,]*,[^,]*,\"(?:systemid|serial_number)[^,]*IBM,(\w*)[\s|\"].*\n', line)
     if sn:
-        SN = sn.group(4)
-        logging.info("SerialNumber:" + str(SN))
+        SN = sn.group(1)
+        print("SerialNumber:", SN)
 
     # Set DATE
     date = re.match(r'^(AAA),(date),(.+)\n', line)
@@ -665,10 +674,7 @@ for line in data:
 
 # create a directory under APP_VAR
 # This directory will used to store per section last epochtime status
-if is_windows:
-    HOSTNAME_VAR = APP_VAR + '\\' + HOSTNAME + '_' + SN
-else:
-    HOSTNAME_VAR = APP_VAR + '/' + HOSTNAME + '_' + SN
+HOSTNAME_VAR = APP_VAR + '/' + HOSTNAME + '_' + SN
 
 if not os.path.isdir(HOSTNAME_VAR):
     try:
@@ -697,21 +703,12 @@ NMON_DATE = DATE + ' ' + TIME
 # For Nmon V10 and more
 timestamp_match = re.match(r'\d*-\w*-\w*\s\d*:\d*:\d*', NMON_DATE)
 if timestamp_match:
-
-    if is_windows:
-        starting_epochtime = time.mktime(time.strptime(NMON_DATE, '%d-%b-%Y %H:%M:%S'))
-    else:
-        starting_epochtime = datetime.datetime.strptime(NMON_DATE, '%d-%b-%Y %H:%M:%S').strftime('%s')
+    starting_epochtime = datetime.datetime.strptime(NMON_DATE, '%d-%b-%Y %H:%M:%S').strftime('%s')
     starting_time = datetime.datetime.strptime(NMON_DATE, '%d-%b-%Y %H:%M:%S').strftime('%d-%m-%Y %H:%M:%S')
 
 else:
     # For Nmon v9 and prior
-
-    if is_windows:
-        starting_epochtime = time.mktime(time.strptime(NMON_DATE, '%d-%b-%Y %H:%M.%S'))
-    else:
-        starting_epochtime = datetime.datetime.strptime(NMON_DATE, '%d-%b-%Y %H:%M.%S').strftime('%s')
-
+    starting_epochtime = datetime.datetime.strptime(NMON_DATE, '%d-%b-%Y %H:%M.%S').strftime('%s')
     starting_time = datetime.datetime.strptime(NMON_DATE, '%d-%b-%Y %H:%M.%S').strftime('%d-%m-%Y %H:%M:%S')
 
 # Search for last epochtime in data
@@ -738,10 +735,7 @@ for line in data:
         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
         # Convert in epochtime
-        if is_windows:
-            ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-        else:
-            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
+        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
 
     # For Nmon V9 and less
 
@@ -757,10 +751,7 @@ for line in data:
             ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
             # Convert in epochtime
-            if is_windows:
-                ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-            else:
-                ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
+            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
 
 # Set ending epochtime
 # noinspection PyBroadException
@@ -784,8 +775,6 @@ if options.mode == 'colddata':
     colddata = True
 elif options.mode == 'realtime':
     realtime = True
-elif is_windows:
-    colddata = True
 else:
     # options.mode is 'auto', therefore:
     # Evaluate if we are dealing with real time data or cold data
@@ -796,24 +785,14 @@ else:
 
 if realtime:
     # Override ID_REF & CONFIG_REF
-    if is_windows:
-        ID_REF = HOSTNAME_VAR + '\\' + HOSTNAME + '.id_reference_realtime.txt'
-        CONFIG_REF = HOSTNAME_VAR + '\\' + HOSTNAME + '.config_reference_realtime.txt'
-        BBB_FLAG = HOSTNAME_VAR + '\\' + HOSTNAME + '.BBB_status.flag'
-    else:
-        ID_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.id_reference_realtime.txt'
-        CONFIG_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.config_reference_realtime.txt'
-        BBB_FLAG = HOSTNAME_VAR + '/' + HOSTNAME + '.BBB_status.flag'
+    ID_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.id_reference_realtime.txt'
+    CONFIG_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.config_reference_realtime.txt'
+    BBB_FLAG = HOSTNAME_VAR + '/' + HOSTNAME + '.BBB_status.flag'
 else:
     # Override ID_REF & CONFIG_REF
-    if is_windows:
-        ID_REF = HOSTNAME_VAR + '\\' + HOSTNAME + '.id_reference.txt'
-        CONFIG_REF = HOSTNAME_VAR + '\\' + HOSTNAME + '.config_reference.txt'
-        BBB_FLAG = HOSTNAME_VAR + '\\' + HOSTNAME + '.BBB_status.flag'
-    else:
-        ID_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.id_reference.txt'
-        CONFIG_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.config_reference.txt'
-        BBB_FLAG = HOSTNAME_VAR + '/' + HOSTNAME + '.BBB_status.flag'
+    ID_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.id_reference.txt'
+    CONFIG_REF = HOSTNAME_VAR + '/' + HOSTNAME + '.config_reference.txt'
+    BBB_FLAG = HOSTNAME_VAR + '/' + HOSTNAME + '.BBB_status.flag'
 
 # NMON file id (concatenation of ids)
 idnmon = DATE + ':' + TIME + ',' + HOSTNAME + ',' + SN + ',' + str(bytes_total) + ',' + str(starting_epochtime) + ',' +\
@@ -1288,10 +1267,7 @@ def standard_section_fn(section):
                         # Compose final timestamp
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                        if is_windows:
-                            ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                        else:
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
                                 .strftime('%s')
 
                     # For Nmon V9 and less
@@ -1307,10 +1283,7 @@ def standard_section_fn(section):
                             ZZZZ_TIME = timestamp_match.group(2)
                             ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                            if is_windows:
-                                ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                            else:
-                                ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
+                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
                                     .strftime('%s')
 
                     # Extract Data
@@ -1602,10 +1575,7 @@ def top_section_fn(section):
 
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                        if is_windows:
-                            ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                        else:
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
                                 .strftime('%s')
 
                     # For Nmon V9 and less
@@ -1621,10 +1591,7 @@ def top_section_fn(section):
                             ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
 
                             ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-                            if is_windows:
-                                ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                            else:
-                                ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
+                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
                                     .strftime('%s')
 
                 # Extract Data
@@ -1827,10 +1794,7 @@ def uarg_section_fn(section):
 
                     ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                    if is_windows:
-                        ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                    else:
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
+                    ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
 
                 # For Nmon V9 and less
 
@@ -1846,10 +1810,7 @@ def uarg_section_fn(section):
 
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                        if is_windows:
-                            ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                        else:
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
                                 .strftime('%s')
 
             if oslevel == 'Linux':  # Linux OS specific header
@@ -2109,13 +2070,8 @@ def dynamic_section_fn(section):
 
                     # Replace month names with numbers
                     ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
                     ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-
-                    if is_windows:
-                        ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                    else:
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
+                    ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
 
                 # For Nmon V9 and less
 
@@ -2128,13 +2084,8 @@ def dynamic_section_fn(section):
 
                         # Replace month names with numbers
                         ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-
-                        if is_windows:
-                            ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                        else:
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
                                 .strftime('%s')
 
                 # Extract Data
@@ -2492,13 +2443,8 @@ def solaris_wlm_section_fn(section):
 
                     # Replace month names with numbers
                     ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
                     ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-
-                    if is_windows:
-                        ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                    else:
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
+                    ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').strftime('%s')
 
                 # For Nmon V9 and less
 
@@ -2511,13 +2457,8 @@ def solaris_wlm_section_fn(section):
 
                         # Replace month names with numbers
                         ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-
-                        if is_windows:
-                            ZZZZ_epochtime = time.mktime(time.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'))
-                        else:
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').\
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').\
                                 strftime('%s')
 
                 # Extract Data
