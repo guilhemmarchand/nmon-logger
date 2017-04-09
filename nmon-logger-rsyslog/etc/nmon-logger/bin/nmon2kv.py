@@ -1440,9 +1440,9 @@ if OStype in ("Solaris", "Unknown"):
     for section in Solaris_static_section:
         standard_section_fn(section)
 
-    # nmon external
-    for section in nmon_external:
-        standard_section_fn(section)
+# nmon external
+for section in nmon_external:
+    standard_section_fn(section)
 
 ###################
 # TOP section: has a specific structure with uncommon fields, needs to be treated separately
