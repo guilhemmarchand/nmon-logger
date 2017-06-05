@@ -34,11 +34,10 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
-# - 2017/09/04, V1.0.4: Guilhem Marchand:
+# - # 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - 2017/06/05, V1.0.5: Guilhem Marchand:
-#                                          - Mirror update of the TA-nmon
-
+# - # 2017/05/06, V1.0.5: Guilhem Marchand:
+#                                          - Mirror update from TA-nmon
 # Load libs
 
 from __future__ import print_function
@@ -162,7 +161,7 @@ sanity_check = "-1"
 #      Arguments
 #################################################
 
-parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog '+nmon2csv_version)
+parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog ' + nmon2csv_version)
 
 parser.set_defaults(nmon_var='/var/log/nmon-logger', mode='auto', dumpargs=False)
 
@@ -180,8 +179,8 @@ parser.add_option('--use_fqdn', action='store_true', dest='use_fqdn', help='Use 
                                                                            ' of Splunk'
                                                                            ' (eg. central repositories)')
 parser.add_option('--nokvdelim', action='store_true', dest='nokvdelim', default=False, help='Deactivate delimitor for '
-                                                                                       'kv value (activated '
-                                                                                       'by default)')
+                                                                                            'kv value (activated '
+                                                                                            'by default)')
 parser.add_option('--dumpargs', action='store_true', dest='dumpargs',
                   help='only dump the passed arguments and exit (for debugging purposes only)')
 parser.add_option('--debug', action='store_true', dest='debug', help='Activate debug for testing purposes')
@@ -264,18 +263,6 @@ DATA_DIR = APP_VAR
 # CSV output repository
 CONFIG_DIR = APP_VAR
 
-# Initialize some default values
-day = "-1"
-month = "-1"
-year = "-1"
-hour = "-1"
-minute = "-1"
-second = "-1"
-ZZZZ_timestamp = "-1"
-INTERVAL = "-1"
-SNAPSHOTS = "-1"
-sanity_check = "-1"
-
 # bin directory
 APP = "/etc/nmon-logger"
 
@@ -317,6 +304,7 @@ with open(APP_CONF_FILE, "r") as f:
         addon_version_match = re.match(r'version\s*=\s*([\d|\.]*)', line)
         if addon_version_match:
             addon_version = addon_version_match.group(1)
+
 
 #################################################
 #      Functions
@@ -402,7 +390,7 @@ def openRef():
     ref = open(ID_REF, "w")
 
 
-#Convert csv data into key=value format
+# Convert csv data into key=value format
 def write_kv(input, kv_file):
     with open(kv_file, 'ab') as f:
         reader = csv.DictReader(input)
@@ -410,12 +398,12 @@ def write_kv(input, kv_file):
         if kvdelim:
             for row in reader:
                 for k, v in row.items():
-                    f.write("%s=\"%s\" " % (k,v))
+                    f.write("%s=\"%s\" " % (k, v))
                 f.write('\n')
         else:
             for row in reader:
                 for k, v in row.items():
-                    f.write("%s=%s " % (k,v))
+                    f.write("%s=%s " % (k, v))
                 f.write('\n')
 
 
@@ -437,7 +425,7 @@ nbr_lines = len(data)
 bytes_total = len(''.join(data))
 
 # Show current time and number of lines
-msg = "nmon2csv:" + currenttime() + " Reading NMON data: " + str(nbr_lines) + " lines" + " " +\
+msg = "nmon2csv:" + currenttime() + " Reading NMON data: " + str(nbr_lines) + " lines" + " " + \
       str(bytes_total) + " bytes"
 logging.info(msg)
 
@@ -495,7 +483,7 @@ for line in data:
     # The value will be equivalent to the stdout of the os "hostname -f" command
     # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
     if use_fqdn:
-        host=socket.getfqdn()
+        host = socket.getfqdn()
         if host:
             HOSTNAME = host
             logging.info("HOSTNAME:" + str(HOSTNAME))
@@ -809,7 +797,7 @@ else:
     BBB_FLAG = HOSTNAME_VAR + '/' + HOSTNAME + '.BBB_status.flag'
 
 # NMON file id (concatenation of ids)
-idnmon = DATE + ':' + TIME + ',' + HOSTNAME + ',' + SN + ',' + str(bytes_total) + ',' + str(starting_epochtime) + ',' +\
+idnmon = DATE + ':' + TIME + ',' + HOSTNAME + ',' + SN + ',' + str(bytes_total) + ',' + str(starting_epochtime) + ',' + \
          str(ending_epochtime)
 
 # Partial idnmon that won't contain ending_epochtime for compare operation, to used for cold data
@@ -831,6 +819,12 @@ elif colddata:
     else:
         msg = 'ANALYSIS: Assuming Nmon cold data'
     logging.info(msg)
+elif fifo:
+    if options.mode == 'fifo':
+        msg = "ANALYSIS: Enforcing fifo mode using --mode option"
+    else:
+        msg = 'ANALYSIS: fifo mode activated'
+    logging.info(msg)
 
 # Open reference file for reading, if exists already
 if os.path.isfile(ID_REF):
@@ -838,8 +832,6 @@ if os.path.isfile(ID_REF):
     with open(ID_REF, "r") as ref:
 
         for line in ref:
-
-            # Notes: fifo mode will always proceed data
 
             if realtime:
 
@@ -986,10 +978,10 @@ if config_run == 0:
                 # Write header
                 if kvdelim:
                     config.write('timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' + 'host="' +
-                             HOSTNAME + '", ' + 'serialnum="' + SN + '", configuration_content="' + '\n')
+                                 HOSTNAME + '", ' + 'serialnum="' + SN + '", configuration_content="' + '\n')
                 else:
                     config.write('timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' + 'host="' +
-                             HOSTNAME + '", ' + 'serialnum="' + SN + '", configuration_content=' + '\n')
+                                 HOSTNAME + '", ' + 'serialnum="' + SN + '", configuration_content=' + '\n')
 
                 for line in data:
 
@@ -1071,10 +1063,11 @@ if config_run == 0:
 
 elif config_run == 1:
     # Show number of lines extracted
-    result = "CONFIG section: will not be extracted (time delta of " + str(time_delta) +\
+    result = "CONFIG section: will not be extracted (time delta of " + str(time_delta) + \
              " seconds is inferior to 1 hour)"
     logging.info(result)
     ref.write(result + '\n')
+
 
 ##########################
 # Write PERFORMANCE DATA #
@@ -1087,8 +1080,6 @@ elif config_run == 1:
 
 
 def standard_section_fn(section):
-
-
     # Set output file
     currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
@@ -1099,7 +1090,7 @@ def standard_section_fn(section):
         if not os.path.exists(keyref):
             if debug:
                 logging.info("DEBUG, no keyref file for this " + str(section) +
-                       " section (searched for " + str(keyref) + "), no data or first execution")
+                             " section (searched for " + str(keyref) + "), no data or first execution")
         else:
             with open(keyref, "r") as f:
                 for line in f:
@@ -1112,19 +1103,20 @@ def standard_section_fn(section):
 
                         if debug:
                             logging.info("DEBUG, Last known timestamp for " + str(section) +
-                                  " section is " + str(last_epoch_persection))
+                                         " section is " + str(last_epoch_persection))
 
         # In realtime mode, in case no per section information is available, let's use global epoch time
         try:
             last_epoch_persection
         except NameError:
             if debug:
-                logging.debug("DEBUG: no last epoch information were found for " +str(section) +
-                       " , using global last epoch time (gaps in data may occur if not the first time we run)")
+                logging.debug("DEBUG: no last epoch information were found for " + str(section) +
+                              " , using global last epoch time (gaps in data may occur if not the first time we run)")
             last_epoch_filter = last_known_epochtime
         else:
             if debug:
-                logging.debug("DEBUG: Using per section last epoch time for event filtering (no gaps in data should occur)")
+                logging.debug(
+                    "DEBUG: Using per section last epoch time for event filtering (no gaps in data should occur)")
             last_epoch_filter = last_epoch_persection
 
     # counter
@@ -1221,8 +1213,8 @@ def standard_section_fn(section):
                             count += 1
 
                             # Write header
-                            final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' +\
-                                           'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' +\
+                            final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' + \
+                                           'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + \
                                            ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
 
                             # Number of separators in final header
@@ -1257,8 +1249,8 @@ def standard_section_fn(section):
                                 count += 1
 
                                 # Write header
-                                final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' +\
-                                               'serialnum' + ','  + 'logical_cpus' + ',' + 'virtual_cpus' + ',' +\
+                                final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' + \
+                                               'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + \
                                                'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
 
                                 # Number of separators in final header
@@ -1287,8 +1279,8 @@ def standard_section_fn(section):
                         # Compose final timestamp
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
-                                .strftime('%s')
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                            .strftime('%s')
 
                     # For Nmon V9 and less
 
@@ -1303,8 +1295,8 @@ def standard_section_fn(section):
                             ZZZZ_TIME = timestamp_match.group(2)
                             ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
-                                    .strftime('%s')
+                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                                .strftime('%s')
 
                     # Extract Data
                     if section == "CPUnn":
@@ -1330,14 +1322,14 @@ def standard_section_fn(section):
                                 # final_perfdata
                                 if section == 'CPUnn':
 
-                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN +\
-                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
-                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN + \
+                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
+                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
                                                      perfdata + '\n'
                                 else:
-                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN +\
-                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
-                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + \
+                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
+                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
                                                      perfdata + '\n'
 
                                 # Analyse the first line of data: Compare number of fields in data with number of fields
@@ -1355,12 +1347,12 @@ def standard_section_fn(section):
 
                                     if num_cols_perfdata > num_cols_header:
 
-                                        msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
-                                              ' section data is not consistent: ' + str(num_cols_perfdata) +\
+                                        msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                              ' section data is not consistent: ' + str(num_cols_perfdata) + \
                                               ' fields in data, ' + str(num_cols_header) \
                                               + ' fields in header, extra fields detected (more fields in data ' \
                                                 'than header), dropping this section to prevent data inconsistency'
-                                        logging.warn(msg)
+                                        logging.error(msg)
                                         ref.write(msg + "\n")
 
                                         # Affect a sanity check to 1, bad data
@@ -1376,24 +1368,25 @@ def standard_section_fn(section):
                             else:
                                 if debug:
                                     logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                    " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time for this "
-                                                                  "section " + str(last_epoch_filter) + " )")
+                                                  " ( " + str(
+                                        ZZZZ_epochtime) + " is lower than last known epoch time for this "
+                                                          "section " + str(last_epoch_filter) + " )")
 
-                        elif colddata:
+                        elif colddata or fifo:
 
                             # increment
                             count += 1
 
                             # final_perfdata
                             if section == 'CPUnn':
-                                final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN +\
-                                                 ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
-                                                 ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN + \
+                                                 ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
+                                                 ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
                                                  perfdata + '\n'
                             else:
-                                final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN +\
-                                                 ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' +\
-                                                 ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' +\
+                                final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + \
+                                                 ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
+                                                 ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
                                                  perfdata + '\n'
 
                             # Analyse the first line of data: Compare number of fields in data with number of fields
@@ -1411,8 +1404,8 @@ def standard_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'hostname: ' + HOSTNAME + ' :' + section +\
-                                          ' section data is not consistent: ' + str(num_cols_perfdata) +\
+                                    msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                          ' section data is not consistent: ' + str(num_cols_perfdata) + \
                                           ' fields in data, ' + str(num_cols_header) \
                                           + ' fields in header, extra fields detected (more fields in data ' \
                                             'than header), dropping this section to prevent data inconsistency'
@@ -1446,7 +1439,7 @@ def standard_section_fn(section):
             with open(keyref, "wb") as f:
                 f.write("last_epoch: " + ZZZZ_epochtime + "\n")
 
-    # End for
+                # End for
 
 
 # These are standard static sections common for all OS
@@ -1467,13 +1460,13 @@ if OStype in ("Solaris", "Unknown"):
 for section in nmon_external:
     standard_section_fn(section)
 
+
 ###################
 # TOP section: has a specific structure with uncommon fields, needs to be treated separately
 ###################
 
 
 def top_section_fn(section):
-
     # Set output file
     currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
@@ -1484,7 +1477,7 @@ def top_section_fn(section):
         if not os.path.exists(keyref):
             if debug:
                 logging.debug("DEBUG, no keyref file for this " + str(section) +
-                       " section (searched for " + str(keyref) + "), no data or first execution")
+                              " section (searched for " + str(keyref) + "), no data or first execution")
         else:
             with open(keyref, "r") as f:
                 for line in f:
@@ -1497,7 +1490,7 @@ def top_section_fn(section):
 
                         if debug:
                             logging.debug("DEBUG, Last known timestamp for " + str(section) +
-                                  " section is " + str(last_epoch_persection))
+                                          " section is " + str(last_epoch_persection))
 
         # In realtime mode, in case no per section information is available, let's use global epoch time
         try:
@@ -1505,7 +1498,7 @@ def top_section_fn(section):
         except NameError:
             if debug:
                 logging.debug("DEBUG: no last epoch information were found for " + str(section) +
-                       " , using global last epoch time (gaps in data may occur if not the first time we run)")
+                              " , using global last epoch time (gaps in data may occur if not the first time we run)")
             last_epoch_filter = last_known_epochtime
         else:
             if debug:
@@ -1599,8 +1592,8 @@ def top_section_fn(section):
 
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
-                                .strftime('%s')
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                            .strftime('%s')
 
                     # For Nmon V9 and less
 
@@ -1615,8 +1608,8 @@ def top_section_fn(section):
                             ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
 
                             ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
-                                    .strftime('%s')
+                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                                .strftime('%s')
 
                 # Extract Data
                 perfdata_match = re.match('^TOP,([0-9]+),(T\d+),(.+)\n', line)
@@ -1640,8 +1633,9 @@ def top_section_fn(section):
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                       " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time for this"
-                                                                " section " + str(last_epoch_filter) + " )")
+                                              " ( " + str(
+                                    ZZZZ_epochtime) + " is lower than last known epoch time for this"
+                                                      " section " + str(last_epoch_filter) + " )")
 
                     elif colddata or fifo:
 
@@ -1670,12 +1664,13 @@ def top_section_fn(section):
             with open(keyref, "wb") as f:
                 f.write("last_epoch: " + ZZZZ_epochtime + "\n")
 
+
 # End for
 
 # Run
 for section in top_section:
-
     top_section_fn(section)
+
 
 ###################
 # UARG section: has a specific structure with uncommon fields, needs to be treated separately
@@ -1688,7 +1683,6 @@ for section in top_section:
 
 
 def uarg_section_fn(section):
-
     # Set output file
     currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
@@ -1699,7 +1693,7 @@ def uarg_section_fn(section):
         if not os.path.exists(keyref):
             if debug:
                 logging.debug("DEBUG, no keyref file for this " + str(section) +
-                       " section (searched for " + str(keyref) + "), no data or first execution")
+                              " section (searched for " + str(keyref) + "), no data or first execution")
         else:
             with open(keyref, "r") as f:
                 for line in f:
@@ -1712,7 +1706,7 @@ def uarg_section_fn(section):
 
                         if debug:
                             logging.debug("DEBUG, Last known timestamp for " + str(section) +
-                                  " section is " + str(last_epoch_persection))
+                                          " section is " + str(last_epoch_persection))
 
         # In realtime mode, in case no per section information is available, let's use global epoch time
         try:
@@ -1720,11 +1714,12 @@ def uarg_section_fn(section):
         except NameError:
             if debug:
                 logging.debug("DEBUG: no last epoch information were found for " + str(section) +
-                       " , using global last epoch time (gaps in data may occur if not the first time we run)")
+                              " , using global last epoch time (gaps in data may occur if not the first time we run)")
             last_epoch_filter = last_known_epochtime
         else:
             if debug:
-                logging.debug("DEBUG: Using per section last epoch time for event filtering (no gaps in data should occur)")
+                logging.debug(
+                    "DEBUG: Using per section last epoch time for event filtering (no gaps in data should occur)")
             last_epoch_filter = last_epoch_persection
 
     # counter
@@ -1834,8 +1829,8 @@ def uarg_section_fn(section):
 
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
-                                .strftime('%s')
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                            .strftime('%s')
 
             if oslevel == 'Linux':  # Linux OS specific header
 
@@ -1855,15 +1850,14 @@ def uarg_section_fn(section):
                     if realtime:
 
                         if ZZZZ_epochtime > last_known_epochtime:
-
                             # increment
                             count += 1
 
                             # Write perf data
                             membuffer.write(
-                                 ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME +
-                                 ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL +
-                                 ',' + SNAPSHOTS + ',' + perfdata + '\n'),
+                                ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME +
+                                ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL +
+                                ',' + SNAPSHOTS + ',' + perfdata + '\n'),
 
                     elif colddata or fifo:
 
@@ -1897,7 +1891,7 @@ def uarg_section_fn(section):
                     perfdata_part6 = perfdata_match.group(6)
                     perfdata_part7 = perfdata_match.group(7)
 
-                    perfdata = perfdata_part1 + ',' + perfdata_part2 + ',' + perfdata_part3 + ',' + perfdata_part4 +\
+                    perfdata = perfdata_part1 + ',' + perfdata_part2 + ',' + perfdata_part3 + ',' + perfdata_part4 + \
                                ',' + perfdata_part5 + ',' + perfdata_part6 + ',"' + perfdata_part7 + '"'
 
                     if realtime:
@@ -1915,8 +1909,9 @@ def uarg_section_fn(section):
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time "
-                                                        "for this section " + str(last_epoch_filter) + " )")
+                                              " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time "
+                                                                            "for this section " + str(
+                                    last_epoch_filter) + " )")
 
                     elif colddata or fifo:
 
@@ -1951,11 +1946,13 @@ def uarg_section_fn(section):
             # close membuffer
             membuffer.close()
 
+
 # End for
 
 if OStype in ('AIX', 'Linux', 'Solaris', 'Unknown'):
     for section in uarg_section:
         uarg_section_fn(section)
+
 
 ###################
 # Dynamic Sections : data requires to be transposed to be exploitable within Splunk
@@ -1963,7 +1960,6 @@ if OStype in ('AIX', 'Linux', 'Solaris', 'Unknown'):
 
 
 def dynamic_section_fn(section):
-
     # Set output file (will be opened for writing after data transposition)
     currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
@@ -1977,7 +1973,7 @@ def dynamic_section_fn(section):
         if not os.path.exists(keyref):
             if debug:
                 logging.debug("DEBUG, no keyref file for this " + str(section) +
-                       " section (searched for " + str(keyref) + "), no data or first execution")
+                              " section (searched for " + str(keyref) + "), no data or first execution")
         else:
             with open(keyref, "r") as f:
                 for line in f:
@@ -1990,7 +1986,7 @@ def dynamic_section_fn(section):
 
                         if debug:
                             logging.debug("DEBUG, Last known timestamp for " + str(section) +
-                                  " section is " + str(last_epoch_persection))
+                                          " section is " + str(last_epoch_persection))
 
         # In realtime mode, in case no per section information is available, let's use global epoch time
         try:
@@ -1998,11 +1994,12 @@ def dynamic_section_fn(section):
         except NameError:
             if debug:
                 logging.debug("DEBUG: no last epoch information were found for " + str(section) +
-                       " , using global last epoch time (gaps in data may occur if not the first time we run)")
+                              " , using global last epoch time (gaps in data may occur if not the first time we run)")
             last_epoch_filter = last_known_epochtime
         else:
             if debug:
-                logging.debug("DEBUG: Using per section last epoch time for event filtering (no gaps in data should occur)")
+                logging.debug(
+                    "DEBUG: Using per section last epoch time for event filtering (no gaps in data should occur)")
             last_epoch_filter = last_epoch_persection
 
     # counter
@@ -2109,8 +2106,8 @@ def dynamic_section_fn(section):
                         # Replace month names with numbers
                         ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S')\
-                                .strftime('%s')
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                            .strftime('%s')
 
                 # Extract Data
                 myregex = r'^' + section + '\,(T\d+)\,(.+)\n'
@@ -2143,9 +2140,9 @@ def dynamic_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'hostname: ' + HOSTNAME + ' :' + section +\
-                                          ' section data is not consistent: ' + str(num_cols_perfdata) +\
-                                          ' fields in data, ' + str(num_cols_header) +\
+                                    msg = 'WARN: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                          ' section data is not consistent: ' + str(num_cols_perfdata) + \
+                                          ' fields in data, ' + str(num_cols_header) + \
                                           ' fields in header, extra fields detected (more fields in data than header)' \
                                           ', dropping this section to prevent data inconsistency'
                                     logging.warn(msg)
@@ -2155,7 +2152,7 @@ def dynamic_section_fn(section):
                                         logging.debug("\nDebug information: header content:\n")
                                         logging.debug(final_header)
                                         logging.debug("\nDebug information: data sample:\n")
-                                        logging.debug(final_perfdata +"\n")
+                                        logging.debug(final_perfdata + "\n")
 
                                     # Affect a sanity check to 1, bad data
                                     sanity_check = 1
@@ -2170,10 +2167,11 @@ def dynamic_section_fn(section):
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time for this section " +
-                                       str(last_epoch_filter) + " )")
+                                              " ( " + str(
+                                    ZZZZ_epochtime) + " is lower than last known epoch time for this section " +
+                                              str(last_epoch_filter) + " )")
 
-                    elif colddata:
+                    elif colddata or fifo:
 
                         # increment
                         count += 1
@@ -2193,9 +2191,9 @@ def dynamic_section_fn(section):
 
                             if num_cols_perfdata > num_cols_header:
 
-                                msg = 'hostname: ' + HOSTNAME + ' :' + section +\
-                                      ' section data is not consistent: ' + str(num_cols_perfdata) +\
-                                      ' fields in data, ' + str(num_cols_header) +\
+                                msg = 'WARN: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                      ' section data is not consistent: ' + str(num_cols_perfdata) + \
+                                      ' fields in data, ' + str(num_cols_header) + \
                                       ' fields in header, extra fields detected (more fields in data than header),' \
                                       ' dropping this section to prevent data inconsistency'
                                 logging.warn(msg)
@@ -2278,6 +2276,7 @@ def dynamic_section_fn(section):
 
             # End for
 
+
 ###################
 # Disk* Dynamic Sections : data requires to be transposed to be exploitable within Splunk
 ###################
@@ -2293,9 +2292,9 @@ for section in dynamic_section1:
 for subsection in dynamic_section1:
 
     persubsection = [subsection + "1", subsection + "2", subsection + "3", subsection + "4", subsection + "5",
-                  subsection + "6", subsection + "7", subsection + "8", subsection + "9", subsection + "10",
-                  subsection + "11", subsection + "12", subsection + "13", subsection + "14", subsection + "15",
-                  subsection + "17", subsection + "18", subsection + "19"]
+                     subsection + "6", subsection + "7", subsection + "8", subsection + "9", subsection + "10",
+                     subsection + "11", subsection + "12", subsection + "13", subsection + "14", subsection + "15",
+                     subsection + "17", subsection + "18", subsection + "19"]
 
     for section in persubsection:
         dynamic_section_fn(section)
@@ -2334,6 +2333,7 @@ if OStype in ("AIX", "Unknown"):
 for section in nmon_external_transposed:
     dynamic_section_fn(section)
 
+
 ###################
 # Solaris Sections : data requires to be transposed to be exploitable within Splunk
 ###################
@@ -2343,7 +2343,6 @@ for section in nmon_external_transposed:
 
 
 def solaris_wlm_section_fn(section):
-
     # Set output file (will be opened for writing after data transposition)
     currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
@@ -2357,7 +2356,7 @@ def solaris_wlm_section_fn(section):
         if not os.path.exists(keyref):
             if debug:
                 logging.debug("DEBUG, no keyref file for this " + str(section) +
-                       " section (searched for " + str(keyref) + "), no data or first execution")
+                              " section (searched for " + str(keyref) + "), no data or first execution")
         else:
             with open(keyref, "r") as f:
                 for line in f:
@@ -2370,7 +2369,7 @@ def solaris_wlm_section_fn(section):
 
                         if debug:
                             logging.debug("DEBUG, Last known timestamp for " + str(section) +
-                                  " section is " + str(last_epoch_persection))
+                                          " section is " + str(last_epoch_persection))
 
         # In realtime mode, in case no per section information is available, let's use global epoch time
         try:
@@ -2378,7 +2377,7 @@ def solaris_wlm_section_fn(section):
         except NameError:
             if debug:
                 logging.debug("DEBUG: no last epoch information were found for " + str(section) +
-                       " , using global last epoch time (gaps in data may occur if not the first time we run)")
+                              " , using global last epoch time (gaps in data may occur if not the first time we run)")
             last_epoch_filter = last_known_epochtime
         else:
             if debug:
@@ -2391,7 +2390,7 @@ def solaris_wlm_section_fn(section):
 
     # sanity_check
     sanity_check = 1
-    
+
     # Initialize num_cols_header to 0 (see sanity_check)
     num_cols_header = 0
 
@@ -2490,8 +2489,8 @@ def solaris_wlm_section_fn(section):
                         # Replace month names with numbers
                         ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S').\
-                                strftime('%s')
+                        ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S'). \
+                            strftime('%s')
 
                 # Extract Data
                 myregex = r'^' + section + '\,(T\d+)\,(.+)\n'
@@ -2524,9 +2523,9 @@ def solaris_wlm_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
-                                          ' section data is not consistent: ' + str(num_cols_perfdata) +\
-                                          ' fields in data, ' + str(num_cols_header) +\
+                                    msg = 'WARN: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                          ' section data is not consistent: ' + str(num_cols_perfdata) + \
+                                          ' fields in data, ' + str(num_cols_header) + \
                                           ' fields in header, extra fields detected (more fields in data than header)' \
                                           ', dropping this section to prevent data inconsistency'
                                     logging.warn(msg)
@@ -2552,8 +2551,9 @@ def solaris_wlm_section_fn(section):
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time for this section " +
-                                       str(last_epoch_filter) + " )")
+                                              " ( " + str(
+                                    ZZZZ_epochtime) + " is lower than last known epoch time for this section " +
+                                              str(last_epoch_filter) + " )")
 
                     elif colddata or fifo:
 
@@ -2575,9 +2575,9 @@ def solaris_wlm_section_fn(section):
 
                             if num_cols_perfdata > num_cols_header:
 
-                                msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
-                                      ' section data is not consistent: ' + str(num_cols_perfdata) +\
-                                      ' fields in data, ' + str(num_cols_header) +\
+                                msg = 'WARN: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                      ' section data is not consistent: ' + str(num_cols_perfdata) + \
+                                      ' fields in data, ' + str(num_cols_header) + \
                                       ' fields in header, extra fields detected (more fields in data than header),' \
                                       ' dropping this section to prevent data inconsistency'
                                 logging.warn(msg)
@@ -2657,6 +2657,7 @@ def solaris_wlm_section_fn(section):
             membuffer.close()
 
             # End for
+
 
 # Run
 if OStype in ("Solaris", "Unknown"):
