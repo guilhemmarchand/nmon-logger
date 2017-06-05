@@ -168,7 +168,7 @@ parser.set_defaults(nmon_var='/var/log/nmon-logger', mode='auto', dumpargs=False
 
 parser.add_option('-o', '--nmon_var', action='store', type='string', dest='nmon_var',
                   help='sets the output Home directory for Nmon (Default: %default)')
-opmodes = ['auto', 'realtime', 'colddata']
+opmodes = ['auto', 'realtime', 'colddata', 'fifo']
 parser.add_option('-m', '--mode', action='store', type='choice', dest='mode', choices=opmodes,
                   help='sets the operation mode (Default: %default); supported modes: ' + ', '.join(opmodes))
 parser.add_option('--use_fqdn', action='store_true', dest='use_fqdn', help='Use the host fully qualified '
