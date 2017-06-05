@@ -5,15 +5,16 @@
 # Program name: nmon_helper.sh
 # Purpose - nmon sample script to start collecting data
 # Author - Guilhem Marchand
-# Disclaimer:  this provided "as is".  
+# Disclaimer:  this provided "as is".
 # Date - June 2014
 
 # 2015/05/09, Guilhem Marchand: Rewrite of main program to fix main common troubles with nmon_helper.sh, be simple, effective
 # 2016/07/17, Guilhem Marchand: Mirror update of the TA-nmon
 # 2016/09/01, Guilhem Marchand: Mirror update of the TA-nmon
 # 2017/06/01, Guilhem Marchand: Mirror update of the TA-nmon
+# 2017/06/05, Guilhem Marchand: Mirror update of the TA-nmon
 
-# Version 1.0.4
+# Version 1.0.6
 
 # For AIX / Linux / Solaris
 
@@ -175,6 +176,19 @@ Linux_disk_dg_enable="1"
 
 # Name of the DG group file
 Linux_disk_dg_group="auto"
+
+# nmon external generation, default is activated
+nmon_external_generation="1"
+
+# nmon fifo mode, default is activated
+mode_fifo="1"
+
+# source default nmon.conf
+
+# Notes: in a search head running in SHC, the creation of a local/nmon.conf will make the SHC deployer
+# reformatting the conf file in a Splunk fashion
+# this is however not compatible with a shell sourcing of the file
+# If we detect this case, the nmon.conf file will be reformatted to match our constraints
 
 # source default nmon.conf
 if [ -f $APP/default/nmon.conf ]; then
@@ -776,11 +790,8 @@ if [ ! -x "$NMON" ];then
 	case $? in
 	0 )
 		# arch is sparc
-
-		# sorry to break there ;-) sarmon not yet ready!
-	    echo "`date`, ${HOST} ERROR, Unsupported system ! This TA-nmon release is not yet compatible with Solaris on Sparc, please downgrade to the main previous TA-nmon branch"
-        exit 1
-
+        # Unfortunately, the sarmon fifo compatible version is not yet available, switch to old file mechanism
+        mode_fifo="0"
 		NMON="$APP_VAR/bin/sarmon_bin_sparc/sadc" ;;
 	* )
 		# arch is x86
@@ -858,13 +869,13 @@ case $fifo_started in
 "fifo1")
     cat ${APP}/bin/nmon_external_cmd/nmon_external_start.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_FIFO|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
-    cat ${APP}/bin/nmon_external_cmd/nmon_external_snap.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_FIFO|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
+    cat ${APP}/bin/nmon_external_cmd/nmon_external_snap.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_DIR|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
     ;;
 "fifo2")
     cat ${APP}/bin/nmon_external_cmd/nmon_external_start.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_FIFO|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
-    cat ${APP}/bin/nmon_external_cmd/nmon_external_snap.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_FIFO|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
+    cat ${APP}/bin/nmon_external_cmd/nmon_external_snap.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_DIR|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
     ;;
 esac
@@ -882,71 +893,108 @@ case $UNAME in
         # on AIX, prevent error messages linked to /usr/opt/freeware/bin/rpm
         unset LIBPATH
 
-        # global nmon_external
-	    NMON_EXTERNAL_DIR="${APP_VAR}/var/nmon_repository/${fifo_started}"
-	    export NMON_EXTERNAL_DIR
-        NMON_EXTERNAL_FIFO="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
-        export NMON_EXTERNAL_FIFO
-        TIMESTAMP=0
-        export TIMESTAMP
-        NMON_ONE_IN=1
-        export NMON_ONE_IN
-        unset NMON_END
+        case ${mode_fifo} in
 
-        # fifo_started variable is exported by the function start_fifo_reader
-        case $fifo_started in
-        "fifo1")
-            # nmon_external
-            create_nmon_external
-            NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
-            export NMON_START
-            NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
-            export NMON_SNAP
-            echo "`date`, ${HOST} INFO: starting nmon : ${nmon_command_fifo1} in ${NMON_EXTERNAL_DIR}"
-            ${nmon_command_fifo1} > ${PIDFILE} ;;
-        "fifo2")
-            # nmon_external
-            create_nmon_external
-            NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
-            export NMON_START
-            NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
-            export NMON_SNAP
-            echo "`date`, ${HOST} INFO: starting nmon : ${nmon_command_fifo2} in ${NMON_EXTERNAL_DIR}"
-            ${nmon_command_fifo2} > ${PIDFILE} ;;
+        "1")
+
+            # global nmon_external
+            NMON_EXTERNAL_DIR="${APP_VAR}/var/nmon_repository/${fifo_started}"
+            export NMON_EXTERNAL_DIR
+            NMON_EXTERNAL_FIFO="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
+            export NMON_EXTERNAL_FIFO
+            TIMESTAMP=0
+            export TIMESTAMP
+            NMON_ONE_IN=1
+            export NMON_ONE_IN
+            unset NMON_END
+
+            # fifo_started variable is exported by the function start_fifo_reader
+            case $fifo_started in
+            "fifo1")
+                case $nmon_external_generation in
+                1)
+                    # nmon_external
+                    create_nmon_external
+                    NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
+                    export NMON_START
+                    NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
+                    export NMON_SNAP
+                ;;
+                esac
+                echo "`date`, ${HOST} INFO: starting nmon : ${nmon_command_fifo1} in ${NMON_EXTERNAL_DIR}"
+                ${nmon_command_fifo1} > ${PIDFILE} ;;
+            "fifo2")
+                case $nmon_external_generation in
+                1)
+                    # nmon_external
+                    create_nmon_external
+                    NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
+                    export NMON_START
+                    NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
+                    export NMON_SNAP
+                ;;
+                esac
+                echo "`date`, ${HOST} INFO: starting nmon : ${nmon_command_fifo2} in ${NMON_EXTERNAL_DIR}"
+                ${nmon_command_fifo2} > ${PIDFILE} ;;
+            esac
+
+        ;;
+
+        *)
+            ${nmon_command} > ${PIDFILE}
+
+        ;;
+
         esac
+
 	;;
 
 	Linux )
 
-        # global nmon_external
-	    NMON_EXTERNAL_DIR="${APP_VAR}/var/nmon_repository/${fifo_started}"
-	    export NMON_EXTERNAL_DIR
-        NMON_EXTERNAL_FIFO="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
-        export NMON_EXTERNAL_FIFO
-        TIMESTAMP=0
-        export TIMESTAMP
-        NMON_ONE_IN=1
-        export NMON_ONE_IN
-        unset NMON_END
+        case ${mode_fifo} in
 
-        # fifo_started variable is exported by the function start_fifo_reader
-        case $fifo_started in
-        "fifo1")
-	        # nmon_external
-            create_nmon_external
-            NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
-            export NMON_START
-            NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
-            export NMON_SNAP
-            nmon_command=${nmon_command_fifo1} ;;
-        "fifo2")
-	        # nmon_external
-            create_nmon_external
-            NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
-            export NMON_START
-            NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
-            export NMON_SNAP
-            nmon_command=${nmon_command_fifo2} ;;
+        "1")
+
+            # global nmon_external
+            NMON_EXTERNAL_DIR="${APP_VAR}/var/nmon_repository/${fifo_started}"
+            export NMON_EXTERNAL_DIR
+            NMON_EXTERNAL_FIFO="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
+            export NMON_EXTERNAL_FIFO
+            TIMESTAMP=0
+            export TIMESTAMP
+            NMON_ONE_IN=1
+            export NMON_ONE_IN
+            unset NMON_END
+
+            # fifo_started variable is exported by the function start_fifo_reader
+            case $fifo_started in
+            "fifo1")
+                case $nmon_external_generation in
+                1)
+                    # nmon_external
+                    create_nmon_external
+                    NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
+                    export NMON_START
+                    NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
+                    export NMON_SNAP
+                ;;
+                esac
+                nmon_command=${nmon_command_fifo1} ;;
+            "fifo2")
+                case $nmon_external_generation in
+                1)
+                    # nmon_external
+                    create_nmon_external
+                    NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
+                    export NMON_START
+                    NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
+                    export NMON_SNAP
+                ;;
+                esac
+                nmon_command=${nmon_command_fifo2} ;;
+            esac
+
+        ;;
         esac
 
 	    # Retrieve the nmon Linux version
@@ -1012,35 +1060,50 @@ case $UNAME in
 
 	SunOS )
 
-        # global nmon_external
-	    NMON_EXTERNAL_DIR="${APP_VAR}/var/nmon_repository/${fifo_started}"
-	    export NMON_EXTERNAL_DIR
-        NMON_EXTERNAL_FIFO="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
-        export NMON_EXTERNAL_FIFO
-        TIMESTAMP=0
-        export TIMESTAMP
-        NMON_ONE_IN=1
-        export NMON_ONE_IN
-        unset NMON_END
+        case ${mode_fifo} in
 
-        # fifo_started variable is exported by the function start_fifo_reader
-        case $fifo_started in
-        "fifo1")
-            NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
-            export NMON_START
-            NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
-            export NMON_SNAP
-            NMONOUTPUTFILE="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
-            export NMONOUTPUTFILE
-            ;;
-        "fifo2")
-            NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
-            export NMON_START
-            NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
-            export NMON_SNAP
-            NMONOUTPUTFILE="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
-            export NMONOUTPUTFILE
-            ;;
+        "1")
+
+            # global nmon_external
+            NMON_EXTERNAL_DIR="${APP_VAR}/var/nmon_repository/${fifo_started}"
+            export NMON_EXTERNAL_DIR
+            NMON_EXTERNAL_FIFO="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
+            export NMON_EXTERNAL_FIFO
+            TIMESTAMP=0
+            export TIMESTAMP
+            NMON_ONE_IN=1
+            export NMON_ONE_IN
+            unset NMON_END
+
+            # fifo_started variable is exported by the function start_fifo_reader
+            case $fifo_started in
+            "fifo1")
+                case $nmon_external_generation in
+                1)
+                    NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
+                    export NMON_START
+                    NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
+                    export NMON_SNAP
+                ;;
+                esac
+                NMONOUTPUTFILE="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
+                export NMONOUTPUTFILE
+                ;;
+            "fifo2")
+                case $nmon_external_generation in
+                1)
+                    NMON_START="${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
+                    export NMON_START
+                    NMON_SNAP="${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
+                    export NMON_SNAP
+                ;;
+                esac
+                NMONOUTPUTFILE="${APP_VAR}/var/nmon_repository/${fifo_started}/nmon.fifo"
+                export NMONOUTPUTFILE
+                ;;
+            esac
+
+        ;;
         esac
 
 		NMONNOSAFILE=1 # Do not generate useless sa files
@@ -1194,61 +1257,68 @@ case $UNAME in
 
 start_fifo_reader () {
 
-# Check fifo readers, start if either fifo1 or fifo2 is free
-fifo_started="none"
+case ${mode_fifo} in
 
-# Verify Perl availability (Perl will be more commonly available than Python)
-PYTHON=`which python >/dev/null 2>&1`
+"1")
 
-if [ $? -eq 0 ]; then
+    # Check fifo readers, start if either fifo1 or fifo2 is free
+    fifo_started="none"
 
-	# Check Python version, nmon2csv.py compatibility starts with Python version 2.6.6
-	python_subversion=`python --version 2>&1`
+    # Verify Perl availability (Perl will be more commonly available than Python)
+    PYTHON=`which python >/dev/null 2>&1`
 
-	case $python_subversion in
-	*" 2.7"*)
-		INTERPRETER="python" ;;
-	*)
-		INTERPRETER="perl" ;;
-	esac
+    if [ $? -eq 0 ]; then
 
-else
-    INTERPRETER="perl"
-fi
+        # Check Python version, nmon2csv.py compatibility starts with Python version 2.6.6
+        python_subversion=`python --version 2>&1`
 
-# be portable
-running_fifo=`ps -ef | awk '/fifo_reader.py --fifo fifo1/ || /fifo_reader.py --fifo fifo2/ || /fifo_reader.pl --fifo fifo1/ || /fifo_reader.pl --fifo fifo2/' | grep -v awk`
-echo $running_fifo | grep 'fifo1' >/dev/null
+        case $python_subversion in
+        *" 2.7"*)
+            INTERPRETER="python" ;;
+        *)
+            INTERPRETER="perl" ;;
+        esac
 
-if [ $? -eq 0 ]; then
-    echo "`date`, ${HOST} INFO: The fifo_reader fifo1 is running"
-	echo $running_fifo | grep 'fifo2' >/dev/null
-	if [ $? -eq 0 ]; then
-        echo "`date`, ${HOST} INFO: The fifo_reader fifo2 is running"
-	else
-        echo "`date`, ${HOST} INFO: starting the fifo_reader fifo2"
+    else
+        INTERPRETER="perl"
+    fi
+
+    # be portable
+    running_fifo=`ps -ef | awk '/fifo_reader.py --fifo fifo1/ || /fifo_reader.py --fifo fifo2/ || /fifo_reader.pl --fifo fifo1/ || /fifo_reader.pl --fifo fifo2/' | grep -v awk`
+    echo $running_fifo | grep 'fifo1' >/dev/null
+
+    if [ $? -eq 0 ]; then
+        echo "`date`, ${HOST} INFO: The fifo_reader fifo1 is running"
+        echo $running_fifo | grep 'fifo2' >/dev/null
+        if [ $? -eq 0 ]; then
+            echo "`date`, ${HOST} INFO: The fifo_reader fifo2 is running"
+        else
+            echo "`date`, ${HOST} INFO: starting the fifo_reader fifo2"
+            case $INTERPRETER in
+            "perl")
+                nohup $APP/bin/fifo_reader.pl --fifo fifo2 </dev/null >/dev/null 2>&1 & ;;
+            "python")
+                nohup $APP/bin/fifo_reader.py --fifo fifo2 </dev/null >/dev/null 2>&1 & ;;
+            esac
+            echo $! > ${APP_VAR}/var/fifo_reader_fifo2.pid
+            fifo_started="fifo2"
+            export fifo_started
+        fi
+    else
+        echo "`date`, ${HOST} INFO: starting the fifo_reader fifo1"
         case $INTERPRETER in
         "perl")
-            nohup $APP/bin/fifo_reader.pl --fifo fifo2 </dev/null >/dev/null 2>&1 & ;;
+            nohup $APP/bin/fifo_reader.pl --fifo fifo1 </dev/null >/dev/null 2>&1 & ;;
         "python")
-            nohup $APP/bin/fifo_reader.py --fifo fifo2 </dev/null >/dev/null 2>&1 & ;;
+            nohup $APP/bin/fifo_reader.py --fifo fifo1 </dev/null >/dev/null 2>&1 & ;;
         esac
-        echo $! > ${APP_VAR}/var/fifo_reader_fifo2.pid
-        fifo_started="fifo2"
+        echo $! > ${APP_VAR}/var/fifo_reader_fifo1.pid
+        fifo_started="fifo1"
         export fifo_started
-	fi
-else
-    echo "`date`, ${HOST} INFO: starting the fifo_reader fifo1"
-    case $INTERPRETER in
-    "perl")
-        nohup $APP/bin/fifo_reader.pl --fifo fifo1 </dev/null >/dev/null 2>&1 & ;;
-    "python")
-        nohup $APP/bin/fifo_reader.py --fifo fifo1 </dev/null >/dev/null 2>&1 & ;;
-    esac
-    echo $! > ${APP_VAR}/var/fifo_reader_fifo1.pid
-    fifo_started="fifo1"
-    export fifo_started
-fi
+    fi
+
+;;
+esac
 
 }
 
@@ -1340,9 +1410,6 @@ case $UNAME in
 
 AIX )
 
-    # since release 1.3.0, writing to fifo
-    write_to_fifo="true"
-
 	# -p option is mandatory to get the pid of the launched instances, ensure it has been set
 
 	echo ${AIX_options} | grep '\-p' >/dev/null
@@ -1356,56 +1423,65 @@ AIX )
             AIX_options=`echo ${AIX_options} | sed 's/\-f //g'`
     fi
 
-    # As well, the option "-yoverwrite=1" is mandatory
+    # old topas-nmon version might not be compatible with the -y option, let's manage this
+    ${NMON} -y 2>&1| grep 'option requires an argument -- y' >/dev/null
+    if [ $? -ne 0 ]; then
+        # option -y is not compatible and not mandatory
+        AIX_options=`echo ${AIX_options} | sed 's/\-yoverwrite=1 //g'`
+    else
+        # option -y is compatible and mandatory, ensure it has been set
+        echo ${AIX_options} | grep 'yoverwrite' >/dev/null
+        if [ $? -ne 0 ]; then
+                AIX_options="${AIX_options} -yoverwrite=1"
+        fi
+    fi
+
     echo ${AIX_options} | grep 'yoverwrite' >/dev/null
     if [ $? -ne 0 ]; then
             AIX_options="${AIX_options} -yoverwrite=1"
     fi
 
-	case ${AIX_topas_nmon} in
+    # Set interval and snapshot for AIX
+    case ${mode_fifo} in
+    1)
+        aix_interval=${fifo_interval}
+        aix_snapshot=${fifo_snapshot}
+    ;;
+    *)
+        aix_interval=${interval}
+        aix_snapshot=${snapshot}
+    ;;
+    esac
 
-	true )
-
-		if [ ${AIX_NFS23} -eq 1 ]; then
-			nmon_command="-N -s ${fifo_interval} -c ${fifo_snapshot}"
-		elif [ ${AIX_NFS4} -eq 1 ]; then
-			nmon_command="-NN -s ${fifo_interval} -c ${fifo_snapshot}"
-		else
-			nmon_command="-s ${fifo_interval} -c ${fifo_snapshot}"
-		fi
-	;;
-
-	false )
-
-		if [ ${AIX_NFS23} -eq 1 ]; then
-			nmon_command="-N -s ${fifo_interval} -c ${fifo_snapshot}"
-		elif [ ${AIX_NFS4} -eq 1 ]; then
-			nmon_command="-NN -s ${fifo_interval} -c ${fifo_snapshot}"
-		else
-			nmon_command="-s ${fifo_interval} -c ${fifo_snapshot}"
-		fi
-	;;
-
-	esac
+    # Manage NFS
+    if [ ${AIX_NFS23} -eq 1 ]; then
+        nmon_command="-N -s ${aix_interval} -c ${aix_snapshot}"
+    elif [ ${AIX_NFS4} -eq 1 ]; then
+        nmon_command="-NN -s ${aix_interval} -c ${aix_snapshot}"
+    else
+        nmon_command="-s ${aix_interval} -c ${aix_snapshot}"
+    fi
 
     # Set the nmon command for AIX
-    nmon_command_fifo1="${NMON} -F ${FIFO1} ${AIX_options} ${nmon_command}"
-    nmon_command_fifo2="${NMON} -F ${FIFO2} ${AIX_options} ${nmon_command}"
+    case ${mode_fifo} in
+    1)
+        nmon_command_fifo1="${NMON} -F ${FIFO1} ${AIX_options} ${nmon_command}"
+        nmon_command_fifo2="${NMON} -F ${FIFO2} ${AIX_options} ${nmon_command}"
+        ;;
+    *)
+
+        nmon_command="${NMON} -f ${AIX_options} ${nmon_command}"
+        ;;
+    esac
 
 ;;
 
 SunOS )
 
-    # writing to fifo is now supported
-    write_to_fifo="true"
-
 	nmon_command="${NMON} ${interval} ${snapshot}"
 ;;
 
 Linux )
-
-    # since release 1.3.0, writing to fifo
-    write_to_fifo="true"
 
     # Since 1.2.47, Linux_unlimited_capture feature has changed
     # For historical reason, and in case the old activation value (1) has been set in local/nmon.conf, manage it.
@@ -1415,7 +1491,12 @@ Linux )
     esac
 
     # Set the default Linux minimal args list
-    Linux_nmon_args="-T -s ${fifo_interval} -c ${fifo_snapshot} -d ${Linux_devices}"
+    case ${mode_fifo} in
+    1)
+        Linux_nmon_args="-T -s ${fifo_interval} -c ${fifo_snapshot} -d ${Linux_devices}" ;;
+    *)
+        Linux_nmon_args="-T -s ${interval} -c ${snapshot} -d ${Linux_devices}" ;;
+    esac
 
     case ${Linux_NFS} in
     "1" )
@@ -1443,13 +1524,19 @@ Linux )
     esac
 
     # Set the nmon command for Linux
-    nmon_command_fifo1="${NMON} -F ${FIFO1} $Linux_nmon_args -p"
-    nmon_command_fifo2="${NMON} -F ${FIFO2} $Linux_nmon_args -p"
+    case ${mode_fifo} in
+    "1")
+        nmon_command_fifo1="${NMON} -F ${FIFO1} $Linux_nmon_args -p"
+        nmon_command_fifo2="${NMON} -F ${FIFO2} $Linux_nmon_args -p"
+        ;;
+    *)
+        nmon_command="${NMON} -f $Linux_nmon_args -p"
+        ;;
+    esac
 
 ;;
 
 esac
-
 
 # Initialize PID variable
 PIDs=""
@@ -1481,7 +1568,6 @@ if [ ! -f ${PIDFILE} ]; then
 	case ${PIDs} in
 
 	"")
-
         start_fifo_reader
         sleep 1
         start_nmon
@@ -1541,10 +1627,10 @@ else
 		# Use expr for portability with sh
 
 		# verify if we use fifo versus regular files
-		case $write_to_fifo in
-		"true")
+		case ${mode_fifo} in
+		"1")
 		    endtime=`expr ${fifo_interval} \* ${fifo_snapshot}` ;;
-        "false")
+        *)
             endtime=`expr ${interval} \* ${snapshot}` ;;
         esac
 
@@ -1566,7 +1652,6 @@ else
 		case ${PIDs} in
 
 		"")
-
             start_fifo_reader
             sleep 1
             start_nmon

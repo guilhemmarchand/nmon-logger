@@ -8,9 +8,10 @@
 # Disclaimer:  this provided "as is".
 # Date - June 2014
 
-# Guilhem Marchand 2017/03, initial version
+# - 2017/06/05, V1.0.2: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
-# Version 1.0.0
+# Version 1.0.2
 
 # For AIX / Linux / Solaris
 
@@ -40,7 +41,7 @@ else
 fi
 
 # default values relevant for our context
-nmon2csv_options="--mode realtime"
+nmon2csv_options="--mode fifo"
 
 # source default nmon.conf
 if [ -f $APP/default/nmon.conf ]; then
@@ -76,12 +77,15 @@ nmon_config=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_config.dat
 nmon_header=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_header.dat
 nmon_timestamp=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_timestamp.dat
 nmon_data=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_data.dat
+nmon_data_tmp=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_data_tmp.dat
+nmon_external=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_external.dat
 
 # rotated
 nmon_config_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_config.dat.rotated
 nmon_header_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_header.dat.rotated
 nmon_timestamp_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_timestamp.dat.rotated
 nmon_data_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_data.dat.rotated
+nmon_external_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon_external.dat.rotated
 
 # manage rotated data if existing, prevent any data loss
 
@@ -96,14 +100,14 @@ if [ -s $nmon_config_rotated ] && [ -s $nmon_header_rotated ] && [ -s $nmon_data
         # and the parser will raise an error
         if [ -f $nmon_timestamp_rotated ]; then
             tail -1 $nmon_timestamp_rotated >$temp_file
-            cat $nmon_config_rotated $nmon_header_rotated $temp_file $nmon_data_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+            cat $nmon_config_rotated $nmon_header_rotated $temp_file $nmon_data_rotated $nmon_external_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
         fi
     else
-        cat $nmon_config_rotated $nmon_header_rotated $nmon_data_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+        cat $nmon_config_rotated $nmon_header_rotated $nmon_data_rotated $nmon_external_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
     fi
 
     # remove rotated
-    rm -f /var/log/nmon-logger/var/nmon_repository/$FIFO/*.dat_rotated
+    rm -f /var/log/nmon-logger/var/nmon_repository/$FIFO/*.dat.rotated
 
 fi
 
@@ -148,17 +152,29 @@ if [ -s $nmon_config ] && [ -s $nmon_header ] && [ -s $nmon_data ]; then
 
     done
 
-    # Ensure the first line of nmon_data starts by the relevant timestamp, if not add it
-    head -1 $nmon_data | grep 'ZZZZ,T' >/dev/null
-    if [ $? -ne 0 ]; then
-        tail -1 $nmon_timestamp >$temp_file
-        cat $nmon_config $nmon_header $temp_file $nmon_data | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
-    else
-        cat $nmon_config $nmon_header $nmon_data | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+    # copy content
+    cat $nmon_data > $nmon_data_tmp
+
+    # nmon external data
+    if [ -f $nmon_external ]; then
+        cat $nmon_external >> $nmon_data_tmp
     fi
 
-    # empty the nmon_data file
+    # empty the nmon_data file & external
     > $nmon_data
+    > $nmon_external
+
+    # Ensure the first line of nmon_data starts by the relevant timestamp, if not add it
+    head -1 $nmon_data_tmp | grep 'ZZZZ,T' >/dev/null
+    if [ $? -ne 0 ]; then
+        tail -1 $nmon_timestamp >$temp_file
+        cat $nmon_config $nmon_header $temp_file $nmon_data_tmp | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+    else
+        cat $nmon_config $nmon_header $nmon_data_tmp | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+    fi
+
+    # remove the copy
+    rm -f $nmon_data_tmp
 
 fi
 

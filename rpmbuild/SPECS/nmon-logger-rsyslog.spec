@@ -1,5 +1,5 @@
 Name: nmon-logger-rsyslog
-Version: 2.0.0
+Version: 2.0.1
 Release: 0
 Summary: nmon-logger for rsyslog
 Source: %{name}.tar.gz

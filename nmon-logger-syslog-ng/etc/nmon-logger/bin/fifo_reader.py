@@ -10,10 +10,12 @@ import subprocess
 # Releases Notes:
 
 # - March 2017, V1.0.0: Guilhem Marchand, Initial version
-# - 2017/04/09, V1.0.01: Guilhem Marchand, mirror update from TA-nmon
+# - 2017/04/09, V1.0.1: Guilhem Marchand, mirror update from TA-nmon
+# - 2017/06/05, V1.0.2: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
 # script version
-version = '1.0.01'
+version = '1.0.2'
 
 #################################################
 #      Variables
@@ -123,7 +125,7 @@ else:
 
         # Manage nmon config
         nmon_config_match = re.match(r'^[AAA|BBB].+', line)
-        nmon_header_match = re.match(r'^(?!AAA|BBB|TOP)[a-zA-Z0-9\-\_]*,(?!T\d{3,}).*', line)
+        nmon_header_match = re.match(r'^(?!AAA|BBB|TOP)[a-zA-Z0-9\-\_]*,(?!T\d{3,})[^,]*,(?!T\d{3,})[^,]*.*', line)
         nmon_header_TOP_match = re.match(r'^TOP,(?!\d*,)', line)
         nmon_timestamp_match = re.match(r'^ZZZZ,T\d*', line)
 

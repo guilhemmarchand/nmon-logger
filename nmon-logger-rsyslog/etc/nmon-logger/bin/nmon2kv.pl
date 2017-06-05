@@ -32,10 +32,12 @@
 # - 2017/06/01, V1.0.2: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
 #                                          - Fix per section last epoch not working properly
-# - # 2017/09/04, V1.0.4: Guilhem Marchand:
+# - 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
+# - 2017/06/05, V1.0.5: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
-$version = "1.0.4";
+$version = "1.0.5";
 
 use Time::Local;
 use Time::HiRes;
@@ -80,7 +82,7 @@ This script has been designed to read the nmon file from stdin. (eg. cat <my fil
 
 Available options are:
 
---mode <realtime | colddata> :Force the script to consider the data as cold data (nmon process has over) or real time data (nmon is running)
+--mode <realtime | colddata | fifo> :Force the script to consider the data as cold data (nmon process has over) , real time data (nmon is running) or fifo.
 --use_fqdn :Use the host fully qualified domain name (fqdn) as the hostname value instead of the value returned by nmon.
 **CAUTION:** This option must not be used when managing nmon data generated out of Splunk (eg. central repositories)
 --nmon_var <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
@@ -156,6 +158,7 @@ my $t_start = [Time::HiRes::gettimeofday];
 # Initial states for Analysis
 my $realtime = "False";
 my $colddata = "False";
+my $fifo = "False";
 
 # Local time
 my $time = strftime "%d-%m-%Y %H:%M:%S", localtime;
@@ -412,10 +415,10 @@ my $OStype = "Unknown";
 while ( defined( my $l = <FILE> ) ) {
     chomp $l;
 
-    # Set HOSTNAME
-    # if the option --use_fqdn has been set, use the fully qualified domain name by the running OS
-    # The value will be equivalent to the stdout of the os "hostname -f" command
-    # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
+# Set HOSTNAME
+# if the option --use_fqdn has been set, use the fully qualified domain name by the running OS
+# The value will be equivalent to the stdout of the os "hostname -f" command
+# CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
 
     if ($USE_FQDN) {
         chomp( $HOSTNAME = `hostname -f` );
@@ -453,14 +456,6 @@ while ( defined( my $l = <FILE> ) ) {
         $nmon_hour   = $1;
         $nmon_minute = $2;
         $nmon_second = $3;
-    }
-
-    # If SN is undetermined, set it equal to HOSTNAME
-    if ( $l =~ m/BBB.+systemid.+IBM,(\w+).+/ ) {
-        $SN = $1;
-    }
-    else {
-        $SN = $HOSTNAME;
     }
 
     # Get Nmon version
@@ -785,6 +780,13 @@ foreach $FILENAME (@nmon_files) {
 
     }
 
+    elsif ( $OPMODE eq "fifo" ) {
+
+        $fifo = True;
+        print("ANALYSIS: Enforcing fifo mode using --mode option \n");
+
+    }
+
     elsif ( ( ($time_epoch) - ( 4 * $INTERVAL ) ) > $ending_epochtime ) {
 
         $colddata = True;
@@ -811,6 +813,8 @@ foreach $FILENAME (@nmon_files) {
     $partial_idnmon = "$idnmon,$STARTING_EPOCHTIME";
 
     # Open ID_REF file
+
+    # Notes: fifo mode will always proceed data
 
     if ( -e $ID_REF ) {
 
@@ -907,14 +911,6 @@ foreach $FILENAME (@nmon_files) {
     # Open ID_REF for writing in append mode
     open( ID_REF, ">>$ID_REF" );
 
-    # Save Analysis
-    if ( $realtime eq "True" ) {
-        print ID_REF "ANALYSIS: Assuming Nmon realtime data \n";
-    }
-    elsif ( $colddata eq "True" ) {
-        print ID_REF "ANALYSIS: Assuming Nmon cold data \n";
-    }
-
     # Show and Save timestamps information
     print "Starting_epochtime: $STARTING_EPOCHTIME \n";
     print ID_REF "Starting_epochtime: $STARTING_EPOCHTIME \n";
@@ -998,7 +994,7 @@ foreach $FILENAME (@nmon_files) {
             if ( $config_run eq "0" ) {
 
 # Real time restricts configuration extraction once per hour, with the exception of the BBB extraction failure
-                if ( $realtime eq "True" ) {
+                if ( $realtime eq "True" || $fifo eq "True" ) {
 
                     $limit = ( ($STARTING_EPOCHTIME) + ( 4 * $INTERVAL ) );
 
@@ -1134,7 +1130,7 @@ foreach $FILENAME (@nmon_files) {
             @rawdataheader = grep( /^TOP,\+PID,/, @nmon );
             if ( @rawdataheader < 1 ) {
                 $msg =
-"ERROR: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
+"WARN: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
                 print "$msg";
                 print ID_REF "$msg";
 
@@ -1245,8 +1241,8 @@ foreach $FILENAME (@nmon_files) {
                     $x =~ s/\%/pct_/g;
 
                     # $x =~ s/\W*//g;
-                    $x =~ s/\/s/ps/g;      # /s  - ps
-                    $x =~ s/\//s/g;        # / - s
+                    $x =~ s/\/s/ps/g;    # /s  - ps
+                    $x =~ s/\//s/g;      # / - s
                     $x =~ s/\(/_/g;
                     $x =~ s/\)/_/g;
                     $x =~ s/ /_/g;
@@ -1348,7 +1344,7 @@ foreach $FILENAME (@nmon_files) {
                         }
 
                     }
-                    elsif ( $colddata eq "True" ) {
+                    elsif ( $colddata eq "True" || $fifo eq "True" ) {
                         print( INSERT $write . "\n" );
                         $count++;
                     }
@@ -1368,7 +1364,8 @@ foreach $FILENAME (@nmon_files) {
                     if ( $realtime eq "True" ) {
 
                         if ($DEBUG) {
-                            print "Last epochtime is $ZZZZ_epochtime \n";
+                            print
+"Per section write, Last epochtime is $ZZZZ_epochtime \n";
                         }
 
                         # Open keyref for writing in create mode
@@ -1431,7 +1428,7 @@ foreach $FILENAME (@nmon_files) {
                 @rawdataheader = grep( /^UARG,\+Time,/, @nmon );
                 if ( @rawdataheader < 1 ) {
                     $msg =
-"ERROR: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
+"WARN: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
                     print "$msg";
                     print ID_REF "$msg";
 
@@ -1542,8 +1539,8 @@ foreach $FILENAME (@nmon_files) {
                         $x =~ s/\%/pct_/g;
 
                         # $x =~ s/\W*//g;
-                        $x =~ s/\/s/ps/g;      # /s  - ps
-                        $x =~ s/\//s/g;        # / - s
+                        $x =~ s/\/s/ps/g;    # /s  - ps
+                        $x =~ s/\//s/g;      # / - s
                         $x =~ s/\(/_/g;
                         $x =~ s/\)/_/g;
                         $x =~ s/ /_/g;
@@ -1766,7 +1763,7 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
                                     $count++;
                                 }
                             }
-                            elsif ( $colddata eq "True" ) {
+                            elsif ( $colddata eq "True" || $fifo eq "True" ) {
                                 print( INSERT $write . "\n" );
                                 $count++;
                             }
@@ -1788,7 +1785,8 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
                         if ( $realtime eq "True" ) {
 
                             if ($DEBUG) {
-                                print "Last epochtime is $ZZZZ_epochtime \n";
+                                print
+"Per section write, Last epochtime is $ZZZZ_epochtime \n";
                             }
 
                             # Open keyref for writing in create mode
@@ -2329,7 +2327,7 @@ sub static_sections_insert {
 
         if ( @rawdataheader < 1 ) {
             $msg =
-"ERROR: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
+"WARN: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
             print "$msg";
             print ID_REF "$msg";
 
@@ -2369,7 +2367,6 @@ sub static_sections_insert {
     print INSERT (
 qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,interval,snapshots,$x\n|
     );
-    $count++;
 
 # For CPUnn case, filter on perf data only (multiple headers are present in rawdata)
     if ( $nmon_var eq "CPUnn" ) {
@@ -2459,7 +2456,7 @@ qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpu
 
             }
 
-            elsif ( $colddata eq "True" ) {
+            elsif ( $colddata eq "True" || $fifo eq "True" ) {
 
                 print INSERT (
 qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpus","$virtual_cpus","$DATETIME{@cols[1]}","$INTERVAL","$SNAPSHOTS",$x|
@@ -2500,7 +2497,8 @@ qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpu
             if ( $realtime eq "True" ) {
 
                 if ($DEBUG) {
-                    print "Last epochtime is $ZZZZ_epochtime \n";
+                    print
+                      "Per section write, Last epochtime is $ZZZZ_epochtime \n";
                 }
 
                 # Open keyref for writing in create mode
@@ -2608,7 +2606,7 @@ sub variable_sections_insert {
         @rawdataheader = grep( /^$nmon_var,([^T].+),/, @nmon );
         if ( @rawdataheader < 1 ) {
             $msg =
-"ERROR: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
+"WARN: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
             print "$msg";
             print ID_REF "$msg";
 
@@ -2659,6 +2657,14 @@ qq|timestamp,type,serialnum,hostname,OStype,interval,snapshots,ZZZZ,device,value
 
      # Convert timestamp string to epoch time (from format: YYYY-MM-DD hh:mm:ss)
         my ( $year, $month, $day, $hour, $min, $sec ) = split /\W+/, $timestamp;
+
+        if ($month == 0) {
+            print "ERROR, section $key has failed to identify the timestamp of these data, affecting current timestamp which may be inaccurate\n";
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+            $month = $mon;
+            $day = $mday;
+        }
+
         my $ZZZZ_epochtime =
           timelocal( $sec, $min, $hour, $day, $month - 1, $year );
 
@@ -2686,7 +2692,7 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
 
         }
 
-        elsif ( $colddata eq "True" ) {
+        elsif ( $colddata eq "True" || $fifo eq "True" ) {
 
             print INSERT (
 qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOTS","$DATETIME{$cols[1]}","$devices[2]","$cols[2]"|
@@ -2751,7 +2757,7 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
 
                 }
 
-                elsif ( $colddata eq "True" ) {
+                elsif ( $colddata eq "True" || $fifo eq "True" ) {
 
                     print INSERT (
 qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOTS","$DATETIME{$cols[1]}","$devices[$j]","$cols[$j]"|
@@ -2791,7 +2797,8 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
             if ( $realtime eq "True" ) {
 
                 if ($DEBUG) {
-                    print "Last epochtime is $ZZZZ_epochtime \n";
+                    print
+                      "Per sectoon write, Last epochtime is $ZZZZ_epochtime \n";
                 }
 
                 # Open keyref for writing in create mode
@@ -2901,7 +2908,7 @@ sub solaris_wlm_section_fn {
         @rawdataheader = grep( /^$nmon_var,([^T].+),/, @nmon );
         if ( @rawdataheader < 1 ) {
             $msg =
-"ERROR: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
+"WARN: hostname: $HOSTNAME :$key section data is not consistent: the data header could not be identified, dropping the section to prevent data inconsistency \n";
             print "$msg";
             print ID_REF "$msg";
 
@@ -2979,7 +2986,7 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
 
         }
 
-        elsif ( $colddata eq "True" ) {
+        elsif ( $colddata eq "True" || $fifo eq "True" ) {
 
             print INSERT (
 qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHOTS,$DATETIME{$cols[1]},$devices[2],$cols[2]|
@@ -3044,7 +3051,7 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
 
                 }
 
-                elsif ( $colddata eq "True" ) {
+                elsif ( $colddata eq "True" || $fifo eq "True" ) {
 
                     print INSERT (
 qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHOTS,$DATETIME{$cols[1]},$devices[$j],$cols[$j]|
@@ -3084,7 +3091,8 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
             if ( $realtime eq "True" ) {
 
                 if ($DEBUG) {
-                    print "Last epochtime is $ZZZZ_epochtime \n";
+                    print
+                      "Per section write, Last epochtime is $ZZZZ_epochtime \n";
                 }
 
                 # Open keyref for writing in create mode
@@ -3147,8 +3155,8 @@ sub clean_up_line {
     $x =~ s/\%/Pct/g;
 
     # $x =~ s/\W*//g;
-    $x =~ s/\/s/ps/g;      # /s  - ps
-    $x =~ s/\//s/g;        # / - s
+    $x =~ s/\/s/ps/g;    # /s  - ps
+    $x =~ s/\//s/g;      # / - s
     $x =~ s/\(/_/g;
     $x =~ s/\)/_/g;
     $x =~ s/ /_/g;

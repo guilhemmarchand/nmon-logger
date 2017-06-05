@@ -9,9 +9,11 @@
 # Releases Notes:
 
 # - March 2017, V1.0.0: Guilhem Marchand, Initial version
-# - 2017/04/01, V1.0.01: Guilhem Marchand, Update path discovery
+# - 2017/04/01, V1.0.1: Guilhem Marchand, Update path discovery
+# - 2017/06/05, V1.0.2: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
-$version = "1.0.01";
+$version = "1.0.2";
 
 use Getopt::Long;
 use File::stat;
@@ -150,7 +152,7 @@ else {
             chomp($_);
 
             $nmon_config_match     = '^[AAA|BBB].+';
-            $nmon_header_match     = '^(?!AAA|BBB|TOP)[a-zA-Z0-9\-\_]*,(?!T\d{3,}).*';
+            $nmon_header_match     = '^(?!AAA|BBB|TOP)[a-zA-Z0-9\-\_]*,(?!T\d{3,})[^,]*,(?!T\d{3,})[^,]*.*';
             $nmon_header_TOP_match = '^TOP,(?!\d*,)';
             $nmon_timestamp_match  = '^ZZZZ,T\d*';
 

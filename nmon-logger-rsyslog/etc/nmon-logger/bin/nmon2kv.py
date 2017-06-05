@@ -34,8 +34,10 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
-# - # 2017/09/04, V1.0.4: Guilhem Marchand:
+# - 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
+# - 2017/06/05, V1.0.5: Guilhem Marchand:
+#                                          - Mirror update of the TA-nmon
 
 # Load libs
 
@@ -139,6 +141,7 @@ logging.root.addHandler(handler)
 # Initial states for Analysis
 realtime = False
 colddata = False
+fifo = False
 
 # Starting time of process
 start_time = time.time()
@@ -260,6 +263,18 @@ DATA_DIR = APP_VAR
 
 # CSV output repository
 CONFIG_DIR = APP_VAR
+
+# Initialize some default values
+day = "-1"
+month = "-1"
+year = "-1"
+hour = "-1"
+minute = "-1"
+second = "-1"
+ZZZZ_timestamp = "-1"
+INTERVAL = "-1"
+SNAPSHOTS = "-1"
+sanity_check = "-1"
 
 # bin directory
 APP = "/etc/nmon-logger"
@@ -772,6 +787,8 @@ if options.mode == 'colddata':
     colddata = True
 elif options.mode == 'realtime':
     realtime = True
+elif options.mode == 'fifo':
+    fifo = True
 else:
     # options.mode is 'auto', therefore:
     # Evaluate if we are dealing with real time data or cold data
@@ -821,6 +838,8 @@ if os.path.isfile(ID_REF):
     with open(ID_REF, "r") as ref:
 
         for line in ref:
+
+            # Notes: fifo mode will always proceed data
 
             if realtime:
 
@@ -909,38 +928,42 @@ config_output = NMON_VAR + '/nmon_configdata.log'
 # default is extract
 config_run = 0
 
-# Search in ID_REF for a last matching execution
-if os.path.isfile(CONFIG_REF):
+# configuration data will always be extracted for cold data
+# Only enter this section when data is realtime or fifo
+if realtime or fifo:
 
-    with open(CONFIG_REF, "rb") as f:
+    # Search in ID_REF for a last matching execution
+    if os.path.isfile(CONFIG_REF):
 
-        for line in f:
+        with open(CONFIG_REF, "rb") as f:
 
-            # Only proceed if hostname has the same value
-            if HOSTNAME in line:
+            for line in f:
 
-                CONFIG_REFDETAILS = re.match(r'^.+:\s(\d+)', line)
-                config_lastepoch = CONFIG_REFDETAILS.group(1)
+                # Only proceed if hostname has the same value
+                if HOSTNAME in line:
 
-                if config_lastepoch:
+                    CONFIG_REFDETAILS = re.match(r'^.+:\s(\d+)', line)
+                    config_lastepoch = CONFIG_REFDETAILS.group(1)
 
-                    time_delta = (int(now_epoch) - int(config_lastepoch))
+                    if config_lastepoch:
 
-                    if time_delta < 3600:
+                        time_delta = (int(now_epoch) - int(config_lastepoch))
 
-                        # Only set the status to do not extract is the BBB_FLAG is not present
-                        if not os.path.isfile(BBB_FLAG):
-                            config_run = 1
-                        else:
+                        if time_delta < 3600:
+
+                            # Only set the status to do not extract is the BBB_FLAG is not present
+                            if not os.path.isfile(BBB_FLAG):
+                                config_run = 1
+                            else:
+                                config_run = 0
+
+                        elif time_delta > 3600:
+
                             config_run = 0
-
-                    elif time_delta > 3600:
-
-                        config_run = 0
 
 if config_run == 0:
 
-    if realtime:
+    if realtime or fifo:
 
         # Only allow one extraction of the config section per nmon file
         limit = (int(starting_epochtime) + (4 * int(INTERVAL)))
@@ -1332,12 +1355,12 @@ def standard_section_fn(section):
 
                                     if num_cols_perfdata > num_cols_header:
 
-                                        msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
+                                        msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
                                               ' section data is not consistent: ' + str(num_cols_perfdata) +\
                                               ' fields in data, ' + str(num_cols_header) \
                                               + ' fields in header, extra fields detected (more fields in data ' \
                                                 'than header), dropping this section to prevent data inconsistency'
-                                        logging.error(msg)
+                                        logging.warn(msg)
                                         ref.write(msg + "\n")
 
                                         # Affect a sanity check to 1, bad data
@@ -1388,12 +1411,12 @@ def standard_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
+                                    msg = 'hostname: ' + HOSTNAME + ' :' + section +\
                                           ' section data is not consistent: ' + str(num_cols_perfdata) +\
                                           ' fields in data, ' + str(num_cols_header) \
                                           + ' fields in header, extra fields detected (more fields in data ' \
                                             'than header), dropping this section to prevent data inconsistency'
-                                    logging.error(msg)
+                                    logging.warn(msg)
                                     ref.write(msg + "\n")
 
                                     # Affect a sanity check to 1, bad data
@@ -1620,7 +1643,7 @@ def top_section_fn(section):
                                        " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time for this"
                                                                 " section " + str(last_epoch_filter) + " )")
 
-                    elif colddata:
+                    elif colddata or fifo:
 
                         # increment
                         count += 1
@@ -1842,7 +1865,7 @@ def uarg_section_fn(section):
                                  ',' + logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL +
                                  ',' + SNAPSHOTS + ',' + perfdata + '\n'),
 
-                    elif colddata:
+                    elif colddata or fifo:
 
                         # increment
                         count += 1
@@ -1895,7 +1918,7 @@ def uarg_section_fn(section):
                                 " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time "
                                                         "for this section " + str(last_epoch_filter) + " )")
 
-                    elif colddata:
+                    elif colddata or fifo:
 
                         # increment
                         count += 1
@@ -2120,12 +2143,12 @@ def dynamic_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
+                                    msg = 'hostname: ' + HOSTNAME + ' :' + section +\
                                           ' section data is not consistent: ' + str(num_cols_perfdata) +\
                                           ' fields in data, ' + str(num_cols_header) +\
                                           ' fields in header, extra fields detected (more fields in data than header)' \
                                           ', dropping this section to prevent data inconsistency'
-                                    logging.error(msg)
+                                    logging.warn(msg)
                                     ref.write(msg + "\n")
 
                                     if debug:
@@ -2170,12 +2193,12 @@ def dynamic_section_fn(section):
 
                             if num_cols_perfdata > num_cols_header:
 
-                                msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
+                                msg = 'hostname: ' + HOSTNAME + ' :' + section +\
                                       ' section data is not consistent: ' + str(num_cols_perfdata) +\
                                       ' fields in data, ' + str(num_cols_header) +\
                                       ' fields in header, extra fields detected (more fields in data than header),' \
                                       ' dropping this section to prevent data inconsistency'
-                                logging.debug(msg)
+                                logging.warn(msg)
                                 ref.write(msg + "\n")
 
                                 if debug:
@@ -2501,12 +2524,12 @@ def solaris_wlm_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
+                                    msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
                                           ' section data is not consistent: ' + str(num_cols_perfdata) +\
                                           ' fields in data, ' + str(num_cols_header) +\
                                           ' fields in header, extra fields detected (more fields in data than header)' \
                                           ', dropping this section to prevent data inconsistency'
-                                    logging.debug(msg)
+                                    logging.warn(msg)
                                     ref.write(msg + "\n")
 
                                     if debug:
@@ -2532,7 +2555,7 @@ def solaris_wlm_section_fn(section):
                                 " ( " + str(ZZZZ_epochtime) + " is lower than last known epoch time for this section " +
                                        str(last_epoch_filter) + " )")
 
-                    elif colddata:
+                    elif colddata or fifo:
 
                         # increment
                         count += 1
@@ -2552,12 +2575,12 @@ def solaris_wlm_section_fn(section):
 
                             if num_cols_perfdata > num_cols_header:
 
-                                msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
+                                msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) +\
                                       ' section data is not consistent: ' + str(num_cols_perfdata) +\
                                       ' fields in data, ' + str(num_cols_header) +\
                                       ' fields in header, extra fields detected (more fields in data than header),' \
                                       ' dropping this section to prevent data inconsistency'
-                                logging.debug(msg)
+                                logging.warn(msg)
                                 ref.write(msg + "\n")
 
                                 if debug:
