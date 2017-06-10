@@ -94,6 +94,12 @@ nmon_external_header_rotated=/var/log/nmon-logger/var/nmon_repository/$FIFO/nmon
 # all files must be existing to be managed
 if [ -s $nmon_config_rotated ] && [ -s $nmon_header_rotated ] && [ -s $nmon_data_rotated ]; then
 
+    if [ -f $nmon_external_header_rotated ]; then
+        nmon_header_files="$nmon_header_rotated $nmon_external_header_rotated"
+    else
+        nmon_header_files="$nmon_header_rotated"
+    fi
+
     # Ensure the first line of nmon_data starts by the relevant timestamp, if not add it
     head -1 $nmon_data_rotated | grep 'ZZZZ,T' >/dev/null
     if [ $? -ne 0 ]; then
@@ -102,10 +108,10 @@ if [ -s $nmon_config_rotated ] && [ -s $nmon_header_rotated ] && [ -s $nmon_data
         # and the parser will raise an error
         if [ -f $nmon_timestamp_rotated ]; then
             tail -1 $nmon_timestamp_rotated >$temp_file
-            cat $nmon_config_rotated $nmon_header_rotated $nmon_external_header_rotated $temp_file $nmon_data_rotated $nmon_external_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+            cat $nmon_config_rotated $nmon_header_files $temp_file $nmon_data_rotated $nmon_external_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
         fi
     else
-        cat $nmon_config_rotated $nmon_header_rotated $nmon_external_header_rotated $nmon_data_rotated $nmon_external_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+        cat $nmon_config_rotated $nmon_header_files $nmon_data_rotated $nmon_external_rotated | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
     fi
 
     # remove rotated
