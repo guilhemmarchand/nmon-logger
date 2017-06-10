@@ -191,7 +191,7 @@ if [ -s $nmon_config ] && [ -s $nmon_header ] && [ -s $nmon_data ]; then
         tail -1 $nmon_timestamp >$temp_file
         cat $nmon_config $nmon_header_files $temp_file $nmon_data_tmp | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
     else
-        cat $nmon_config $nmon_header_files $nmon_external_header $nmon_data_tmp | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
+        cat $nmon_config $nmon_header_files $nmon_data_tmp | /etc/nmon-logger/bin/nmon2kv.sh $nmon2csv_options
     fi
 
     # remove the copy
