@@ -867,13 +867,13 @@ create_nmon_external () {
 # fifo_started variable is exported by the function start_fifo_reader
 case $fifo_started in
 "fifo1")
-    cat ${APP}/bin/nmon_external_cmd/nmon_external_start.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_FIFO|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
+    cat ${APP}/bin/nmon_external_cmd/nmon_external_start.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_DIR|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo1.sh"
     cat ${APP}/bin/nmon_external_cmd/nmon_external_snap.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_DIR|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo1.sh"
     ;;
 "fifo2")
-    cat ${APP}/bin/nmon_external_cmd/nmon_external_start.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_FIFO|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
+    cat ${APP}/bin/nmon_external_cmd/nmon_external_start.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_DIR|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_start_fifo2.sh"
     cat ${APP}/bin/nmon_external_cmd/nmon_external_snap.sh | sed "s|NMON_FIFO_PATH|$NMON_EXTERNAL_DIR|g" > "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"
     chmod +x "${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_fifo2.sh"

@@ -7,8 +7,9 @@
 # Date - March 2017
 # Guilhem Marchand 2017/03/18, initial version
 # Guilhem Marchand 2017/03/29, protect against unexpecting failure in NMON_EXTERNAL_DIR getting value
+# Guilhem Marchand 2017/06/09, use dedicated files for external header and data
 
-# Version 1.0.01
+# Version 1.0.2
 
 # For AIX / Linux / Solaris
 
@@ -23,21 +24,13 @@
 # - nmon_external: manage any number of fields without transposition
 # - nmon_external_transposed: manage any number of fields with a notion of device / value
 
-# Do no try to do anything unless the NMON_FIFO_PATH exists
-# we exit without any error code, the situation is not expected but we do not want to generate bad data in nmon data
-
 # note: the NMON_FIFO_PATH is a pattern that will be replaced by the nmon_helper.sh script in a copy of this script
 # that lives for the time to live of the nmon process started
-
-if [ ! -p NMON_FIFO_PATH ]
-then
-   exit 0
-fi
 
 # CAUTION: ensure your custom command does not output any comma within the field name and value
 
 # number of running processes
-echo "PROCCOUNT,Process Count,nb_running_processes" >>NMON_FIFO_PATH
+echo "PROCCOUNT,Process Count,nb_running_processes" >>NMON_FIFO_PATH/nmon_external_header.dat
 
 # uptime information
-echo "UPTIME,Server Uptime and load,uptime_stdout" >>NMON_FIFO_PATH
+echo "UPTIME,Server Uptime and load,uptime_stdout" >>NMON_FIFO_PATH/nmon_external_header.dat
