@@ -1,5 +1,5 @@
 Name: nmon-logger-syslog-ng
-Version: 2.0.1
+Version: 2.0.2
 Release: 0
 Summary: nmon-logger for syslog-ng
 Source: %{name}.tar.gz
@@ -64,8 +64,9 @@ echo You will also find a new process running under nmon account, you can get th
 echo
 
 %postun
+if [ "$1" = "0" ]; then
 echo
-if [ `ps -fu nmon | grep -v 'PID' | wc -l` -ne 0 ]; then echo "Killing running nmon processes:"; echo "**** list of running processes: ****"; echo `ps -fu nmon | grep '/etc/nmon-logger'`; ps -fu nmon | grep '/etc/nmon-logger/bin/linux' | awk '{print $2}' | xargs kill; fi
+if [ `ps -fu nmon | grep -v 'PID' | wc -l` -ne 0 ]; then echo "Killing running nmon processes:"; echo "**** list of running processes: ****"; echo `ps -fu nmon | grep '/var/log/nmon-logger/bin'`; ps -fu nmon | grep '/var/log/nmon-logger/bin' | awk '{print $2}' | xargs kill; sleep 5; fi
 echo "Removing /etc/nmon-logger remaining files."; rm -rf /etc/nmon-logger
 echo "Removing /var/log/nmon-logger remaining files."; rm -rf /var/log/nmon-logger
 echo "Removing nmon user account"; userdel nmon
@@ -74,6 +75,7 @@ service syslog-ng restart
 echo
 echo Nmon logger has been successfully uninstalled.
 echo
+fi
 
 %clean
 rm -rf $RPM_BUILD_ROOT
