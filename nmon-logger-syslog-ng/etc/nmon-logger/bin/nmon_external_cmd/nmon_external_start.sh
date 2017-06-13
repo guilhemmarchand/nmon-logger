@@ -27,6 +27,11 @@
 # note: the NMON_FIFO_PATH is a pattern that will be replaced by the nmon_helper.sh script in a copy of this script
 # that lives for the time to live of the nmon process started
 
+# Empty the header file if existing
+if [ -f NMON_FIFO_PATH/nmon_external_header.dat ]; then
+    >NMON_FIFO_PATH/nmon_external_header.dat
+fi
+
 # CAUTION: ensure your custom command does not output any comma within the field name and value
 
 # number of running processes
