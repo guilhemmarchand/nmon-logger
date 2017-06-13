@@ -1,5 +1,5 @@
 Name: nmon-logger-syslog-ng
-Version: 2.0.2
+Version: 2.0.3
 Release: 0
 Summary: nmon-logger for syslog-ng
 Source: %{name}.tar.gz
