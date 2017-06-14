@@ -882,6 +882,33 @@ esac
 
 }
 
+# Verify that we don't spawn multiple instances of nmon external snap script
+# this issue is unexpected and has been reported on some cases in AIX
+# If this occurs, we will remove nmon_external_snap scripts and warn
+
+check_duplicated_external_snap () {
+
+    for instance in fifo1 fifo2; do
+
+        if [ -f ${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_${instance}.sh ]; then
+
+            nb_instances=0
+            nb_instances=`ps -ef | grep nmon_external_snap | grep $instance | wc -l`
+
+            if [ $nb_instances -gt 2 ]; then
+
+                echo "`date`, ${HOST} ERROR: detected duplicated instances of $instance nmon external snap script, to prevent infinite spawn of processes, the $instance snap script will be removed until those processes will have been terminated and a new nmon process started."
+
+                rm -f ${APP_VAR}/bin/nmon_external_cmd/nmon_external_snap_${instance}.sh
+
+            fi
+
+        fi
+
+    done
+
+}
+
 # For AIX / Linux, the -p option when launching nmon will output the instance pid in stdout
 
 start_nmon () {
@@ -1747,6 +1774,9 @@ else
 			echo "`date`, ${HOST} INFO: Nmon process is $PIDAGE sec old, a new process will be spawned when this value will be greater than estimated end in seconds ($endtime sec based on parameters)"
 
 		fi
+
+        # Prevent infinite spawn of nmon external snap processes (in case of unexpected issue)
+        check_duplicated_external_snap
 
 		echo "`date`, ${HOST} INFO: found Nmon running with PID ${SAVED_PID}"
 		exit 0
