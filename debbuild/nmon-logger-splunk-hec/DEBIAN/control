@@ -1,0 +1,9 @@
+Package: nmon-logger-splunk-hec
+Version: 2.0.3
+Section: base
+Priority: optional
+Architecture: all
+Depends: bash
+Maintainer: Guilhem Marchand (guilhem.marchand@gmail.com)
+Description: This package provides Nmon performance monitoring logging for your Linux systems, and use Splunk http input to transfer data to your Splunk infrastructure. For more information, please see: https://github.com/guilhemmarchand/nmon-logger
+

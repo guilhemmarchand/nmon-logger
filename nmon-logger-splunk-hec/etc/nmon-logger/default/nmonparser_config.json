@@ -1,0 +1,32 @@
+{
+    "static_section":["CPUnn", "CPU_ALL", "FILE", "MEM", "PAGE", "MEMNEW", "MEMUSE", "PROC", "VM", "NFSSVRV2", "NFSSVRV3", "NFSSVRV4", "NFSCLIV2", "NFSCLIV3", "NFSCLIV4"],
+
+    "Solaris_static_section":["PROCSOL"],
+
+    "LPAR_static_section":["LPAR", "POOLS"],
+
+    "top_section":["TOP"],
+
+    "uarg_section":["UARG"],
+
+    "dynamic_section1":["DISKBUSY", "DISKBSIZE", "DISKREAD", "DISKWRITE", "DISKXFER", "DISKRIO", "DISKWIO", "DISKREADSERV", "DISKWRITESERV"],
+
+    "dynamic_section2":["IOADAPT", "NETERROR", "NET", "NETPACKET", "JFSFILE", "JFSINODE", "FCREAD", "FCWRITE", "FCXFERIN", "FCXFEROUT"],
+
+    "disk_extended_section":["DGBUSY", "DGREAD", "DGWRITE", "DGSIZE", "DGXFER", "DGREADS", "DGREADMERGE", "DGREADSERV", "DGWRITES", "DGWRITEMERGE", "DGWRITESERV", "DGINFLIGHT", "DGIOTIME", "DGBACKLOG"],
+
+    "solaris_WLM":["WLMPROJECTCPU", "WLMZONECPU", "WLMTASKCPU", "WLMUSERCPU", "WLMPROJECTMEM", "WLMZONEMEM", "WLMTASKMEM", "WLMUSERMEM"],
+
+    "solaris_VxVM":["VxVMREAD", "VxVMWRITE", "VxVMXFER", "VxVMBSIZE", "VxVMBUSY", "VxVMSVCTM", "VxVMWAITTM"],
+
+    "solaris_dynamic_various":["DISKSVCTM", "DISKWAITTM"],
+
+    "AIX_dynamic_various":["SEA", "SEAPACKET", "SEACHPHY"],
+
+    "AIX_WLM":["WLMCPU", "WLMMEM", "WLMBIO"],
+
+    "nmon_external":["UPTIME", "PROCCOUNT"],
+
+    "nmon_external_transposed":[""]
+
+}

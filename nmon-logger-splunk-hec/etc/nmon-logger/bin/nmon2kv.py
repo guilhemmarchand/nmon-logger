@@ -57,7 +57,8 @@ import platform
 import optparse
 import socket
 import json
-import requests
+import subprocess
+import uuid
 
 # Converter version
 nmon2csv_version = '1.0.6'
@@ -185,10 +186,10 @@ parser.add_option('--use_fqdn', action='store_true', dest='use_fqdn', help='Use 
 parser.add_option('--nokvdelim', action='store_true', dest='nokvdelim', default=False, help='Deactivate delimitor for '
                                                                                             'kv value (activated '
                                                                                             'by default)')
-parser.add_option('-u', '--splunk_http_url', action='store', type='choice', dest='splunk_http_url',
+parser.add_option('-u', '--splunk_http_url', action='store', type='string', dest='splunk_http_url',
                   help='Defines the URL for Splunk http forwarding, example:'
                   '--splunk_http_url  https://host.splunk.com:8088/services/collector/event')
-parser.add_option('-s', '--splunk_http_token', action='store', type='choice', dest='splunk_http_token',
+parser.add_option('-s', '--splunk_http_token', action='store', type='string', dest='splunk_http_token',
                   help='Defines the value of the Splunk HEC token, example:'
                   '--splunk_http_token B07538E6-729F-4D5B-8AE1-30E93646C65A')
 parser.add_option('--dumpargs', action='store_true', dest='dumpargs',
@@ -235,13 +236,6 @@ if options.splunk_http_url and options.splunk_http_token:
             "the Splunk http input token must be defined using the --splunk_http_token <token value> argument, "
             "forwarding to Splunk http input will be disabled")
         use_splunk_http = False
-    else:
-        splunk_http_token_is_set = True
-
-elif options.splunk_http_url and not options.splunk_http_token:
-    logging.error("the Splunk http input token must be defined using the --splunk_http_token <token value> argument, "
-                  "forwarding to Splunk http input will be disabled")
-    use_splunk_http = False
 
 # Guest Operation System type
 ostype = platform.system().lower()
@@ -443,21 +437,37 @@ def write_kv(input, kv_file):
 
 def write_kv_to_http(input, url, token):
 
-    auth = "Splunk " + str(token)
-    header = {'Authorization': str(auth), 'Accept-Charset': 'UTF-8'}
-
     reader = csv.DictReader(input)
+    final_data = ""
 
-    if kvdelim:
-        for row in reader:
-            for k, v in row.items():
-                r = requests.post(url, data="%s=\"%s\" " % (k, v), headers=header)
-                print(r)
-    else:
-        for row in reader:
-            for k, v in row.items():
-                r = requests.post(url, data="%s=%s " % (k, v), headers=header)
-                print(r)
+    FNULL = open('/dev/null', 'w')
+
+    for row in reader:
+
+        for k, v in row.items():
+
+            data="%s=\"%s\" " % (k, v)
+            final_data = final_data + data
+
+        # extract epochtime
+        timestamp_match = re.match(r'.*timestamp="([0-9]*)".*', final_data)
+        if timestamp_match:
+            timestamp = timestamp_match.group(1)
+        else:
+            logging.warn("failed to parse timestamp before streaming to http, applying now as the timestamp")
+            timestamp = time.strftime("%s")
+
+        # escape any double quote
+        params = final_data.replace('"', '\\"')
+
+        # This might be changed for a more Pythonic approach in the future!
+        http_data = '-k -H \"Authorization: Splunk ' + str(token) + '\" ' + str(url) + ' -d \'{"time": "' +\
+                    str(timestamp) + '", "sourcetype": "nmon_data:fromhttp", "event": "' + params + '"}\''
+        cmd = "curl" + " " + http_data
+        subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
+
+        # empty variable before next iteration
+        final_data = ""
 
 ####################################################################
 #           Main Program
@@ -966,6 +976,9 @@ section = "CONFIG"
 # Set output file
 config_output = NMON_VAR + '/nmon_configdata.log'
 
+# This will be used for Splunk HEC
+config_content = ""
+
 # Set default for config_run:
 # 0 --> Extract configuration
 # 1 --> Don't Extract configuration
@@ -1051,8 +1064,39 @@ if config_run == 0:
                         # Write
                         config.write(line)
 
+                        if use_splunk_http:
+                            config_content = config_content + str(line)
+
                 # Write end of key=value and line return
                 config.write('"\n')
+
+                if use_splunk_http:
+
+                    # Set output file
+                    config_output_tmp = NMON_VAR + '/nmon_configdata.tmp'
+
+                    config_content = config_content + '"\n'
+
+                    # For /dev/null redirection
+                    FNULL = open('/dev/null', 'w')
+
+                    raw_params = config_content
+
+                    # replace quotes by a space, escape double quotes
+                    raw_params = re.sub(r"\'", " ", raw_params)
+                    raw_params = re.sub(r'\"', '\\"', raw_params)
+
+                    with open(config_output_tmp, "wb") as f:
+                        f.write('{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"')
+                        f.write(raw_params + "\\n")
+                        f.write('"}')
+
+                    # This might be changed for a more Pythonic approach in the future!
+                    http_data = '-k -H \"Authorization: Splunk ' + str(splunk_http_token) + '\" ' +\
+                                str(splunk_http_url) + ' -d @' + str(config_output_tmp)
+
+                    cmd = "curl" + " " + http_data
+                    subprocess.call([cmd], shell=True)
 
                 # Under 10 lines of data in BBB, estimate extraction is not complete
                 if BBB_count < 10:
@@ -1481,11 +1525,13 @@ def standard_section_fn(section):
         # Write final kv file in append mode
         write_kv(membuffer, currsection_output)
 
+        # If streaming to Splunk HEC is activated
         if use_splunk_http:
 
             # Rewind temp
             membuffer.seek(0)
 
+            # Transform to kv data and stream to http
             write_kv_to_http(membuffer, splunk_http_url, splunk_http_token)
 
         # Show number of lines extracted
@@ -1712,6 +1758,15 @@ def top_section_fn(section):
 
         # Write final kv file in append mode
         write_kv(membuffer, currsection_output)
+
+        # If streaming to Splunk HEC is activated
+        if use_splunk_http:
+
+            # Rewind temp
+            membuffer.seek(0)
+
+            # Transform to kv data and stream to http
+            write_kv_to_http(membuffer, splunk_http_url, splunk_http_token)
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
@@ -2001,6 +2056,14 @@ def uarg_section_fn(section):
 
             # Write final kv file in append mode
             write_kv(membuffer, currsection_output)
+
+            # If streaming to Splunk HEC is activated
+            if use_splunk_http:
+                # Rewind temp
+                membuffer.seek(0)
+
+                # Transform to kv data and stream to http
+                write_kv_to_http(membuffer, splunk_http_url, splunk_http_token)
 
             # close membuffer
             membuffer.close()
@@ -2312,6 +2375,14 @@ def dynamic_section_fn(section):
 
                 # Write final kv file in append mode
                 write_kv(membuffer2, currsection_output)
+
+                # If streaming to Splunk HEC is activated
+                if use_splunk_http:
+                    # Rewind temp
+                    membuffer2.seek(0)
+
+                    # Transform to kv data and stream to http
+                    write_kv_to_http(membuffer2, splunk_http_url, splunk_http_token)
 
             # Show number of lines extracted
             result = section + " section: Wrote" + " " + str(count) + " lines"
@@ -2695,6 +2766,14 @@ def solaris_wlm_section_fn(section):
 
                 # Write final kv file in append mode
                 write_kv(membuffer2, currsection_output)
+
+                # If streaming to Splunk HEC is activated
+                if use_splunk_http:
+                    # Rewind temp
+                    membuffer.seek(0)
+
+                    # Transform to kv data and stream to http
+                    write_kv_to_http(membuffer2, splunk_http_url, splunk_http_token)
 
             # Show number of lines extracted
             result = str(section) + " section: Wrote" + " " + str(count) + " lines"

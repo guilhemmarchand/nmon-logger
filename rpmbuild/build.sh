@@ -21,6 +21,7 @@ rpmdev-setuptree
 # Copy sources
 cp -a nmon-logger/nmon-logger-rsyslog rpmbuild/SOURCES/
 cp -a nmon-logger/nmon-logger-syslog-ng rpmbuild/SOURCES/
+cp -a nmon-logger/nmon-logger-splunk-hec rpmbuild/SOURCES/
 
 # Create tar archives
 cd rpmbuild/SOURCES/
