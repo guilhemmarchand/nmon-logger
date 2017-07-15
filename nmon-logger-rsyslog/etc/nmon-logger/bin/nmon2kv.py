@@ -38,8 +38,9 @@
 #                                          - Mirror update from TA-nmon
 # - # 2017/05/06, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - # 2017/16/06, V1.0.6: Guilhem Marchand:
-#                                          - Splunk http input feature (HEC)
+# - # 2017/13/07, V1.0.6: Guilhem Marchand:
+#                                          - FQDN issue, see:
+#                                            https://github.com/guilhemmarchand/nmon-for-splunk/issues/72
 
 # Load libs
 
@@ -527,6 +528,12 @@ logical_cpus = "-1"
 virtual_cpus = "-1"
 OStype = "Unknown"
 
+if use_fqdn:
+    host = socket.getfqdn()
+    if host:
+        HOSTNAME = host
+        logging.info("HOSTNAME:" + str(HOSTNAME))
+
 for line in data:
 
     # Set HOSTNAME
@@ -534,12 +541,7 @@ for line in data:
     # if the option --use_fqdn has been set, use the fully qualified domain name by the running OS
     # The value will be equivalent to the stdout of the os "hostname -f" command
     # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
-    if use_fqdn:
-        host = socket.getfqdn()
-        if host:
-            HOSTNAME = host
-            logging.info("HOSTNAME:" + str(HOSTNAME))
-    else:
+    if not use_fqdn:
         host = re.match(r'^(AAA),(host),(.+)\n', line)
         if host:
             HOSTNAME = host.group(3)
