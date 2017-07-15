@@ -1,0 +1,150 @@
+---
+
+############################## Splunk server ##############################
+
+- hosts: splunk
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+   - splunk_binpath: "{{ lookup('pipe', 'ls /opt/deployment/splunk_bin/splunk-*.tgz | head -1') }}"
+   - splunk_installpath: /opt
+   - core_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/nmon-performance-monitor-for-unix-and-linux-systems_*.tgz | head -1') }}"
+   - TA_archive: "{{ lookup('pipe', 'ls /opt/deployment/nmon-for-splunk/TA-nmon_*.tgz | head -1') }}"
+
+  tasks:
+
+  # Verify if Splunk is already installed
+  - name: Check if Splunk path exists
+    stat: path={{ splunk_installpath }}/splunk
+    register: check_splunk_path
+
+  - block:
+
+    - name: Create the system splunk account for splunk
+      user: name=splunk comment="system account for Splunk" state=present
+
+    # Copy and unarchive Splunk
+    - name: Copy and unarchive Splunk
+      unarchive: src={{ splunk_binpath }} dest={{ splunk_installpath }} owner=splunk group=splunk
+
+    # Start and accept licence (run async)
+    - name: Start Splunk and accept licence
+      command: "{{ splunk_installpath }}/splunk/bin/splunk start --answer-yes --no-prompt --accept-license"
+      async: 60
+      poll: 5
+      become: yes
+      become_user: splunk
+      ignore_errors: yes
+
+    # Enable boot-start
+    - name: Enable boot start for Splunk
+      command: "{{ splunk_installpath }}/splunk/bin/splunk enable boot-start -user splunk"
+      ignore_errors: yes
+
+    # Deploy the core application
+    - name: Unarchive nmon performance core app
+      unarchive: src={{ core_archive }} dest=/opt/splunk/etc/apps
+      become: yes
+      become_user: splunk
+
+    - name: Unarchive TA-nmon for Splunk instance
+      unarchive: src="{{ TA_archive }}" dest=/opt/splunk/etc/apps
+      become: yes
+      become_user: splunk
+
+    - name: Create the splunk_httpinput app local directory
+      file: path={{ splunk_installpath }}/splunk/etc/apps/splunk_httpinput/local state=directory owner=splunk group=splunk
+
+    - name: Copy the splunk_httpinput/local/inputs.conf
+      action: template src=splunk_local/splunk_httpinput_inputs.conf dest={{ splunk_installpath }}/splunk/etc/apps/splunk_httpinput/local/inputs.conf owner=splunk group=splunk
+
+    - name: Create the nmon app local directory
+      file: path={{ splunk_installpath }}/splunk/etc/apps/nmon/local state=directory owner=splunk group=splunk
+
+    - name: Copy the nmon/local/indexes.conf
+      action: template src=splunk_local/indexes.conf dest={{ splunk_installpath }}/splunk/etc/apps/nmon/local/ owner=splunk group=splunk
+
+    - name: Copy the nmon/local/inputs.conf
+      action: template src=splunk_local/inputs.conf dest={{ splunk_installpath }}/splunk/etc/apps/nmon/local/ owner=splunk group=splunk
+
+    # Restart
+    - name: Restart Splunk
+      command: /opt/splunk/bin/splunk restart
+      become: yes
+      become_user: splunk
+
+    # Wait for service startup
+    - name: Wait for Splunk startup
+      wait_for: port=8089 timeout=30
+      ignore_errors: yes
+
+    when: check_splunk_path.stat.exists == false
+
+############################## HEC-clients ##############################
+
+- hosts: hec-client1 hec-client2
+  become: yes
+  become_method: sudo
+
+  vars:
+   - docroot: /opt/deployment/nmon-logger
+   - rpm_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-splunk-hec-*.rpm | head -1') }}"
+   - rpm_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-splunk-hec-*.rpm | head -1 | xargs basename') }}"
+   - deb_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-splunk-hec-*.deb | head -1') }}"
+   - deb_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-splunk-hec-*.deb | head -1 | xargs basename') }}"
+
+  tasks:
+
+  ############################## Perl dependency ##############################
+  - block:
+
+    - name: Install perl minimal for CentOS 6.x
+      yum: name=perl state=latest update_cache=yes
+
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
+
+  ############################## Perl Time/HiRes dependency ##############################
+  - block:
+
+    - name: Install perl-Time-HiRes for CentOS 6.x
+      yum: name=perl-Time-HiRes state=latest
+
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "6")
+
+  # NMON LOGGER installation
+
+  # For RPM
+
+  - block:
+
+    - name: Copy current rpm package to /tmp (for rpm based OS)
+      copy: src={{ rpm_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
+
+    - name: Install nmon-logger rpm package (for rpm based OS)
+      yum: name=/tmp/{{ rpm_binname }} state=present
+
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+  # For Debian
+
+  - block:
+
+    - name: Copy current deb package to /tmp (for Debian/Ubuntu OS)
+      copy: src={{ deb_binpath }} dest=/tmp/
+              owner=root group=root mode=0644
+
+    - name: Install nmon-logger deb package (for Debian/Ubuntu OS)
+      apt: deb=/tmp/{{ deb_binname }} state=present
+
+    when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+  # NMON LOGGER configuration
+
+  - name: Create the local directory in /etc/nmon-logger
+    file: path=/etc/nmon-logger/local state=directory owner=nmon group=nmon
+
+  - name: Copy the local nmon-logger configuration
+    action: template src=nmon-logger_local/nmon.conf dest=/etc/nmon-logger/local/ owner=nmon group=nmon

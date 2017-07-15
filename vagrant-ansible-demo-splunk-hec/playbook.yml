@@ -1,0 +1,55 @@
+---
+
+- hosts: all
+  become: yes
+  become_method: sudo
+
+  vars:
+   - template_hosts: "hosts"
+   - localzone: Europe/London
+
+# Run roles
+  roles:
+    - common
+
+  tasks:
+
+############################## Set Timezone ##############################
+
+# Configure time zone, only update whenever required
+
+  - name: Check the current timezone
+    shell: 'timedatectl status | grep "zone" | sed -e "s/^[ ]*Time zone: \(.*\) (.*)$/\1/g"'
+    register: timezone_value
+
+  # Store the host timezone
+  - set_fact: timezone_value={{ timezone_value.stdout }}
+
+  - name: Set timezone variables for Debian / Ubuntu
+    file: src=/usr/share/zoneinfo/{{ localzone }} dest=/etc/localtime owner=root group=root state=link force=yes
+    notify: update tzdata
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and timezone_value!="{{ localzone }}"
+
+  - name: Set timezone variables for CentOS / RHEL / Fedora
+    file: src=/usr/share/zoneinfo/{{ localzone }}  dest=/etc/localtime state=link force=yes
+    when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and timezone_value!="{{ localzone }}"
+
+  - name: Update hosts file
+    action: template src={{ template_hosts }} dest=/etc/hosts
+
+############################## Various ##############################
+
+# Currently centOs box seem to have trouble mounting up private network interface with static ips
+# https://github.com/mitchellh/vagrant/issues/5590
+# here is a workaround
+
+  - name: ensure all interfaces are up
+    service: name=network enabled=yes state=restarted
+    when: (ansible_distribution == "CentOS" and ansible_distribution_major_version == "7")
+
+############################## handlers ##############################
+
+  handlers:
+
+    - name: update tzdata
+      command: dpkg-reconfigure --frontend noninteractive tzdata

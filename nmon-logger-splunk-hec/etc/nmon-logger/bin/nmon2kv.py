@@ -38,8 +38,10 @@
 #                                          - Mirror update from TA-nmon
 # - # 2017/05/06, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - # 2017/16/06, V1.0.6: Guilhem Marchand:
-#                                          - Splunk http input feature (HEC)
+# - 2017/15/07: V1.0.6: Guilhem Marchand:
+#                                           - Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/27/07: V1.0.7: Guilhem Marchand:
+#                                           - Splunk HEC implementation
 
 # Load libs
 
@@ -58,10 +60,9 @@ import optparse
 import socket
 import json
 import subprocess
-import uuid
 
 # Converter version
-nmon2csv_version = '1.0.6'
+nmon2csv_version = '1.0.7'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -186,15 +187,17 @@ parser.add_option('--use_fqdn', action='store_true', dest='use_fqdn', help='Use 
 parser.add_option('--nokvdelim', action='store_true', dest='nokvdelim', default=False, help='Deactivate delimitor for '
                                                                                             'kv value (activated '
                                                                                             'by default)')
-parser.add_option('-u', '--splunk_http_url', action='store', type='string', dest='splunk_http_url',
+parser.add_option('--splunk_http_url', action='store', type='string', dest='splunk_http_url',
                   help='Defines the URL for Splunk http forwarding, example:'
                   '--splunk_http_url  https://host.splunk.com:8088/services/collector/event')
-parser.add_option('-s', '--splunk_http_token', action='store', type='string', dest='splunk_http_token',
+parser.add_option('--splunk_http_token', action='store', type='string', dest='splunk_http_token',
                   help='Defines the value of the Splunk HEC token, example:'
                   '--splunk_http_token B07538E6-729F-4D5B-8AE1-30E93646C65A')
 parser.add_option('--dumpargs', action='store_true', dest='dumpargs',
                   help='only dump the passed arguments and exit (for debugging purposes only)')
 parser.add_option('--debug', action='store_true', dest='debug', help='Activate debug for testing purposes')
+parser.add_option('-s', '--silent', action='store_true', dest='silent', help='Do not output the per section detail'
+                                                                              'logging to save data volume')
 
 (options, args) = parser.parse_args()
 
@@ -208,6 +211,12 @@ if options.debug:
     debug = True
 else:
     debug = False
+
+# Set processing output verbosity
+if options.silent:
+    silent = True
+else:
+    silent = False
 
 # Set hostname mode
 if options.use_fqdn:
@@ -236,6 +245,13 @@ if options.splunk_http_url and options.splunk_http_token:
             "the Splunk http input token must be defined using the --splunk_http_token <token value> argument, "
             "forwarding to Splunk http input will be disabled")
         use_splunk_http = False
+    else:
+        splunk_http_token_is_set = True
+
+elif options.splunk_http_url and not options.splunk_http_token:
+    logging.error("the Splunk http input token must be defined using the --splunk_http_token <token value> argument, "
+                  "forwarding to Splunk http input will be disabled")
+    use_splunk_http = False
 
 # Guest Operation System type
 ostype = platform.system().lower()
@@ -295,6 +311,11 @@ APP = "/etc/nmon-logger"
 
 # app.conf
 APP_CONF_FILE = APP + "/default/app.conf"
+
+# Splunk HEC only: store the final batch file to be streamed (remove any pre-existing file)
+SPLUNK_HEC_BATCHFILE = APP_VAR + '/splunk_hec_perfdata_batch.dat'
+if os.path.isfile(SPLUNK_HEC_BATCHFILE):
+    os.remove(SPLUNK_HEC_BATCHFILE)
 
 # load configuration from json config file
 # the config_file json may exist in default or local (if customized)
@@ -433,14 +454,12 @@ def write_kv(input, kv_file):
                     f.write("%s=%s " % (k, v))
                 f.write('\n')
 
-# test
-
-def write_kv_to_http(input, url, token):
+# Stream to Splunk HEC
+def write_kv_to_http(input):
 
     reader = csv.DictReader(input)
     final_data = ""
-
-    FNULL = open('/dev/null', 'w')
+    http_data = ""
 
     for row in reader:
 
@@ -461,13 +480,28 @@ def write_kv_to_http(input, url, token):
         params = final_data.replace('"', '\\"')
 
         # This might be changed for a more Pythonic approach in the future!
-        http_data = '-k -H \"Authorization: Splunk ' + str(token) + '\" ' + str(url) + ' -d \'{"time": "' +\
-                    str(timestamp) + '", "sourcetype": "nmon_data:fromhttp", "event": "' + params + '"}\''
-        cmd = "curl" + " " + http_data
-        subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
+        http_data = http_data + "\n" + '{"time": "' +\
+                    str(timestamp) + '", "sourcetype": "nmon_data:fromhttp", "event": "' + params + '"}'
 
         # empty variable before next iteration
         final_data = ""
+
+    with open(SPLUNK_HEC_BATCHFILE, "ab") as f:
+        f.write(http_data)
+        f.write("\n")
+
+# Stream to Splunk HEC - process the performance data in a unique batch
+def stream_to_splunk_http(url, token):
+
+    FNULL = open('/dev/null', 'w')
+
+    # This might be changed for a more Pythonic approach in the future!
+    http_data = '-s -k -H \"Authorization: Splunk ' + str(token) + '\" ' + \
+                str(url) + ' -d @' + str(SPLUNK_HEC_BATCHFILE)
+
+    cmd = "curl" + " " + http_data
+    subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
+
 
 ####################################################################
 #           Main Program
@@ -537,6 +571,12 @@ logical_cpus = "-1"
 virtual_cpus = "-1"
 OStype = "Unknown"
 
+if use_fqdn:
+    host = socket.getfqdn()
+    if host:
+        HOSTNAME = host
+        logging.info("HOSTNAME:" + str(HOSTNAME))
+
 for line in data:
 
     # Set HOSTNAME
@@ -544,12 +584,7 @@ for line in data:
     # if the option --use_fqdn has been set, use the fully qualified domain name by the running OS
     # The value will be equivalent to the stdout of the os "hostname -f" command
     # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
-    if use_fqdn:
-        host = socket.getfqdn()
-        if host:
-            HOSTNAME = host
-            logging.info("HOSTNAME:" + str(HOSTNAME))
-    else:
+    if not use_fqdn:
         host = re.match(r'^(AAA),(host),(.+)\n', line)
         if host:
             HOSTNAME = host.group(3)
@@ -1042,11 +1077,19 @@ if config_run == 0:
 
                 # Write header
                 if kvdelim:
-                    config.write('timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' + 'host="' +
-                                 HOSTNAME + '", ' + 'serialnum="' + SN + '", configuration_content="' + '\n')
+                    config_header = 'timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' \
+                                    + 'host="' + HOSTNAME + '", ' + 'serialnum="' + SN \
+                                    + '", configuration_content="' + '\n'
                 else:
-                    config.write('timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' + 'host="' +
-                                 HOSTNAME + '", ' + 'serialnum="' + SN + '", configuration_content=' + '\n')
+                    config_header = 'timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' \
+                                    + 'host="' + HOSTNAME + '", ' + 'serialnum="' + SN \
+                                    + '", configuration_content=' + '\n'
+                # Write the header
+                config.write(config_header)
+
+                # For Splunk HEC
+                if use_splunk_http:
+                    config_content = config_header
 
                 for line in data:
 
@@ -1072,9 +1115,9 @@ if config_run == 0:
 
                 if use_splunk_http:
 
-                    # Set output file
-                    config_output_tmp = NMON_VAR + '/nmon_configdata.tmp'
-
+                    # Set output pseudo files
+                    config_output_tmp = cStringIO.StringIO()
+                    config_output_final = NMON_VAR + '/nmon_configdata.tmp'
                     config_content = config_content + '"\n'
 
                     # For /dev/null redirection
@@ -1086,17 +1129,27 @@ if config_run == 0:
                     raw_params = re.sub(r"\'", " ", raw_params)
                     raw_params = re.sub(r'\"', '\\"', raw_params)
 
-                    with open(config_output_tmp, "wb") as f:
+                    config_output_tmp.write(raw_params)
+                    config_output_tmp.seek(0)
+
+                    with open(config_output_final, "wb") as f:
                         f.write('{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"')
-                        f.write(raw_params + "\\n")
+                        for line in config_output_tmp:
+                            line = line + "\\n"
+                            f.write(line)
                         f.write('"}')
 
                     # This might be changed for a more Pythonic approach in the future!
-                    http_data = '-k -H \"Authorization: Splunk ' + str(splunk_http_token) + '\" ' +\
-                                str(splunk_http_url) + ' -d @' + str(config_output_tmp)
+                    http_data = '-s -k -H \"Authorization: Splunk ' + str(splunk_http_token) + '\" ' +\
+                                str(splunk_http_url) + ' -d @' + str(config_output_final)
 
                     cmd = "curl" + " " + http_data
-                    subprocess.call([cmd], shell=True)
+                    subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
+
+                    # Clean
+                    if os.path.isfile(config_output_final):
+                        os.remove(config_output_final)
+                    config_output_tmp.close()
 
                 # Under 10 lines of data in BBB, estimate extraction is not complete
                 if BBB_count < 10:
@@ -1532,12 +1585,14 @@ def standard_section_fn(section):
             membuffer.seek(0)
 
             # Transform to kv data and stream to http
-            write_kv_to_http(membuffer, splunk_http_url, splunk_http_token)
+            write_kv_to_http(membuffer)
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
-        logging.info(result)
-        ref.write(result + "\n")
+
+        if not silent:
+            logging.info(result)
+            ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
         if realtime:
@@ -1766,12 +1821,14 @@ def top_section_fn(section):
             membuffer.seek(0)
 
             # Transform to kv data and stream to http
-            write_kv_to_http(membuffer, splunk_http_url, splunk_http_token)
+            write_kv_to_http(membuffer)
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
-        logging.info(result)
-        ref.write(result + "\n")
+
+        if not silent:
+            logging.info(result)
+            ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
         if realtime:
@@ -2040,8 +2097,10 @@ def uarg_section_fn(section):
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
-        logging.info(result)
-        ref.write(result + "\n")
+
+        if not silent:
+            logging.info(result)
+            ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
         if realtime:
@@ -2063,7 +2122,7 @@ def uarg_section_fn(section):
                 membuffer.seek(0)
 
                 # Transform to kv data and stream to http
-                write_kv_to_http(membuffer, splunk_http_url, splunk_http_token)
+                write_kv_to_http(membuffer)
 
             # close membuffer
             membuffer.close()
@@ -2382,12 +2441,14 @@ def dynamic_section_fn(section):
                     membuffer2.seek(0)
 
                     # Transform to kv data and stream to http
-                    write_kv_to_http(membuffer2, splunk_http_url, splunk_http_token)
+                    write_kv_to_http(membuffer2)
 
             # Show number of lines extracted
             result = section + " section: Wrote" + " " + str(count) + " lines"
-            logging.info(result)
-            ref.write(result + "\n")
+
+            if not silent:
+                logging.info(result)
+                ref.write(result + "\n")
 
             # In realtime, Store last epoch time for this section
             if realtime:
@@ -2773,12 +2834,14 @@ def solaris_wlm_section_fn(section):
                     membuffer.seek(0)
 
                     # Transform to kv data and stream to http
-                    write_kv_to_http(membuffer2, splunk_http_url, splunk_http_token)
+                    write_kv_to_http(membuffer2)
 
             # Show number of lines extracted
             result = str(section) + " section: Wrote" + " " + str(count) + " lines"
-            logging.info(result)
-            ref.write(result + "\n")
+
+            if not silent:
+                logging.info(result)
+                ref.write(result + "\n")
 
             # In realtime, Store last epoch time for this section
             if realtime:
@@ -2807,6 +2870,13 @@ if OStype in ("Solaris", "Unknown"):
 
     for section in solaris_dynamic_various:
         dynamic_section_fn(section)
+
+# Splunk HEC - Finally stream in batch mode and remove the batch file
+if use_splunk_http:
+    stream_to_splunk_http(splunk_http_url, splunk_http_token)
+
+    if os.path.isfile(SPLUNK_HEC_BATCHFILE):
+        os.remove(SPLUNK_HEC_BATCHFILE)
 
 ###################
 # End

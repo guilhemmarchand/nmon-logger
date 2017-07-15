@@ -1,5 +1,5 @@
 Name: nmon-logger-splunk-hec
-Version: 2.0.3
+Version: 2.0.5
 Release: 0
 Summary: nmon-logger for Splunk HEC
 Source: %{name}.tar.gz
@@ -50,6 +50,8 @@ install -m 700 etc/nmon-logger/bin/nmon_cleaner* $RPM_BUILD_ROOT/etc/nmon-logger
 install -m 700 etc/nmon-logger/bin/nmon_helper.sh $RPM_BUILD_ROOT/etc/nmon-logger/bin/
 install -m 700 etc/nmon-logger/bin/fifo_* $RPM_BUILD_ROOT/etc/nmon-logger/bin/
 install -m 700 etc/nmon-logger/bin/nmon_external_cmd/*.sh $RPM_BUILD_ROOT/etc/nmon-logger/bin/nmon_external_cmd/
+install -m 700 etc/nmon-logger/bin/nmon_helper.sh $RPM_BUILD_ROOT/etc/nmon-logger/bin/
+install -m 700 etc/nmon-logger/bin/hec_wrapper.sh $RPM_BUILD_ROOT/etc/nmon-logger/bin/
 %post
 echo
 echo Nmon logger has been successfully installed. Within next minutes, the performance and configuration data collection will start automatically.

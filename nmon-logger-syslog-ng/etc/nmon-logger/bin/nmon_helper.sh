@@ -14,7 +14,7 @@
 # 2017/06/01, Guilhem Marchand: Mirror update of the TA-nmon
 # 2017/06/05, Guilhem Marchand: Mirror update of the TA-nmon
 
-# Version 1.0.6
+# Version 1.0.7
 
 # For AIX / Linux / Solaris
 
@@ -1585,9 +1585,6 @@ cd ${NMON_REPOSITORY}
 if [ ! -f ${PIDFILE} ]; then
 
 	# PID file not found
-
-	echo "`date`, ${HOST} INFO: Removing stale pid file"
-	rm -f ${PIDFILE}
 
 	# search for any App related instances
 	search_nmon_instances

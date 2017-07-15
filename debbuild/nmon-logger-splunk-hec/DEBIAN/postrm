@@ -5,8 +5,6 @@ if [ `ps -fu nmon | grep -v 'PID' | wc -l` -ne 0 ]; then echo "Killing running n
 echo "Removing /etc/nmon-logger remaining files."; rm -rf /etc/nmon-logger
 echo "Removing /var/log/nmon-logger remaining files."; rm -rf /var/log/nmon-logger
 echo "Removing nmon user account"; userdel nmon
-echo Restarting rsyslog service:
-/etc/init.d/rsyslog restart
 echo
 echo Nmon logger has been successfully uninstalled.
 echo
