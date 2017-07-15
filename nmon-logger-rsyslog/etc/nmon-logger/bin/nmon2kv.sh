@@ -28,9 +28,9 @@
 # Releases Notes:
 
 # - Jan 2014, V1.0.0: Guilhem Marchand, Initial version
+# 2017/07/15, Guilhem Marchand: Mirror update of the TA-nmon
 
-
-# Version 1.0.0
+# Version 1.0.1
 
 # For AIX / Linux / Solaris
 
@@ -38,12 +38,17 @@
 ## 	Your Customizations Go Here            ##
 #################################################
 
+# format date output to strftime dd/mm/YYYY HH:MM:SS
+log_date () {
+    date "+%d-%m-%Y %H:%M:%S"
+}
+
 # Set tmp directory
 TMP_DIR="/tmp"
 
 # Verify TMP_DIR is writable
 if [ ! -w ${TMP_DIR} ]; then
-    echo "`date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."
+    echo "`log_date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."
 	exit 1
 fi
 
@@ -52,6 +57,66 @@ rm -f ${TMP_DIR}/nmon2kv.temp.*
 
 # Set nmon_temp
 nmon_temp=${TMP_DIR}/nmon2kv.temp.$$
+
+#
+# Interpreter choice
+#
+
+PYTHON=0
+PERL=0
+# Set the default interpreter
+INTERPRETER="python"
+
+# Get the version for both worlds
+PYTHON=`which python >/dev/null 2>&1`
+PERL=`which python >/dev/null 2>&1`
+
+case $PYTHON in
+*)
+   python_subversion=`python --version 2>&1`
+   case $python_subversion in
+   *" 2.7"*)
+    PYTHON_available="true" ;;
+   *)
+    PYTHON_available="false"
+   esac
+   ;;
+0)
+   PYTHON_available="false"
+   ;;
+esac
+
+case $PERL in
+*)
+   PERL_available="true"
+   ;;
+0)
+   PERL_available="false"
+   ;;
+esac
+
+case `uname` in
+
+# AIX priority is Perl
+"AIX")
+     case $PERL_available in
+     "true")
+           INTERPRETER="perl" ;;
+     "false")
+           INTERPRETER="python" ;;
+ esac
+;;
+
+# Other OS, priority is Python
+*)
+     case $PYTHON_available in
+     "true")
+           INTERPRETER="python" ;;
+     "false")
+           INTERPRETER="perl" ;;
+     esac
+;;
+esac
 
 ####################################################################
 #############		Main Program 			############
@@ -69,29 +134,16 @@ while read line ; do
 	echo "$line" >> ${nmon_temp}
 done
 
-# Python is the default choice, if it is not available launch the Perl version
-PYTHON=`which python >/dev/null 2>&1`
+# Start the parser
+case ${INTERPRETER} in
 
-if [ $? -eq 0 ]; then
+"python")
+    cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py ${userargs} ;;
 
-	# Check Python version, nmon2kv.py compatibility starts with Python version 2.6.6
-	python_subversion=`python --version 2>&1`
+"perl")
+	cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl ${userargs} ;;
 
-	case $python_subversion in
-
-	*" 2.7"*)
-		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.py ${userargs} ;;
-
-	*)
-		cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl ${userargs} ;;
-
-	esac
-
-else
-
-	cat ${nmon_temp} | ${NMON_BIN}/bin/nmon2kv.pl ${userargs}
-
-fi
+esac
 
 # Remove temp
 rm -f ${nmon_temp}

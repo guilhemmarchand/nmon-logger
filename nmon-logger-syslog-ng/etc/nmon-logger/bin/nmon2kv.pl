@@ -36,8 +36,9 @@
 #                                          - Mirror update from TA-nmon
 # - 2017/06/05, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update of the TA-nmon
+# - 2017/15/07: V1.0.7: Guilhem Marchand: Optimize nmon_processing output and reduce volume of data to be generated #37
 
-$version = "1.0.5";
+$version = "1.0.7";
 
 use Time::Local;
 use Time::HiRes;
@@ -61,6 +62,7 @@ $result = GetOptions(
     "use_fqdn" => \$USE_FQDN,    # flag
     "help"        => \$help,         # flag
     "debug"       => \$DEBUG,        # flag
+    "silent"    => \$SILENT,       # flag
 );
 
 # Show version
@@ -87,7 +89,8 @@ Available options are:
 **CAUTION:** This option must not be used when managing nmon data generated out of Splunk (eg. central repositories)
 --nmon_var <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
 --debug :Activate debugging mode for testing purposes
---version :Show current program version \n
+--version :Show current program version
+--silent: Do not output the per section detail logging to save data volume \n
 "
     );
 
@@ -1358,8 +1361,10 @@ foreach $FILENAME (@nmon_files) {
 
                 if ( $sanity_check == 0 ) {
 
-                    print "$key section: Wrote $count lines\n";
-                    print ID_REF "$key section: Wrote $count lines\n";
+                    if (not $SILENT) {
+                        print "$key section: Wrote $count line(s)\n";
+                        print ID_REF "$key section: Wrote $count line(s)\n";
+                    }
 
                     if ( $realtime eq "True" ) {
 
@@ -1779,8 +1784,10 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
 
                     if ( $sanity_check == 0 ) {
 
-                        print "$key section: Wrote $count lines\n";
-                        print ID_REF "$key section: Wrote $count lines\n";
+                        if (not $SILENT) {
+                            print "$key section: Wrote $count line(s)\n";
+                            print ID_REF "$key section: Wrote $count line(s)\n";
+                        }
 
                         if ( $realtime eq "True" ) {
 
@@ -2491,8 +2498,11 @@ qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpu
 
     else {
         if ( $count >= 1 ) {
-            print "$key section: Wrote $count lines\n";
-            print ID_REF "$key section: Wrote $count lines\n";
+
+            if (not $SILENT) {
+                print "$key section: Wrote $count lines\n";
+                print ID_REF "$key section: Wrote $count lines\n";
+            }
 
             if ( $realtime eq "True" ) {
 
@@ -2791,8 +2801,11 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
 
     else {
         if ( $count >= 1 ) {
-            print "$key section: Wrote $count lines\n";
-            print ID_REF "$key section: Wrote $count lines\n";
+
+            if (not $SILENT) {
+                print "$key section: Wrote $count lines\n";
+                print ID_REF "$key section: Wrote $count lines\n";
+            }
 
             if ( $realtime eq "True" ) {
 
@@ -3085,8 +3098,11 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
 
     else {
         if ( $count >= 1 ) {
-            print "$key section: Wrote $count lines\n";
-            print ID_REF "$key section: Wrote $count lines\n";
+
+            if (not $SILENT) {
+                print "$key section: Wrote $count lines\n";
+                print ID_REF "$key section: Wrote $count lines\n";
+            }
 
             if ( $realtime eq "True" ) {
 

@@ -34,13 +34,14 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
-# - # 2017/09/04, V1.0.4: Guilhem Marchand:
+# - 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - # 2017/05/06, V1.0.5: Guilhem Marchand:
+# - 2017/05/06, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - # 2017/13/07, V1.0.6: Guilhem Marchand:
+# - 2017/13/07, V1.0.6: Guilhem Marchand:
 #                                          - FQDN issue, see:
 #                                            https://github.com/guilhemmarchand/nmon-for-splunk/issues/72
+# - 2017/15/07: V1.0.7: Guilhem Marchand: Optimize nmon_processing output and reduce volume of data to be generated #37
 
 # Load libs
 
@@ -60,7 +61,7 @@ import socket
 import json
 
 # Converter version
-nmon2csv_version = '1.0.6'
+nmon2csv_version = '1.0.7'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -188,6 +189,8 @@ parser.add_option('--nokvdelim', action='store_true', dest='nokvdelim', default=
 parser.add_option('--dumpargs', action='store_true', dest='dumpargs',
                   help='only dump the passed arguments and exit (for debugging purposes only)')
 parser.add_option('--debug', action='store_true', dest='debug', help='Activate debug for testing purposes')
+parser.add_option('-s', '--silent', action='store_true', dest='silent', help='Do not output the per section detail'
+                                                                              'logging to save data volume')
 
 (options, args) = parser.parse_args()
 
@@ -201,6 +204,12 @@ if options.debug:
     debug = True
 else:
     debug = False
+
+# Set processing output verbosity
+if options.silent:
+    silent = True
+else:
+    silent = False
 
 # Set hostname mode
 if options.use_fqdn:
@@ -1436,8 +1445,10 @@ def standard_section_fn(section):
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
-        logging.info(result)
-        ref.write(result + "\n")
+
+        if not silent:
+            logging.info(result)
+            ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
         if realtime:
@@ -1661,8 +1672,10 @@ def top_section_fn(section):
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
-        logging.info(result)
-        ref.write(result + "\n")
+
+        if not silent:
+            logging.info(result)
+            ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
         if realtime:
@@ -1931,8 +1944,10 @@ def uarg_section_fn(section):
 
         # Show number of lines extracted
         result = section + " section: Wrote" + " " + str(count) + " lines"
-        logging.info(result)
-        ref.write(result + "\n")
+
+        if not silent:
+            logging.info(result)
+            ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
         if realtime:
@@ -2261,8 +2276,10 @@ def dynamic_section_fn(section):
 
             # Show number of lines extracted
             result = section + " section: Wrote" + " " + str(count) + " lines"
-            logging.info(result)
-            ref.write(result + "\n")
+
+            if not silent:
+                logging.info(result)
+                ref.write(result + "\n")
 
             # In realtime, Store last epoch time for this section
             if realtime:
@@ -2644,8 +2661,10 @@ def solaris_wlm_section_fn(section):
 
             # Show number of lines extracted
             result = str(section) + " section: Wrote" + " " + str(count) + " lines"
-            logging.info(result)
-            ref.write(result + "\n")
+
+            if not silent:
+                logging.info(result)
+                ref.write(result + "\n")
 
             # In realtime, Store last epoch time for this section
             if realtime:
