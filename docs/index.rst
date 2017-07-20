@@ -28,6 +28,45 @@ Overview:
    knownissues
    support
    openissue
+   os_compatibility
+   processing_overview
+   footprint
    binaries
-   licence
+   requirements
+   deployment_matrix
 
+Processing:
+-----------
+
+.. toctree::
+   :maxdepth: 2
+
+   data_processing
+
+Deployment and configuration:
+-----------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   deployment
+   upgrade
+   external
+   nmon_config
+   json_indexing
+
+Troubleshoot:
+-------------
+
+.. toctree::
+   :maxdepth: 2
+
+   troubleshoot
+
+Various:
+--------
+
+.. toctree::
+   :maxdepth: 2
+
+   FAQ

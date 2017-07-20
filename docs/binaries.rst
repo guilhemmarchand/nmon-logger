@@ -32,7 +32,7 @@ Its purpose to recompose the nmon flaw of data to be parsed by the nmon parser s
 
 **nmon_parser:**
 
- * bin/nmon2csv.sh | bin/nmon2csv.py | bin/nmon2csv.pl:
+ * bin/nmon2kv.sh | bin/nmon2kv.py | bin/nmon2kv.pl:
 
 Shell / Python / Perl scripts used to manage and process Nmon raw data into multiple csv files being indexed by Splunk
 
