@@ -6,17 +6,28 @@
 Welcome to nmon-logger's documentation!
 =======================================
 
-Contents:
+.. image:: img/splunk_nmon.png
+   :alt: splunk_nmon.png
+   :align: center
+
+.. image:: img/Octamis_Logo_v3_no_bg.png
+   :alt: Octamis_Logo_v3_no_bg.png
+   :align: right
+   :target: http://www.octamis.com
+
+**Nmon Performance is now associated with Octamis to provide professional solutions for your business, and professional support for the Nmon Performance solution.**
+
+Overview:
+---------
 
 .. toctree::
    :maxdepth: 2
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   about
+   releasenotes
+   knownissues
+   support
+   openissue
+   binaries
+   licence
 
