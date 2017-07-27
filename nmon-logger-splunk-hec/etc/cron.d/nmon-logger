@@ -1,0 +1,8 @@
+# The nmon_helper.sh is responsible for nmon binary launch and requires arguments: <arg1: binaries path> <arg2: log path>
+*/1 * * * * nmon /etc/nmon-logger/bin/nmon_helper.sh /etc/nmon-logger /var/log/nmon-logger 2>&1 | /etc/nmon-logger/bin/hec_wrapper.sh /var/log/nmon-logger/nmon_collect.log nmon_collect collect:http
+
+# The nmon_manage.sh is responsible for launching nmon kv converter and requires arguments: <arg1: binaries path> <arg2: log path>
+*/1 * * * * nmon /etc/nmon-logger/bin/fifo_consumer.sh 2>&1 | /etc/nmon-logger/bin/hec_wrapper.sh /var/log/nmon-logger/nmon_processing.log nmon_processing processing:http
+
+# The nmon_cleaner.sh is responsible for nmon files cleaning and requires arguments: <arg1: binaries path> <arg2: log path>
+0 */4 * * * nmon /etc/nmon-logger/bin/nmon_cleaner.sh /etc/nmon-logger /var/log/nmon-logger 2>&1 | /etc/nmon-logger/bin/hec_wrapper.sh /var/log/nmon-logger/nmon_clean.log nmon_clean clean:http

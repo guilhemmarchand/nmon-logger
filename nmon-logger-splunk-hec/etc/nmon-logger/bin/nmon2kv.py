@@ -34,14 +34,14 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
-# - 2017/09/04, V1.0.4: Guilhem Marchand:
+# - # 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - 2017/05/06, V1.0.5: Guilhem Marchand:
+# - # 2017/05/06, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - 2017/13/07, V1.0.6: Guilhem Marchand:
-#                                          - FQDN issue, see:
-#                                            https://github.com/guilhemmarchand/nmon-for-splunk/issues/72
-# - 2017/15/07: V1.0.7: Guilhem Marchand: Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/15/07: V1.0.6: Guilhem Marchand:
+#                                           - Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/27/07: V1.0.7: Guilhem Marchand:
+#                                           - Splunk HEC implementation
 
 # Load libs
 

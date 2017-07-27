@@ -1,0 +1,13 @@
+# logrotate for nmon-logger
+
+/var/log/nmon-logger/*.log
+{
+        su
+        rotate 7
+        daily
+        missingok
+        notifempty
+        delaycompress
+        compress
+        endscript
+}

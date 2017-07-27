@@ -1,0 +1,10 @@
+# /etc/hosts
+
+127.0.0.1   localhost
+
+# splunk
+192.168.33.100  splunk
+
+# rsyslog-servers
+192.168.33.101  hec-client1
+192.168.33.102  hec-client2

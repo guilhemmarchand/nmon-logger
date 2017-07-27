@@ -52,7 +52,7 @@ use File::Copy;
 
 # Default values
 
-my $OPMODE    = "";
+my $OPMODE   = "";
 my $NMON_VAR = "/var/log/nmon-logger";
 
 $result = GetOptions(
@@ -88,6 +88,9 @@ Available options are:
 --use_fqdn :Use the host fully qualified domain name (fqdn) as the hostname value instead of the value returned by nmon.
 **CAUTION:** This option must not be used when managing nmon data generated out of Splunk (eg. central repositories)
 --nmon_var <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
+--splunk_http_url :Defines the URL for Splunk http forwarding, example: --splunk_http_url  https://host.splunk.com:8088/services/collector/event
+--splunk_http_token :Defines the value of the Splunk HEC token, example: --splunk_http_token B07538E6-729F-4D5B-8AE1-30E93646C65A
+--silent: Do not output the per section detail logging to save data volume
 --debug :Activate debugging mode for testing purposes
 --version :Show current program version
 --silent: Do not output the per section detail logging to save data volume \n
@@ -161,7 +164,21 @@ my $t_start = [Time::HiRes::gettimeofday];
 # Initial states for Analysis
 my $realtime = "False";
 my $colddata = "False";
-my $fifo = "False";
+my $fifo     = "False";
+
+# Splunk HEC
+my $use_splunk_http          = "False";
+my $splunk_http_token_is_set = "False";
+
+if ( $splunk_http_token eq "insert_your_splunk_http_token" ) {
+    $use_splunk_http          = "False";
+    $splunk_http_token_is_set = "False";
+}
+
+else {
+    $use_splunk_http          = "True";
+    $splunk_http_token_is_set = "True";
+}
 
 # Local time
 my $time = strftime "%d-%m-%Y %H:%M:%S", localtime;
@@ -198,88 +215,88 @@ else {
 open( $json, "< $json_config" )
   or die "ERROR: Can't open $json_config : $!";
 
-    while (<$json>) {
-        chomp($_);
+while (<$json>) {
+    chomp($_);
 
-        $_ =~ s/\"//g; #remove quotes
-        $_ =~ s/\,\s/,/g; #remove comma space
+    $_ =~ s/\"//g;       #remove quotes
+    $_ =~ s/\,\s/,/g;    #remove comma space
 
-        # static_section
-        if ($_ =~ /^\s*static_section:\[([\w\,\s]*)\],{0,}$/) {
-            @static_vars = split(',', $1);
-        }
-
-        # Solaris_static_section
-        if ($_ =~ /^\s*Solaris_static_section:\[([\w\,\s]*)\],{0,}$/) {
-            @Solaris_static_section = split(',', $1);
-        }
-
-        # LPAR_static_section
-        if ($_ =~ /^\s*LPAR_static_section:\[([\w\,\s]*)\],{0,}$/) {
-            @LPAR_static_section = split(',', $1);
-        }
-
-        # top_section
-        if ($_ =~ /^\s*top_section:\[([\w\,\s]*)\],{0,}$/) {
-            @top_vars = split(',', $1);
-        }
-
-        # uarg_section
-        if ($_ =~ /^\s*uarg_section:\[([\w\,\s]*)\],{0,}$/) {
-            @uarg_vars = split(',', $1);
-        }
-
-        # dynamic_section1
-        if ($_ =~ /^\s*dynamic_section1:\[([\w\,\s]*)\],{0,}$/) {
-            @dynamic_vars1 = split(',', $1);
-        }
-
-        # dynamic_section2
-        if ($_ =~ /^\s*dynamic_section2:\[([\w\,\s]*)\],{0,}$/) {
-            @dynamic_vars2 = split(',', $1);
-        }
-
-        # disk_extended_section
-        if ($_ =~ /^\s*disk_extended_section:\[([\w\,\s]*)\],{0,}$/) {
-            @disk_extended_section = split(',', $1);
-        }
-
-        # solaris_WLM
-        if ($_ =~ /^\s*solaris_WLM:\[([\w\,\s]*)\],{0,}$/) {
-            @solaris_WLM = split(',', $1);
-        }
-
-        # solaris_VxVM
-        if ($_ =~ /^\s*solaris_VxVM:\[([\w\,\s]*)\],{0,}$/) {
-            @solaris_VxVM = split(',', $1);
-        }
-
-        # solaris_dynamic_various
-        if ($_ =~ /^\s*solaris_dynamic_various:\[([\w\,\s]*)\],{0,}$/) {
-            @solaris_dynamic_various = split(',', $1);
-        }
-
-        # AIX_dynamic_various
-        if ($_ =~ /^\s*AIX_dynamic_various:\[([\w\,\s]*)\],{0,}$/) {
-            @AIX_dynamic_various = split(',', $1);
-        }
-
-        # AIX_WLM
-        if ($_ =~ /^\s*AIX_WLM:\[([\w\,\s]*)\],{0,}$/) {
-            @AIX_WLM = split(',', $1);
-        }
-
-        # nmon_external
-        if ($_ =~ /^\s*nmon_external:\[([\w\,\s]*)\],{0,}$/) {
-            @nmon_external = split(',', $1);
-        }
-
-        # nmon_external
-        if ($_ =~ /^\s*nmon_external_transposed:\[([\w\,\s]*)\],{0,}$/) {
-            @nmon_external_transposed = split(',', $1);
-        }
-
+    # static_section
+    if ( $_ =~ /^\s*static_section:\[([\w\,\s]*)\],{0,}$/ ) {
+        @static_vars = split( ',', $1 );
     }
+
+    # Solaris_static_section
+    if ( $_ =~ /^\s*Solaris_static_section:\[([\w\,\s]*)\],{0,}$/ ) {
+        @Solaris_static_section = split( ',', $1 );
+    }
+
+    # LPAR_static_section
+    if ( $_ =~ /^\s*LPAR_static_section:\[([\w\,\s]*)\],{0,}$/ ) {
+        @LPAR_static_section = split( ',', $1 );
+    }
+
+    # top_section
+    if ( $_ =~ /^\s*top_section:\[([\w\,\s]*)\],{0,}$/ ) {
+        @top_vars = split( ',', $1 );
+    }
+
+    # uarg_section
+    if ( $_ =~ /^\s*uarg_section:\[([\w\,\s]*)\],{0,}$/ ) {
+        @uarg_vars = split( ',', $1 );
+    }
+
+    # dynamic_section1
+    if ( $_ =~ /^\s*dynamic_section1:\[([\w\,\s]*)\],{0,}$/ ) {
+        @dynamic_vars1 = split( ',', $1 );
+    }
+
+    # dynamic_section2
+    if ( $_ =~ /^\s*dynamic_section2:\[([\w\,\s]*)\],{0,}$/ ) {
+        @dynamic_vars2 = split( ',', $1 );
+    }
+
+    # disk_extended_section
+    if ( $_ =~ /^\s*disk_extended_section:\[([\w\,\s]*)\],{0,}$/ ) {
+        @disk_extended_section = split( ',', $1 );
+    }
+
+    # solaris_WLM
+    if ( $_ =~ /^\s*solaris_WLM:\[([\w\,\s]*)\],{0,}$/ ) {
+        @solaris_WLM = split( ',', $1 );
+    }
+
+    # solaris_VxVM
+    if ( $_ =~ /^\s*solaris_VxVM:\[([\w\,\s]*)\],{0,}$/ ) {
+        @solaris_VxVM = split( ',', $1 );
+    }
+
+    # solaris_dynamic_various
+    if ( $_ =~ /^\s*solaris_dynamic_various:\[([\w\,\s]*)\],{0,}$/ ) {
+        @solaris_dynamic_various = split( ',', $1 );
+    }
+
+    # AIX_dynamic_various
+    if ( $_ =~ /^\s*AIX_dynamic_various:\[([\w\,\s]*)\],{0,}$/ ) {
+        @AIX_dynamic_various = split( ',', $1 );
+    }
+
+    # AIX_WLM
+    if ( $_ =~ /^\s*AIX_WLM:\[([\w\,\s]*)\],{0,}$/ ) {
+        @AIX_WLM = split( ',', $1 );
+    }
+
+    # nmon_external
+    if ( $_ =~ /^\s*nmon_external:\[([\w\,\s]*)\],{0,}$/ ) {
+        @nmon_external = split( ',', $1 );
+    }
+
+    # nmon_external
+    if ( $_ =~ /^\s*nmon_external_transposed:\[([\w\,\s]*)\],{0,}$/ ) {
+        @nmon_external_transposed = split( ',', $1 );
+    }
+
+}
 
 close $json;
 
@@ -306,7 +323,7 @@ if ( -e $APP_CONF_FILE ) {
 my $APP_VAR = "$NMON_VAR/var";
 
 # If may main directories do not exist
-if ( !-d "$APP_VAR" )     { mkdir "$APP_VAR"; }
+if ( !-d "$APP_VAR" ) { mkdir "$APP_VAR"; }
 
 # Spool directory for NMON files processing
 my $SPOOL_DIR = "$APP_VAR/spool";
@@ -334,6 +351,12 @@ $CONFIG_REF = "$APP_VAR/config_reference.txt";
 
 # BBB extraction flag
 $BBB_FLAG = "$APP_VAR/BBB_status.flag";
+
+# Splunk HEC only: store the final batch file to be streamed (remove any pre-existing file)
+$SPLUNK_HEC_BATCHFILE = "$APP_VAR/splunk_hec_perfdata_batch.dat";
+if ( -e $SPLUNK_HEC_BATCHFILE ) {
+            unlink $SPLUNK_HEC_BATCHFILE;
+}
 
 #################################################
 ## 	Various
@@ -2009,6 +2032,12 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
         }
     }
 
+
+    if ($use_splunk_http) {
+        # Finally Stream to Splunk HEC in batch
+        &stream_to_splunk_http();
+    }
+
 #############################################
 #############  Main Program End 	############
 #############################################
@@ -2058,12 +2087,19 @@ sub csv2kv {
             die("ERROR: Can not open /$outfile for writting\n");
         }
 
+        # for Splunk HEC only
+        unless ( open( SPLUNK_HEC, ">> $SPLUNK_HEC_BATCHFILE" ) ) {
+            die("ERROR: Can not open /$SPLUNK_HEC_BATCHFILE for writting\n");
+        }
+
         my $count = 0;
         my @header;
         my @event;
         my $line;
         my $hdcount;
         my $loopvariable;
+        my $kvdata;
+        my $http_data;
 
         foreach $line (@lines) {
             if ( $count == 0 ) {
@@ -2076,20 +2112,73 @@ sub csv2kv {
                 @event   = split /,/, $line;
                 $count   = $count + 1;
                 $hdcount = 0;
+
                 foreach $loopvariable (@event) {
                     if ( $loopvariable eq "" ) {
                         $hdcount = $hdcount + 1;
                         last;
                     }
                     print INSERT $header[$hdcount] . "=" . $loopvariable . " ";
+
+                    # for Splunk HEC
+                    if ($use_splunk_http) {
+                        $kvdata =
+                            $kvdata
+                          . $header[$hdcount] . "="
+                          . $loopvariable . " ";
+                    }
+
                     $hdcount = $hdcount + 1;
                 }
                 print INSERT "\n";
+
+                # For Splunk HEC
+                if ($use_splunk_http) {
+                    #$kvdata =~ s/"/\\"/g;
+                    my $timestamp = "";
+
+                    if ( $kvdata =~ /timestamp=\"(\d*)\"/ ) {
+                        $timestamp = $1;
+                    }
+                    else {
+                        print
+"failed to parse timestamp before streaming to http, applying now as the timestamp\n";
+                        $timestamp = time();
+                    }
+
+                    $kvdata =~ s/"/\\"/g;
+                    $kvdata = "{\"time\": \"$timestamp\", \"sourcetype\": \"nmon_data:fromhttp\", \"event\": \"$kvdata\"}\n";
+
+                    print SPLUNK_HEC "$kvdata";
+
+                    # Empty for next loop
+                    $kvdata    = "";
+                    $timestamp = "";
+
+                }
+
             }
 
         }
 
     }    # end main if
+
+}
+
+# Stream to Splunk HEC in batch
+sub stream_to_splunk_http () {
+
+    # Stream to http
+    $curl = `curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE 2>&1 /dev/null`;
+
+    if ($DEBUG) {
+        print
+"DEBUG, sending: curl -s -k -H \"Authorization: Splunk $SPLUNK_HTTP_TOKEN\" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE'\n";
+    }
+
+    if ( -e $SPLUNK_HEC_BATCHFILE ) {
+                unlink $SPLUNK_HEC_BATCHFILE;
+    }
 
 }
 
@@ -2104,6 +2193,19 @@ sub config_extract {
         die("ERROR: ERROR: Can not open /$BASEFILENAME\n");
     }
 
+    # Splunk HEC
+    my $config_output_tmp = "$NMON_VAR/nmon_configdata_splunkhec.tmp";
+    my $config_output_final = "$NMON_VAR/nmon_configdata_splunkhec.log";
+
+     if ($use_splunk_http) {
+        unless (open(INSERT_HEC_TMP, ">$config_output_tmp")) {
+            die("ERROR: ERROR: Can not open $config_output_tmp\n");
+        }
+        unless (open(INSERT_HEC, ">$config_output_final")) {
+            die("ERROR: ERROR: Can not open $config_output_final\n");
+        }
+    }
+
     # Initialize variables
     my $section      = "CONFIG";
     my $time         = "";
@@ -2116,18 +2218,19 @@ sub config_extract {
     # Get nmon/server settings (search string, return column, delimiter)
     $AIXVER   = &get_setting( "AIX",      2, "," );
     $HOSTNAME = &get_setting( "host",     2, "," );
-    $DATE = &get_setting( "AAA,date", 2, "," );
-    $TIME = &get_setting( "AAA,time", 2, "," );
+    $DATE     = &get_setting( "AAA,date", 2, "," );
+    $TIME     = &get_setting( "AAA,time", 2, "," );
 
     # for AIX
     if ( $AIXVER ne "-1" ) {
         $SN = &get_setting( "systemid", 4, "," );
-        $SN = ( split( /\s+/, $SN ) )[0];                # "systemid IBM,SN ..."
+        $SN = ( split( /\s+/, $SN ) )[0];    # "systemid IBM,SN ..."
     }
+
     # for Power Linux
     else {
         $SN = &get_setting( "serial_number", 4, "," );
-        $SN = ( split( /\s+/, $SN ) )[0];                # "serial_number=IBM,SN ..."
+        $SN = ( split( /\s+/, $SN ) )[0];    # "serial_number=IBM,SN ..."
     }
 
     # undeterminated
@@ -2154,6 +2257,11 @@ sub config_extract {
       . $SN
       . "$colon, configuration_content=$colon";
     print( INSERT "$write\n" );
+
+    if ($use_splunk_http) {
+        print(INSERT_HEC_TMP "$write\n");
+    }
+
     $count++;
 
     # Open NMON file for reading
@@ -2177,6 +2285,11 @@ sub config_extract {
             my $write = $x;
 
             print( INSERT "$write\n" );
+
+            if ($use_splunk_http) {
+                print(INSERT_HEC_TMP "$write\n");
+            }
+
             $count++;
 
         }
@@ -2192,6 +2305,11 @@ sub config_extract {
             my $write = $x;
 
             print( INSERT "$write\n" );
+
+            if ($use_splunk_http) {
+                print(INSERT_HEC_TMP "$write\n");
+            }
+
             $count++;
             $BBB_count++;
 
@@ -2201,6 +2319,46 @@ sub config_extract {
 
     # print terminator
     print( INSERT "$colon" );
+    close INSERT;
+
+    if ($use_splunk_http) {
+
+        print(INSERT_HEC_TMP "$colon");
+        close INSERT_HEC_TMP;
+
+        # Insert the HEC header
+        print INSERT_HEC "{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"";
+
+        open my $origin, $config_output_tmp or die "Could not open $config_output_tmp: $!";
+
+        while (my $line = <$origin>) {
+            $line =~ s/\'/ /g;
+            $line =~ s/\"/\\"/g;
+            $line = "$line\\n";
+            print INSERT_HEC $line;
+        }
+
+        print INSERT_HEC '"}';
+
+        if ($DEBUG) {
+            print
+"DEBUG, sending: curl -s -k -H \"Authorization: Splunk $SPLUNK_HTTP_TOKEN\" $SPLUNK_HTTP_URL -d \@$config_output_final'\n";
+        }
+
+        # Stream to http
+        $curl = `curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$config_output_final 2>&1 /dev/null`;
+
+        close INSERT_HEC;
+
+        if ( -e $config_output_tmp ) {
+            unlink $config_output_tmp;
+        }
+
+        if ( -e $config_output_final ) {
+            unlink $config_output_final;
+        }
+
+    }
 
 # If we extracted at least 10 lines of BBB data, estimate we successfully extracted it
     if ( $BBB_count > 10 ) {
@@ -2368,7 +2526,7 @@ sub static_sections_insert {
     $x =~ s/_$//;
 
     # Count the number fields in header
-    my @c = $x =~ /,/g;
+    my @c                 = $x =~ /,/g;
     my $fieldsheadercount = @c;
 
     print INSERT (
@@ -2402,7 +2560,7 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,inter
         $x = join( ",", @cols[ 2 .. $n ] );
         $x =~ s/,,/,-1,/g;    # replace missing data ",," with a ",-1,"
 
-        my @c = $x =~ /,/g;
+        my @c              = $x =~ /,/g;
         my $fieldsrawcount = @c;
 
         # section dynamic name
@@ -2650,7 +2808,7 @@ qq|timestamp,type,serialnum,hostname,OStype,interval,snapshots,ZZZZ,device,value
     # Count the number fields in header
     my $header =
 "timestamp,type,serialnum,hostname,OStype,interval,snapshots,ZZZZ,device,value";
-    my @c = $header =~ /,/g;
+    my @c                 = $header =~ /,/g;
     my $fieldsheadercount = @c;
 
     #print "\n COUNT IS $fieldsheadercount \n";
@@ -2668,11 +2826,13 @@ qq|timestamp,type,serialnum,hostname,OStype,interval,snapshots,ZZZZ,device,value
      # Convert timestamp string to epoch time (from format: YYYY-MM-DD hh:mm:ss)
         my ( $year, $month, $day, $hour, $min, $sec ) = split /\W+/, $timestamp;
 
-        if ($month == 0) {
-            print "ERROR, section $key has failed to identify the timestamp of these data, affecting current timestamp which may be inaccurate\n";
-            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+        if ( $month == 0 ) {
+            print
+"ERROR, section $key has failed to identify the timestamp of these data, affecting current timestamp which may be inaccurate\n";
+            my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst )
+              = localtime(time);
             $month = $mon;
-            $day = $mday;
+            $day   = $mday;
         }
 
         my $ZZZZ_epochtime =
@@ -2726,7 +2886,7 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
             }
 
             # Count the number fields in data
-            my @c = $finaldata =~ /,/g;
+            my @c              = $finaldata =~ /,/g;
             my $fieldsrawcount = @c;
 
             #print "\n COUNT IS $fieldsrawcount \n";
@@ -2955,7 +3115,7 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,interval,snapshots,ZZZZ
     # Count the number fields in header
     my $header =
 "timestamp,type,serialnum,hostname,OStype,logical_cpus,interval,snapshots,ZZZZ,device,value";
-    my @c = $header =~ /,/g;
+    my @c                 = $header =~ /,/g;
     my $fieldsheadercount = @c;
 
     #print "\n COUNT IS $fieldsheadercount \n";
@@ -3023,7 +3183,7 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
             }
 
             # Count the number fields in data
-            my @c = $finaldata =~ /,/g;
+            my @c              = $finaldata =~ /,/g;
             my $fieldsrawcount = @c;
 
             #print "\n COUNT IS $fieldsrawcount \n";
@@ -3241,10 +3401,11 @@ sub get_nmon_data {
         $SN = &get_setting( "systemid", 4, "," );
         $SN = ( split( /\s+/, $SN ) )[0];                # "systemid IBM,SN ..."
     }
+
     # for Power Linux
     else {
         $SN = &get_setting( "serial_number", 4, "," );
-        $SN = ( split( /\s+/, $SN ) )[0];                # "serial_number=IBM,SN ..."
+        $SN = ( split( /\s+/, $SN ) )[0];    # "serial_number=IBM,SN ..."
     }
 
     # undeterminated

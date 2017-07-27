@@ -15,6 +15,7 @@ git checkout testing; git pull
 # Copy sources to build
 rsync -av nmon-logger-rsyslog/* debbuild/nmon-logger-rsyslog/
 rsync -av nmon-logger-syslog-ng/* debbuild/nmon-logger-syslog-ng/
+rsync -av nmon-logger-splunk-hec/* debbuild/nmon-logger-splunk-hec/
 
 # cleaning
 rm debbuild/nmon-logger*/README
@@ -57,5 +58,17 @@ dpkg-deb --build nmon-logger-rsyslog
 
 # Rename deb with version number and OS name
 for deb in `ls nmon-logger-rsyslog.deb`; do name=`echo $deb | awk -F. '{print $1}'`; version=`cat ${name}/DEBIAN/control | grep Version | awk '{print $2}'`; mv $deb ${name}-debian-${version}.deb; done
+
+# Return rep
+cd ~/nmon-logger
+
+# Enter build
+cd ~/nmon-logger/debbuild
+
+# Build nmon-logger-splunk-hec
+dpkg-deb --build nmon-logger-splunk-hec
+
+# Rename deb with version number and OS name
+for deb in `ls nmon-logger-splunk-hec.deb`; do name=`echo $deb | awk -F. '{print $1}'`; version=`cat ${name}/DEBIAN/control | grep Version | awk '{print $2}'`; mv $deb ${name}-${version}.deb; done
 
 exit 0

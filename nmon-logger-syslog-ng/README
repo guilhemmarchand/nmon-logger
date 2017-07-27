@@ -16,18 +16,4 @@ limitations under the License.
 
 The documentation for Nmon Performance Monitor is available online at:
 
-http://nmonsplunk.wikidot.com
-
-To get support:
-
-http://nmonsplunk.wikidot.com/about-support
-
-###################################
-#### Notes about this package: ####
-###################################
-
-This package is expected to be used with the Nmon Performance monitor for a deployment with no Universal Forwarders for end clients.
-For this to be achievied, syslog can be used as the transport layer. 
-
-See detailed instructions in the Nmon wiki: http://nmonsplunk.wikidot.com/documentation:installation:syslog-ng
-
+http://nmon-logger.readthedocs.io/en/latest/
