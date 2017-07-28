@@ -36,7 +36,10 @@
 #                                          - Mirror update from TA-nmon
 # - 2017/06/05, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update of the TA-nmon
-# - 2017/15/07: V1.0.7: Guilhem Marchand: Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/15/07: V1.0.6: Guilhem Marchand:
+#                                           - Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/27/07: V1.0.7: Guilhem Marchand:
+#                                           - Splunk HEC implementation
 
 $version = "1.0.7";
 
@@ -56,13 +59,15 @@ my $OPMODE   = "";
 my $NMON_VAR = "/var/log/nmon-logger";
 
 $result = GetOptions(
-    "mode=s"      => \$OPMODE,       # string
-    "nmon_var=s" => \$NMON_VAR,    # string
-    "version"     => \$VERSION,      # flag
-    "use_fqdn" => \$USE_FQDN,    # flag
-    "help"        => \$help,         # flag
-    "debug"       => \$DEBUG,        # flag
+    "mode=s"              => \$OPMODE,               # string
+    "nmon_var=s"          => \$NMON_VAR,             # string
+    "version"             => \$VERSION,              # flag
+    "use_fqdn"            => \$USE_FQDN,             # flag
+    "splunk_http_url=s"   => \$SPLUNK_HTTP_URL,      # string
+    "splunk_http_token=s" => \$SPLUNK_HTTP_TOKEN,    # string
     "silent"    => \$SILENT,       # flag
+    "help"                => \$help,                 # flag
+    "debug"               => \$DEBUG,                # flag
 );
 
 # Show version
@@ -92,8 +97,7 @@ Available options are:
 --splunk_http_token :Defines the value of the Splunk HEC token, example: --splunk_http_token B07538E6-729F-4D5B-8AE1-30E93646C65A
 --silent: Do not output the per section detail logging to save data volume
 --debug :Activate debugging mode for testing purposes
---version :Show current program version
---silent: Do not output the per section detail logging to save data volume \n
+--version :Show current program version \n
 "
     );
 
@@ -606,6 +610,11 @@ foreach $FILENAME (@nmon_files) {
 
     # Show perl version
     print "Perl version: $] \n";
+
+    # Print an informational message if running in silent mode
+    if ($SILENT) {
+        print "Output mode is configured to run in minimal mode using the --silent option\n";
+    }
 
     # Show Nmon version
     print "NMON VERSION: $VERSION \n";

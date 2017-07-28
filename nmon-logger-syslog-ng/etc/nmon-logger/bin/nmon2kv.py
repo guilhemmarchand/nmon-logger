@@ -34,14 +34,14 @@
 # - 10/19/2016, V1.0.3: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon, see:
 #                                           https://github.com/guilhemmarchand/TA-nmon/issues/11
-# - 2017/09/04, V1.0.4: Guilhem Marchand:
+# - # 2017/09/04, V1.0.4: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - 2017/05/06, V1.0.5: Guilhem Marchand:
+# - # 2017/05/06, V1.0.5: Guilhem Marchand:
 #                                          - Mirror update from TA-nmon
-# - 2017/13/07, V1.0.6: Guilhem Marchand:
-#                                          - FQDN issue, see:
-#                                            https://github.com/guilhemmarchand/nmon-for-splunk/issues/72
-# - 2017/15/07: V1.0.7: Guilhem Marchand: Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/15/07: V1.0.6: Guilhem Marchand:
+#                                           - Optimize nmon_processing output and reduce volume of data to be generated #37
+# - 2017/27/07: V1.0.7: Guilhem Marchand:
+#                                           - Splunk HEC implementation
 
 # Load libs
 
@@ -523,29 +523,33 @@ bytes_total = len(''.join(data))
 # Show current time and number of lines
 msg = "nmon2csv:" + currenttime() + " Reading NMON data: " + str(nbr_lines) + " lines" + " " + \
       str(bytes_total) + " bytes"
-logging.info(msg)
+print(msg)
 
 # Show Splunk Root Directory
 msg = 'Var Root Directory ($NMON_VAR): ' + str(NMON_VAR)
-logging.info(msg)
+print(msg)
 
 # Show addon type
 msg = "addon type: " + str(APP)
-logging.info(msg)
+print(msg)
 
 # Show application version
 msg = "addon version: " + str(addon_version)
-logging.info(msg)
+print(msg)
 
 # Show program version
 msg = "nmon2kv version: " + str(nmon2csv_version)
-logging.info(msg)
+print(msg)
 
 # Show type of OS we are running
-logging.info('Guest Operating System:' + str(ostype))
+print('Guest Operating System:' + str(ostype))
 
 # Show Python Version
-logging.info('Python version:' + python_version)
+print('Python version:' + python_version)
+
+# Print an informational message if running in silent mode
+if silent:
+    print("Output mode is configured to run in minimal mode using the --silent option")
 
 # Prevent managing empty file
 count = 0
@@ -575,7 +579,7 @@ if use_fqdn:
     host = socket.getfqdn()
     if host:
         HOSTNAME = host
-        logging.info("HOSTNAME:" + str(HOSTNAME))
+        print("HOSTNAME:" + str(HOSTNAME))
 
 for line in data:
 
@@ -588,13 +592,13 @@ for line in data:
         host = re.match(r'^(AAA),(host),(.+)\n', line)
         if host:
             HOSTNAME = host.group(3)
-            logging.info("HOSTNAME:" + str(HOSTNAME))
+            print("HOSTNAME:" + str(HOSTNAME))
 
     # Set VERSION
     version = re.match(r'^(AAA),(version),(.+)\n', line)
     if version:
         VERSION = version.group(3)
-        logging.info("NMON VERSION:" + str(VERSION))
+        print("NMON VERSION:" + str(VERSION))
 
     # Set SN
     sn = re.match(r'^BBB\w*,[^,]*,[^,]*,\"(?:systemid|serial_number)[^,]*IBM,(\w*)[\s|\"].*\n', line)
@@ -606,7 +610,7 @@ for line in data:
     date = re.match(r'^(AAA),(date),(.+)\n', line)
     if date:
         DATE = date.group(3)
-        logging.info("DATE of Nmon data:" + str(DATE))
+        print("DATE of Nmon data:" + str(DATE))
 
     # Set date details
     date_details = re.match(r'(AAA,date,)([0-9]+)[/|\-]([a-zA-Z-0-9]+)[/|\-]([0-9]+)', line)
@@ -619,7 +623,7 @@ for line in data:
     time_match = re.match(r'^(AAA),(time),(.+)\n', line)
     if time_match:
         TIME = time_match.group(3)
-        logging.info("TIME of Nmon Data:" + str(TIME))
+        print("TIME of Nmon Data:" + str(TIME))
 
     # Set TIME DETAILS
     time_details = re.match(r'(AAA,time,)([0-9]+).([0-9]+).([0-9]+)', line)
@@ -632,32 +636,32 @@ for line in data:
     interval = re.match(r'^(AAA),(interval),(.+)\n', line)
     if interval:
         INTERVAL = interval.group(3)
-        logging.info("INTERVAL:" + str(INTERVAL))
+        print("INTERVAL:" + str(INTERVAL))
 
     # Set SNAPSHOTS
     snapshots = re.match(r'^(AAA),(snapshots),(.+)\n', line)
     if snapshots:
         SNAPSHOTS = snapshots.group(3)
-        logging.info("SNAPSHOTS:" + str(SNAPSHOTS))
+        print("SNAPSHOTS:" + str(SNAPSHOTS))
 
     # Set logical_cpus (Note: AIX systems for example will have values behind AAA,cpus - should use the second
     # by default if it exists)
     LOGICAL_CPUS = re.match(r'^(AAA),(cpus),(.+),(.+)\n', line)
     if LOGICAL_CPUS:
         logical_cpus = LOGICAL_CPUS.group(4)
-        logging.info("logical_cpus:" + str(logical_cpus))
+        print("logical_cpus:" + str(logical_cpus))
     else:
         # If not defined in second position, set it from first
         LOGICAL_CPUS = re.match(r'^(AAA),(cpus),(.+)\n', line)
         if LOGICAL_CPUS:
             logical_cpus = LOGICAL_CPUS.group(3)
-            logging.info("logical_cpus:" + str(logical_cpus))
+            print("logical_cpus:" + str(logical_cpus))
 
     # Set virtual_cpus
     VIRTUAL_CPUS = re.match(r'^BBB[a-zA-Z].+Online\sVirtual\sCPUs.+:\s([0-9]+)\"\n', line)
     if VIRTUAL_CPUS:
         virtual_cpus = VIRTUAL_CPUS.group(1)
-        logging.info("virtual_cpus:" + str(virtual_cpus))
+        print("virtual_cpus:" + str(virtual_cpus))
 
     # Identify Linux hosts
     OStype_Linux = re.search(r'AAA,OS,Linux', line)
@@ -675,7 +679,7 @@ for line in data:
         OStype = "AIX"
 
 # Show NMON OStype
-logging.info("NMON OStype:" + str(OStype))
+print("NMON OStype:" + str(OStype))
 
 # If HOSTNAME could not be defined
 if HOSTNAME == '-1':
@@ -700,7 +704,7 @@ if logical_cpus == '-1':
 # If virtual_cpus could not be defined, set it equal to logical_cpus
 if virtual_cpus == '-1':
     virtual_cpus = logical_cpus
-    logging.info("virtual_cpus: " + str(virtual_cpus))
+    print("virtual_cpus: " + str(virtual_cpus))
 
 # If SN could not be defined, not an AIX host, SN == HOSTNAME
 if SN == '-1':
@@ -731,16 +735,16 @@ for line in data:
         msg = 'ERROR: hostname: ' + HOSTNAME + ' Detected Bad Nmon structure, found ZZZZ lines truncated! ' \
                                                '(ZZZZ lines contains the event timestamp and should always ' \
                                                'begin the line)'
-        logging.info(msg)
+        print(msg)
         msg = 'ERROR: hostname: ' + HOSTNAME + ' Ignoring nmon data'
-        logging.info(msg)
+        print(msg)
         sys.exit(1)
 
     # Search for old time format (eg. Nmon version V9 and prior)
     time_oldformat = re.match(r'(AAA,date,)([0-9]+)/([0-9]+)/([0-9]+)', line)
     if time_oldformat:
         msg = 'INFO: hostname: ' + HOSTNAME + ' Detected old Nmon version using old Date format (dd/mm/yy)'
-        logging.info(msg)
+        print(msg)
 
         day = time_oldformat.group(2)
         month = time_oldformat.group(3)
@@ -757,7 +761,7 @@ for line in data:
         DATE = day + '-' + month + '-' + year
 
         msg = 'INFO: hostname: ' + HOSTNAME + ' Date converted to: ' + DATE
-        logging.info(msg)
+        print(msg)
 
 # End for
 
@@ -901,7 +905,7 @@ idnmon = DATE + ':' + TIME + ',' + HOSTNAME + ',' + SN + ',' + str(bytes_total) 
 partial_idnmon = DATE + ':' + TIME + ',' + HOSTNAME + ',' + SN + ',' + str(bytes_total) + ',' + str(starting_epochtime)
 
 # Show Nmon ID
-logging.info("NMON ID:" + str(idnmon))
+print("NMON ID:" + str(idnmon))
 
 # Show real time / cold data message
 if realtime:
@@ -909,19 +913,19 @@ if realtime:
         msg = "ANALYSIS: Enforcing realtime mode using --mode option"
     else:
         msg = 'ANALYSIS: Assuming Nmon realtime data'
-    logging.info(msg)
+    print(msg)
 elif colddata:
     if options.mode == 'colddata':
         msg = "ANALYSIS: Enforcing colddata mode using --mode option"
     else:
         msg = 'ANALYSIS: Assuming Nmon cold data'
-    logging.info(msg)
+    print(msg)
 elif fifo:
     if options.mode == 'fifo':
         msg = "ANALYSIS: Enforcing fifo mode using --mode option"
     else:
         msg = 'ANALYSIS: fifo mode activated'
-    logging.info(msg)
+    print(msg)
 
 # Open reference file for reading, if exists already
 if os.path.isfile(ID_REF):
@@ -937,7 +941,7 @@ if os.path.isfile(ID_REF):
                 if idmatch:
 
                     # If ID matches, then the file has been previously proceeded, let's show last result of execution
-                    logging.info("This nmon file has been already processed, nothing to do.")
+                    print("This nmon file has been already processed, nothing to do.")
                     sys.exit(0)
 
                 # If id does not match, recover the last known ending epoch time to proceed only new data
@@ -954,7 +958,7 @@ if os.path.isfile(ID_REF):
                 if idmatch:
 
                     # If ID matches, then the file has been previously proceeded, let's show last result of execution
-                    logging.info("This nmon file has been already processed, nothing to do.")
+                    print("This nmon file has been already processed, nothing to do.")
                     sys.exit(0)
 
                 # If id does not match, recover the last known ending epoch time to proceed only new data
@@ -973,17 +977,17 @@ ref.write(idnmon + '\n')
 
 # write starting epoch
 msg = "Starting_epochtime: " + str(starting_epochtime)
-logging.info(msg)
+print(msg)
 ref.write(msg + '\n')
 
 # write last epochtime of Nmon data
 msg = "Ending_epochtime: " + str(ZZZZ_epochtime)
-logging.info(msg)
+print(msg)
 ref.write(msg + '\n')
 
 # Show and save last known epoch time
 msg = 'last known epoch time: ' + str(last_known_epochtime)
-logging.info(msg)
+print(msg)
 ref.write(msg + '\n')
 
 # Set last known epochtime equal to starting epochtime if the nmon has not been yet proceeded
@@ -1063,7 +1067,7 @@ if config_run == 0:
         if int(last_known_epochtime) < int(limit):
 
             msg = "CONFIG section will be extracted"
-            logging.info(msg)
+            print(msg)
             ref.write(msg + "\n")
 
             # Initialize BBB_count
@@ -1161,7 +1165,7 @@ if config_run == 0:
 
                 # Show number of lines extracted
                 result = "CONFIG section: Wrote" + " " + str(count) + " lines"
-                logging.info(result)
+                print(result)
                 ref.write(result + '\n')
 
                 # Save the a combo of HOSTNAME: current_epochtime in CONFIG_REF
@@ -1171,13 +1175,13 @@ if config_run == 0:
         else:
 
             msg = "CONFIG section: Assuming we already extracted for this file"
-            logging.info(msg)
+            print(msg)
             ref.write(msg + "\n")
 
     elif colddata:
 
         msg = "CONFIG section will be extracted"
-        logging.info(msg)
+        print(msg)
         ref.write(msg + "\n")
 
         # Open config output for writing
@@ -1203,7 +1207,7 @@ if config_run == 0:
 
             # Show number of lines extracted
             result = "CONFIG section: Wrote" + " " + str(count) + " lines"
-            logging.info(result)
+            print(result)
             ref.write(result + '\n')
 
             # Save the a combo of HOSTNAME: current_epochtime in CONFIG_REF
@@ -1214,7 +1218,7 @@ elif config_run == 1:
     # Show number of lines extracted
     result = "CONFIG section: will not be extracted (time delta of " + str(time_delta) + \
              " seconds is inferior to 1 hour)"
-    logging.info(result)
+    print(result)
     ref.write(result + '\n')
 
 
@@ -1238,7 +1242,7 @@ def standard_section_fn(section):
     if realtime:
         if not os.path.exists(keyref):
             if debug:
-                logging.info("DEBUG, no keyref file for this " + str(section) +
+                print("DEBUG, no keyref file for this " + str(section) +
                              " section (searched for " + str(keyref) + "), no data or first execution")
         else:
             with open(keyref, "r") as f:
@@ -1251,7 +1255,7 @@ def standard_section_fn(section):
                         last_epoch_persection = myregex_match.group(1)
 
                         if debug:
-                            logging.info("DEBUG, Last known timestamp for " + str(section) +
+                            print("DEBUG, Last known timestamp for " + str(section) +
                                          " section is " + str(last_epoch_persection))
 
         # In realtime mode, in case no per section information is available, let's use global epoch time
@@ -1591,7 +1595,7 @@ def standard_section_fn(section):
         result = section + " section: Wrote" + " " + str(count) + " lines"
 
         if not silent:
-            logging.info(result)
+            print(result)
             ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
@@ -1827,7 +1831,7 @@ def top_section_fn(section):
         result = section + " section: Wrote" + " " + str(count) + " lines"
 
         if not silent:
-            logging.info(result)
+            print(result)
             ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
@@ -2099,7 +2103,7 @@ def uarg_section_fn(section):
         result = section + " section: Wrote" + " " + str(count) + " lines"
 
         if not silent:
-            logging.info(result)
+            print(result)
             ref.write(result + "\n")
 
         # In realtime, Store last epoch time for this section
@@ -2447,7 +2451,7 @@ def dynamic_section_fn(section):
             result = section + " section: Wrote" + " " + str(count) + " lines"
 
             if not silent:
-                logging.info(result)
+                print(result)
                 ref.write(result + "\n")
 
             # In realtime, Store last epoch time for this section
@@ -2840,7 +2844,7 @@ def solaris_wlm_section_fn(section):
             result = str(section) + " section: Wrote" + " " + str(count) + " lines"
 
             if not silent:
-                logging.info(result)
+                print(result)
                 ref.write(result + "\n")
 
             # In realtime, Store last epoch time for this section
@@ -2885,7 +2889,7 @@ if use_splunk_http:
 # Time required to process
 end_time = time.time()
 result = "Elapsed time was: %g seconds" % (end_time - start_time)
-logging.info(result)
+print(result)
 ref.write(result + "\n")
 
 # exit

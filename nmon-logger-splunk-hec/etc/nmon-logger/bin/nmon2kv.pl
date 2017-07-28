@@ -611,6 +611,11 @@ foreach $FILENAME (@nmon_files) {
     # Show perl version
     print "Perl version: $] \n";
 
+    # Print an informational message if running in silent mode
+    if ($SILENT) {
+        print "Output mode is configured to run in minimal mode using the --silent option\n";
+    }
+
     # Show Nmon version
     print "NMON VERSION: $VERSION \n";
 
