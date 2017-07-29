@@ -16,9 +16,6 @@
 ## 	Your Customizations Go Here            ##
 #################################################
 
-# hostname
-HOST=`hostname`
-
 # Which type of OS are we running
 UNAME=`uname`
 
@@ -56,6 +53,14 @@ splunk_http_url=`echo $nmon2csv_options | grep -Po "splunk_http_url\s{0,}\K[^\s]
 
 # Capture the splunk_http_token
 splunk_http_token=`echo $nmon2csv_options | grep -Po "splunk_http_token\s{0,}\K[^\s]*"`
+
+# Manage FQDN option
+echo $nmon2csv_options | grep '--use_fqdn' >/dev/null
+if [ $? -eq 0 ]; then
+    HOST=`hostname -f`
+else
+    HOST=`hostname`
+fi
 
 ############################################
 # functions

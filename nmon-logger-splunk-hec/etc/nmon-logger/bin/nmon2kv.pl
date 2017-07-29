@@ -2226,7 +2226,15 @@ sub config_extract {
 
     # Get nmon/server settings (search string, return column, delimiter)
     $AIXVER   = &get_setting( "AIX",      2, "," );
-    $HOSTNAME = &get_setting( "host",     2, "," );
+
+    # Allow hostname os
+    if ($USE_FQDN) {
+        chomp( $HOSTNAME = `hostname -f` );
+    }
+    else {
+        $HOSTNAME = &get_setting( "host", 2, "," );
+    }
+
     $DATE     = &get_setting( "AAA,date", 2, "," );
     $TIME     = &get_setting( "AAA,time", 2, "," );
 
