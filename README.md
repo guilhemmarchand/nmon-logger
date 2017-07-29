@@ -45,9 +45,12 @@ Different versions of the nmon-logger are provided to transport these data using
 
 nmon-logger packages are widely tested against:
 
-* CentOS
-* Debian
-* Ubuntu
+* Ubuntu (x86 and Powerpc)
+* Debian (x86)
+* CentOS (x86)
+* RHEL (x86 and Powerpc)
+* Suse (x86 and Powerpc)
+* OpenSuse (x86)
 
 **What about dependencies ?**
 
