@@ -5,6 +5,6 @@
 # splunk
 192.168.33.100  splunk
 
-# rsyslog-servers
+# HEC clients
 192.168.33.101  hec-client1
 192.168.33.102  hec-client2

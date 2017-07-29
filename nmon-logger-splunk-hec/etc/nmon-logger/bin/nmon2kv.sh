@@ -41,6 +41,9 @@
 # Set tmp directory
 TMP_DIR="/tmp"
 
+# Set host
+HOST=`hostname`
+
 # Verify TMP_DIR is writable
 if [ ! -w ${TMP_DIR} ]; then
     echo "`date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."

@@ -28,7 +28,7 @@
 # Releases Notes:
 
 # - Jan 2014, V1.0.0: Guilhem Marchand, Initial version
-# 2017/07/15, Guilhem Marchand: Mirror update of the TA-nmon
+# - 2017/07/24, V1.0.1: Guilhem Marchand, interpreter choice update
 
 # Version 1.0.1
 
@@ -38,17 +38,15 @@
 ## 	Your Customizations Go Here            ##
 #################################################
 
-# format date output to strftime dd/mm/YYYY HH:MM:SS
-log_date () {
-    date "+%d-%m-%Y %H:%M:%S"
-}
-
 # Set tmp directory
 TMP_DIR="/tmp"
 
+# Set host
+HOST=`hostname`
+
 # Verify TMP_DIR is writable
 if [ ! -w ${TMP_DIR} ]; then
-    echo "`log_date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."
+    echo "`date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."
 	exit 1
 fi
 

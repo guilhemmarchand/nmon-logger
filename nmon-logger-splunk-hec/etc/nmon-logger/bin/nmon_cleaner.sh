@@ -29,6 +29,9 @@
 userarg1=$1
 userarg2=$2
 
+# Set host
+HOST=`hostname`
+
 case ${userarg1} in
 "")
 	echo "`date`, ${HOST} ERROR, the binary home directory for nmon-logger must be provided in first argument. (default: /etc/nmon-logger)"

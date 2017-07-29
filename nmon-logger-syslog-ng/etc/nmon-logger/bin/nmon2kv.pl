@@ -442,6 +442,11 @@ my $SNAPSHOT = "-1";
 
 my $OStype = "Unknown";
 
+# Set HOSTNAME
+if ($USE_FQDN) {
+    chomp( $HOSTNAME = `hostname -f` );
+}
+
 while ( defined( my $l = <FILE> ) ) {
     chomp $l;
 
@@ -450,10 +455,7 @@ while ( defined( my $l = <FILE> ) ) {
 # The value will be equivalent to the stdout of the os "hostname -f" command
 # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
 
-    if ($USE_FQDN) {
-        chomp( $HOSTNAME = `hostname -f` );
-    }
-    else {
+    if (not $USE_FQDN) {
         if ( ( rindex $l, "AAA,host," ) > -1 ) {
             ( my $t1, my $t2, $HOSTNAME ) = split( ",", $l );
         }
@@ -2580,6 +2582,11 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,inter
         my @c              = $x =~ /,/g;
         my $fieldsrawcount = @c;
 
+        # Double quotes all CSV values
+        $x =~ s/,/\",\"/g;
+        $x =~ s/($)/\"/g;
+        $x =~ s/(^)/\"/g;
+
         # section dynamic name
         $datatype = @cols[0];
 
@@ -3401,7 +3408,15 @@ sub get_nmon_data {
     # Get nmon/server settings (search string, return column, delimiter)
     $AIXVER   = &get_setting( "AIX",      2, "," );
     $DATE     = &get_setting( "date",     2, "," );
-    $HOSTNAME = &get_setting( "host",     2, "," );
+
+    # Allow hostname os
+    if ($USE_FQDN) {
+        chomp( $HOSTNAME = `hostname -f` );
+    }
+    else {
+        $HOSTNAME = &get_setting( "host", 2, "," );
+    }
+
     $INTERVAL = &get_setting( "interval", 2, "," );    # nmon sampling interval
 
     $MEMORY  = &get_setting( qq|lsconf,"Good Memory Size:|, 1, ":" );

@@ -207,6 +207,14 @@ if [ -f /etc/nmon.conf ]; then
 	. /etc/nmon.conf
 fi
 
+# Manage FQDN option
+echo $nmon2csv_options | grep '\-\-use_fqdn' >/dev/null
+if [ $? -eq 0 ]; then
+    HOST=`hostname -f`
+else
+    HOST=`hostname`
+fi
+
 # Nmon Binary
 case $UNAME in
 
