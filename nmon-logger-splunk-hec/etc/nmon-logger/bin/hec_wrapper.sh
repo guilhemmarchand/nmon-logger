@@ -55,7 +55,7 @@ splunk_http_url=`echo $nmon2csv_options | grep -Po "splunk_http_url\s{0,}\K[^\s]
 splunk_http_token=`echo $nmon2csv_options | grep -Po "splunk_http_token\s{0,}\K[^\s]*"`
 
 # Manage FQDN option
-echo $nmon2csv_options | grep '--use_fqdn' >/dev/null
+echo $nmon2csv_options | grep '\-\-use_fqdn' >/dev/null
 if [ $? -eq 0 ]; then
     HOST=`hostname -f`
 else
