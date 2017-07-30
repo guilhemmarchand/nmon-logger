@@ -88,7 +88,7 @@ case ${splunk_http_token} in
 ;;
 
 *)
-	curl -s -k -H "Authorization: Splunk ${splunk_http_token}" ${splunk_http_url} -d "{\"host\": \"${HOST}\", \"sourcetype\": \"${userarg2}\", \"source\": \"${userarg3}\", \"event\": \"${output}\"}"
+	curl -s -k -H "Authorization: Splunk ${splunk_http_token}" ${splunk_http_url} -d "{\"host\": \"${HOST}\", \"sourcetype\": \"${userarg2}\", \"source\": \"${userarg3}\", \"event\": \"${output}\"}" >/dev/null
 ;;
 
 esac
