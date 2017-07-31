@@ -48,11 +48,29 @@ if [ -f /etc/nmon.conf ]; then
 	. /etc/nmon.conf
 fi
 
-# Capture the splunk_http_url
-splunk_http_url=`echo $nmon2csv_options | grep -Po "splunk_http_url\s{0,}\K[^\s]*"`
+# AIX does not support Gnu grep but he Perl friendly
 
-# Capture the splunk_http_token
-splunk_http_token=`echo $nmon2csv_options | grep -Po "splunk_http_token\s{0,}\K[^\s]*"`
+case `uname` in
+
+"AIX")
+
+    # Capture the splunk_http_url
+    splunk_http_url=`echo $nmon2csv_options | perl -ne '/splunk_http_url\s([^\s]*+)/ && print $1."\n"'`
+
+    # Capture the splunk_http_token
+    splunk_http_token=`echo $nmon2csv_options | perl -ne '/splunk_http_token\s([^\s]*+)/ && print $1."\n"'`
+;;
+
+*)
+
+    # Capture the splunk_http_url
+    splunk_http_url=`echo $nmon2csv_options | grep -Po "splunk_http_url\s{0,}\K[^\s]*"`
+
+    # Capture the splunk_http_token
+    splunk_http_token=`echo $nmon2csv_options | grep -Po "splunk_http_token\s{0,}\K[^\s]*"`
+;;
+
+esac
 
 # Manage FQDN option
 echo $nmon2csv_options | grep '\-\-use_fqdn' >/dev/null
