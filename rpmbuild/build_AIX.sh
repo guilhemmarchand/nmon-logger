@@ -17,7 +17,7 @@ rm testing.zip
 mv nmon-logger-testing/nmon-logger-splunk-hec .
 
 # Copy spec file
-cp nmon-logger-testing/rpmbuild/SPECS_AIX/nmon-logger-splunk-hec SPECS/
+cp nmon-logger-testing/rpmbuild/SPECS_AIX/nmon-logger-splunk-hec.spec SPECS/
 
 # clean
 rm -rf nmon-logger-testing
@@ -30,7 +30,7 @@ done
 
 # Build rpms
 for i in nmon-logger-splunk-hec; do
-    rpmbuild -ba /opt/freeware/src/packages/$i
+    rpmbuild -ba /opt/freeware/src/packages/SPECS/$i
 done
 
 exit 0
