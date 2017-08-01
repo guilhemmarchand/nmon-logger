@@ -29,7 +29,7 @@ for i in nmon-logger-splunk-hec; do
 done
 
 # Build rpms
-for i in nmon-logger-splunk-hec; do
+for i in nmon-logger-splunk-hec.spec; do
     rpmbuild -ba /opt/freeware/src/packages/SPECS/$i
 done
 
