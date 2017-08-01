@@ -44,9 +44,14 @@ TMP_DIR="/tmp"
 # Set host
 HOST=`hostname`
 
+# format date output to strftime dd/mm/YYYY HH:MM:SS
+log_date () {
+    date "+%d-%m-%Y %H:%M:%S"
+}
+
 # Verify TMP_DIR is writable
 if [ ! -w ${TMP_DIR} ]; then
-    echo "`date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."
+    echo "`log_date`, ${HOST} ERROR, temp directory ${TMP_DIR} is not writable."
 	exit 1
 fi
 

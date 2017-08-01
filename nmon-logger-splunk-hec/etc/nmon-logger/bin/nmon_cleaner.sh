@@ -32,16 +32,21 @@ userarg2=$2
 # Set host
 HOST=`hostname`
 
+# format date output to strftime dd/mm/YYYY HH:MM:SS
+log_date () {
+    date "+%d-%m-%Y %H:%M:%S"
+}
+
 case ${userarg1} in
 "")
-	echo "`date`, ${HOST} ERROR, the binary home directory for nmon-logger must be provided in first argument. (default: /etc/nmon-logger)"
+	echo "`log_date`, ${HOST} ERROR, the binary home directory for nmon-logger must be provided in first argument. (default: /etc/nmon-logger)"
 	exit 1
 ;;
 esac
 
 case ${userarg2} in
 "")
-        echo "`date`, ${HOST} ERROR, the log home directory for nmon-logger must be provided in second argument. (default: /var/log/nmon-logger)"
+        echo "`log_date`, ${HOST} ERROR, the log home directory for nmon-logger must be provided in second argument. (default: /var/log/nmon-logger)"
         exit 1
 ;;
 esac
