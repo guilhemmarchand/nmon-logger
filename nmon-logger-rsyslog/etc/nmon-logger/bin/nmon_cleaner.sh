@@ -49,26 +49,76 @@ esac
 NMON_BIN=${userarg1}
 NMON_VAR=${userarg2}
 
-# Python is the default choice, if it is not available launch the Perl version
+#
+# Interpreter choice
+#
+
+PYTHON=0
+PERL=0
+# Set the default interpreter
+INTERPRETER="python"
+
+# Get the version for both worlds
 PYTHON=`which python >/dev/null 2>&1`
+PERL=`which python >/dev/null 2>&1`
 
-if [ $? -eq 0 ]; then
+case $PYTHON in
+*)
+   python_subversion=`python --version 2>&1`
+   case $python_subversion in
+   *" 2.7"*)
+    PYTHON_available="true" ;;
+   *)
+    PYTHON_available="false"
+   esac
+   ;;
+0)
+   PYTHON_available="false"
+   ;;
+esac
 
-	# Supplementary check: Ensure Python is at least 2.7 version
-	python_subversion=`python --version 2>&1`
+case $PERL in
+*)
+   PERL_available="true"
+   ;;
+0)
+   PERL_available="false"
+   ;;
+esac
 
-	echo $python_subversion | grep '2.7' >/dev/null
+case `uname` in
 
-	if [ $? -eq 0 ]; then
-		${NMON_BIN}/bin/nmon_cleaner.py --nmon_home ${NMON_VAR}
-	else
-		${NMON_BIN}/bin/nmon_cleaner.pl --nmon_home ${NMON_VAR}
-	fi
+# AIX priority is Perl
+"AIX")
+     case $PERL_available in
+     "true")
+           INTERPRETER="perl" ;;
+     "false")
+           INTERPRETER="python" ;;
+ esac
+;;
 
-else
+# Other OS, priority is Python
+*)
+     case $PYTHON_available in
+     "true")
+           INTERPRETER="python" ;;
+     "false")
+           INTERPRETER="perl" ;;
+     esac
+;;
+esac
 
-	${NMON_BIN}/bin/nmon_cleaner.pl --nmon_home ${NMON_VAR}
+###### Start cleaner ######
 
-fi
+case ${INTERPRETER} in
+
+"python")
+		${NMON_BIN}/bin/nmon_cleaner.py --nmon_home ${NMON_VAR} ;;
+
+"perl")
+		${NMON_BIN}/bin/nmon_cleaner.pl --nmon_home ${NMON_VAR} ;;
+
+esac
 
 exit 0

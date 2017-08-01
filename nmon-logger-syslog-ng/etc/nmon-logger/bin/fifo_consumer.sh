@@ -31,14 +31,65 @@ temp_file="/tmp/fifo_consumer.sh.$$"
 # APP path discovery
 APP="/etc/nmon-logger"
 
-# Verify Perl availability (Perl will be more commonly available than Python)
-PERL=`which perl >/dev/null 2>&1`
+#
+# Interpreter choice
+#
 
-if [ $? -eq 0 ]; then
-    INTERPRETER="perl"
-else
-    INTERPRETER="python"
-fi
+PYTHON=0
+PERL=0
+# Set the default interpreter
+INTERPRETER="python"
+
+# Get the version for both worlds
+PYTHON=`which python >/dev/null 2>&1`
+PERL=`which python >/dev/null 2>&1`
+
+case $PYTHON in
+*)
+   python_subversion=`python --version 2>&1`
+   case $python_subversion in
+   *" 2.7"*)
+    PYTHON_available="true" ;;
+   *)
+    PYTHON_available="false"
+   esac
+   ;;
+0)
+   PYTHON_available="false"
+   ;;
+esac
+
+case $PERL in
+*)
+   PERL_available="true"
+   ;;
+0)
+   PERL_available="false"
+   ;;
+esac
+
+case `uname` in
+
+# AIX priority is Perl
+"AIX")
+     case $PERL_available in
+     "true")
+           INTERPRETER="perl" ;;
+     "false")
+           INTERPRETER="python" ;;
+ esac
+;;
+
+# Other OS, priority is Python
+*)
+     case $PYTHON_available in
+     "true")
+           INTERPRETER="python" ;;
+     "false")
+           INTERPRETER="perl" ;;
+     esac
+;;
+esac
 
 # default values relevant for our context
 nmon2csv_options="--mode fifo"
