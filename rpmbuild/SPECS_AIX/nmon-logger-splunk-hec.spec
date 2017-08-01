@@ -60,7 +60,7 @@ echo
 %postun
 echo
 if [ "$1" = "0" ]; then
-if [ `ps -fu nmon | grep -v 'PID' | wc -l` -ne 0 ]; then echo "Killing running nmon processes:"; echo "**** list of running processes: ****"; echo `ps -fu nmon | grep '/var/log/nmon-logger/bin'`; ps -fu nmon | grep '/var/log/nmon-logger/bin' | awk '{print $2}' | xargs kill; sleep 5; fi
+if [ `ps -fu nmon | grep -v 'PID' | wc -l` -ne 0 ]; then echo "Killing running nmon processes:"; echo "**** list of running processes: ****"; echo `ps -fu nmon | grep '/var/log/nmon-logger' | grep topas_nmon`; ps -fu nmon | grep '/var/log/nmon-logger' | grep topas_nmon | awk '{print $2}' | xargs kill; sleep 5; fi
 echo "Removing /etc/nmon-logger remaining files."; rm -rf /etc/nmon-logger
 echo "Removing /var/log/nmon-logger remaining files."; rm -rf /var/log/nmon-logger
 echo "Removing nmon user account"; userdel nmon
