@@ -56,15 +56,15 @@ NMON_BIN=${userarg1}
 NMON_VAR=${userarg2}
 
 # source default nmon.conf
-if [ -f $APP/default/nmon.conf ]; then
-	. $APP/default/nmon.conf
+if [ -f $NMON_BIN/default/nmon.conf ]; then
+	. $NMON_BIN/default/nmon.conf
 fi
 
 # source local nmon.conf, if any
 
 # Search for a local nmon.conf file located in $SPLUNK_HOME/etc/apps/TA-nmon/local
-if [ -f $APP/local/nmon.conf ]; then
-	. $APP/local/nmon.conf
+if [ -f $NMON_BIN/local/nmon.conf ]; then
+	. $NMON_BIN/local/nmon.conf
 fi
 
 # On a per server basis, you can also set in /etc/nmon.conf
