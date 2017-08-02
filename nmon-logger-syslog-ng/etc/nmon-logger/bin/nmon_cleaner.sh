@@ -55,6 +55,31 @@ esac
 NMON_BIN=${userarg1}
 NMON_VAR=${userarg2}
 
+# source default nmon.conf
+if [ -f $APP/default/nmon.conf ]; then
+	. $APP/default/nmon.conf
+fi
+
+# source local nmon.conf, if any
+
+# Search for a local nmon.conf file located in $SPLUNK_HOME/etc/apps/TA-nmon/local
+if [ -f $APP/local/nmon.conf ]; then
+	. $APP/local/nmon.conf
+fi
+
+# On a per server basis, you can also set in /etc/nmon.conf
+if [ -f /etc/nmon.conf ]; then
+	. /etc/nmon.conf
+fi
+
+# Manage FQDN option
+echo $nmon2csv_options | grep '\-\-use_fqdn' >/dev/null
+if [ $? -eq 0 ]; then
+    HOST=`hostname -f`
+else
+    HOST=`hostname`
+fi
+
 #
 # Interpreter choice
 #

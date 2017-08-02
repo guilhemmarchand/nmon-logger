@@ -189,13 +189,6 @@ nmon_external_generation="1"
 mode_fifo="1"
 
 # source default nmon.conf
-
-# Notes: in a search head running in SHC, the creation of a local/nmon.conf will make the SHC deployer
-# reformatting the conf file in a Splunk fashion
-# this is however not compatible with a shell sourcing of the file
-# If we detect this case, the nmon.conf file will be reformatted to match our constraints
-
-# source default nmon.conf
 if [ -f $APP/default/nmon.conf ]; then
 	. $APP/default/nmon.conf
 fi
