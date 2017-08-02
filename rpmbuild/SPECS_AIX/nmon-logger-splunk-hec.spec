@@ -51,6 +51,7 @@ cp -r AIX_support $RPM_BUILD_ROOT/etc/nmon-logger/
 %post
 chown -R nmon:nmon /etc/nmon-logger
 cp /etc/nmon-logger/AIX_support/crontab.conf /var/spool/cron/crontabs/nmon
+ps -ef | grep '/usr/sbin/cron' | grep -v grep | awk '{print $2}' | xargs kill
 echo
 echo Nmon logger has been successfully installed. Within next minutes, the performance and configuration data collection will start automatically.
 echo Please check the content of "/var/log/nmon-logger/"
