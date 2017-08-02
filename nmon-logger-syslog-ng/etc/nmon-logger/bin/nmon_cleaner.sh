@@ -11,8 +11,9 @@
 # Releases Notes:
 
 # - Jan 2016, V1.0.0: Guilhem Marchand, Initial version
+# - 02/08/2017, V1.0.1: Guilhem Marchand, importing maintenance tasks from TA-nmon
 
-# Version 1.0.0
+# Version 1.0.1
 
 # For AIX / Linux / Solaris
 
@@ -113,6 +114,126 @@ case `uname` in
      esac
 ;;
 esac
+
+###### Maintenance tasks ######
+
+#
+# Maintenance task1
+#
+
+# Maintenance task 1: verify if we have nmon processes running over the allowed period
+# This issue seems to happen sometimes specially on AIX servers
+
+# If an nmon process has not been terminated after its grace period, the process will be killed
+
+# get the allowed runtime in seconds for an nmon process according to the configuration
+# and add a 10 minute grace period
+
+case `uname` in
+
+"AIX"|"Linux")
+
+    echo "`log_date`, ${HOST} INFO, starting maintenance task 1: verify nmon processes running over expected time period"
+
+    endtime=0
+
+    case ${mode_fifo} in
+    "1")
+        endtime=`expr ${fifo_interval} \* ${fifo_snapshot}` ;;
+    *)
+        endtime=`expr ${interval} \* ${snapshot}` ;;
+    esac
+
+    endtime=`expr ${endtime} + 600`
+
+    # get the list of running processes
+    ps -eo user,pid,command,etime,args | grep "nmon-logger" | grep "var/log/nmon" | grep -v fifo_reader | grep -v grep >/dev/null
+
+    if [ $? -eq 0 ]; then
+
+        oldPidList=`ps -eo user,pid,command,etime,args | grep "nmon-logger" | grep "var/log/nmon" | grep -v fifo_reader | grep -v grep | awk '{ print $2 }'`
+        for pid in $oldPidList; do
+
+            pid_runtime=0
+            # only run the process is running
+            if [ -d /proc/${pid} ]; then
+                # get the process runtime in seconds
+                pid_runtime=`ps -p ${pid} -oetime= | tr '-' ':' | awk -F: '{ total=0; m=1; } { for (i=0; i < NF; i++) {total += $(NF-i)*m; m *= i >= 2 ? 24 : 60 }} {print total}'`
+                if [ ${pid_runtime} -gt ${endtime} ]; then
+                    echo "`log_date`, ${HOST} WARN, old nmon process found due to `ps -eo user,pid,command,etime,args | grep $pid | grep -v grep` killing (SIGTERM) process $pid"
+                    kill $pid
+
+                    # Allow some time for the process to end
+                    sleep 5
+
+                    # re-check the status
+                    ps -p ${pid} -oetime= >/dev/null
+
+                    if [ $? -eq 0 ]; then
+                        echo "`log_date`, ${HOST} WARN, old nmon process found due to `ps -eo user,pid,command,etime,args | grep $pid | grep -v grep` failed to stop, killing (-9) process $pid"
+                        kill -9 $pid
+                    fi
+
+                fi
+            fi
+
+        done
+
+    fi
+
+    #
+    # Maintenance task2
+    #
+    #set -x
+    # Maintenance task 2: An other case of issue we could have would be having the fifo_reader processing running without associated nmon processes
+    # In such a case, no new nmon processes would be launched and the collection would stop
+
+    echo "`log_date`, ${HOST} INFO, starting maintenance task 2: verify orphan fifo_reader processes"
+
+    for instance in fifo1 fifo2; do
+
+    # get the list of running processes
+    ps -eo user,pid,command,etime,args | grep "nmon-logger" | grep fifo_reader | grep ${instance} >/dev/null
+
+    if [ $? -eq 0 ]; then
+
+        oldPidList=`ps -eo user,pid,command,etime,args | grep "nmon-logger" | grep fifo_reader | grep ${instance} | grep -v grep | awk '{ print $2 }'`
+
+        # search for associated nmon process
+        ps -eo user,pid,command,etime,args | grep "nmon-logger" | grep "var/log/nmon" | grep -v fifo_reader | grep ${instance} >/dev/null
+
+        if [ $? -ne 0 ]; then
+
+            # no process found, kill the reader processes
+            for pid in $oldPidList; do
+                    echo "`log_date`, ${HOST} WARN, orphan reader process found (no associated nmon process) due to `ps -eo user,pid,command,etime,args | grep $pid | grep -v grep` killing (SIGTERM) process $pid"
+                    kill $pid
+
+                    # Allow some time for the process to end
+                    sleep 5
+
+                    # re-check the status
+                    ps -p ${pid} -oetime= >/dev/null
+
+                    if [ $? -eq 0 ]; then
+                    echo "`log_date`, ${HOST} WARN, orphan reader process (no associated nmon process) due to `ps -eo user,pid,command,etime,args | grep $pid | grep -v grep` failed to stop, killing (-9) process $pid"
+                        kill -9 $pid
+                    fi
+
+            done
+
+        fi
+
+    fi
+
+    done
+
+;;
+
+# End of per OS case
+esac
+
+###### End maintenance tasks ######
 
 ###### Start cleaner ######
 
