@@ -241,8 +241,8 @@
 
   vars:
    - docroot: /opt/deployment/nmon-logger
-   - rpm_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-syslog-ng-*.rpm | head -1') }}"
-   - rpm_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-syslog-ng-*.rpm | head -1 | xargs basename') }}"
+   - rpm_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-syslog-ng-*.noarch.rpm | head -1') }}"
+   - rpm_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/rpm/nmon-logger-syslog-ng-*.noarch.rpm | head -1 | xargs basename') }}"
    - deb_binpath: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-syslog-ng-*.deb | head -1') }}"
    - deb_binname: "{{ lookup('pipe', 'ls /opt/deployment/nmon-logger/deb/nmon-logger-syslog-ng-*.deb | head -1 | xargs basename') }}"
 
