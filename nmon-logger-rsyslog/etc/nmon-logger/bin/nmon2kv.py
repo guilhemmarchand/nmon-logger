@@ -2413,7 +2413,7 @@ def dynamic_section_fn(section):
                 membuffer.seek(0)
 
                 # Write to second temp place
-                writer = csv.writer(membuffer2)
+                writer = csv.writer(membuffer2, lineterminator="\n")
                 writer.writerow(
                     ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'interval',
                      'snapshots', 'ZZZZ', 'device', 'value'])
@@ -2806,7 +2806,7 @@ def solaris_wlm_section_fn(section):
                 # Rewind temp
                 membuffer.seek(0)
 
-                writer = csv.writer(membuffer2)
+                writer = csv.writer(membuffer2, lineterminator="\n")
                 writer.writerow(
                     ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'logical_cpus',
                      'interval', 'snapshots', 'ZZZZ', 'device', 'value'])

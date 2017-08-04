@@ -2425,7 +2425,6 @@ sub static_sections_insert {
     my @rawdata;
     my $x;
     my @cols;
-    my $comma;
     my $TS;
     my $n;
     my $sanity_check                  = 0;
@@ -2557,7 +2556,6 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,inter
         @rawdata = grep( /^CPU\d*,T.+,/, @nmon );
     }
 
-    $comma = "";
     $n     = @cols;
     $n     = $n - 1;    # number of columns -1
 
@@ -2627,11 +2625,10 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,inter
                 if ( $ZZZZ_epochtime > $last_epoch_filter ) {
 
                     print INSERT (
-qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpus","$virtual_cpus","$DATETIME{@cols[1]}","$INTERVAL","$SNAPSHOTS",$x|
+qq|"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpus","$virtual_cpus","$DATETIME{@cols[1]}","$INTERVAL","$SNAPSHOTS",$x\n|
                     );
                     $count++;
 
-                    $comma = "\n";
                 }
 
                 else {
@@ -2648,11 +2645,9 @@ qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpu
             elsif ( $colddata eq "True" || $fifo eq "True" ) {
 
                 print INSERT (
-qq|$comma"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpus","$virtual_cpus","$DATETIME{@cols[1]}","$INTERVAL","$SNAPSHOTS",$x|
+qq|"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpus","$virtual_cpus","$DATETIME{@cols[1]}","$INTERVAL","$SNAPSHOTS",$x\n|
                 );
                 $count++;
-
-                $comma = "\n";
 
             }
 
@@ -2724,7 +2719,6 @@ sub variable_sections_insert {
     my $x;
     my $j;
     my @cols;
-    my $comma;
     my $TS;
     my $n;
     my @devices;
@@ -3028,7 +3022,6 @@ sub solaris_wlm_section_fn {
     my $x;
     my $j;
     my @cols;
-    my $comma;
     my $TS;
     my $n;
     my @devices;
