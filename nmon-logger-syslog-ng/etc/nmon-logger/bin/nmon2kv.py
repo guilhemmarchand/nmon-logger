@@ -516,7 +516,7 @@ def stream_to_splunk_http(url, token):
     http_data = '-s -k -H \"Authorization: Splunk ' + str(token) + '\" ' + \
                 str(url) + ' -d @' + str(SPLUNK_HEC_BATCHFILE)
 
-    cmd = "curl" + " " + http_data
+    cmd = "unset LIBPATH; curl" + " " + http_data
     subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
 
 
@@ -1169,7 +1169,7 @@ if config_run == 0:
                 http_data = '-s -k -H \"Authorization: Splunk ' + str(splunk_http_token) + '\" ' +\
                             str(splunk_http_url) + ' -d @' + str(config_output_final)
 
-                cmd = "curl" + " " + http_data
+                cmd = "unset LIBPATH; curl" + " " + http_data
                 subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
 
                 # Clean

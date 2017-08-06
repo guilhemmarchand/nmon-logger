@@ -2192,11 +2192,11 @@ sub csv2kv {
 sub stream_to_splunk_http () {
 
     # Stream to http
-    $curl = `curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE 2>&1 /dev/null`;
+    $curl = `unset LIBPATH; curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE 2>&1 /dev/null`;
 
     if ($DEBUG) {
         print
-"DEBUG, sending: curl -s -k -H \"Authorization: Splunk $SPLUNK_HTTP_TOKEN\" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE'\n";
+"DEBUG, sending: unset LIBPATH; curl -s -k -H \"Authorization: Splunk $SPLUNK_HTTP_TOKEN\" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE'\n";
     }
 
     if ( -e $SPLUNK_HEC_BATCHFILE ) {
@@ -2384,11 +2384,11 @@ sub config_extract {
 
         if ($DEBUG) {
             print
-"DEBUG, sending: curl -s -k -H \"Authorization: Splunk $SPLUNK_HTTP_TOKEN\" $SPLUNK_HTTP_URL -d \@$config_output_final'\n";
+"DEBUG, sending: unset LIBPATH; curl -s -k -H \"Authorization: Splunk $SPLUNK_HTTP_TOKEN\" $SPLUNK_HTTP_URL -d \@$config_output_final'\n";
         }
 
         # Stream to http
-        $curl = `curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$config_output_final 2>&1 /dev/null`;
+        $curl = `unset LIBPATH; curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$config_output_final 2>&1 /dev/null`;
 
         close INSERT_HEC;
 
@@ -2607,6 +2607,9 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,inter
         $x =~ s/,/\",\"/g;
         $x =~ s/($)/\"/g;
         $x =~ s/(^)/\"/g;
+
+        # in case we would generate twice double quotes
+        $x =~ s/\"\"/\"/g;
 
         # section dynamic name
         $datatype = @cols[0];
