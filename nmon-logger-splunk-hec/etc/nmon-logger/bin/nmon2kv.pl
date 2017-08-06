@@ -57,15 +57,18 @@ use File::Copy;
 
 my $OPMODE   = "";
 my $NMON_VAR = "/var/log/nmon-logger";
+my $NMON_APP = "/etc/nmon-logger";
 
 $result = GetOptions(
     "mode=s"              => \$OPMODE,               # string
     "nmon_var=s"          => \$NMON_VAR,             # string
+    "nmon_app=s"          => \$NMON_APP,             # string
     "version"             => \$VERSION,              # flag
     "use_fqdn"            => \$USE_FQDN,             # flag
     "splunk_http_url=s"   => \$SPLUNK_HTTP_URL,      # string
     "splunk_http_token=s" => \$SPLUNK_HTTP_TOKEN,    # string
     "silent"    => \$SILENT,       # flag
+    "no_local_log"    => \$NO_LOCAL_LOG,       # flag
     "help"                => \$help,                 # flag
     "debug"               => \$DEBUG,                # flag
 );
@@ -93,9 +96,11 @@ Available options are:
 --use_fqdn :Use the host fully qualified domain name (fqdn) as the hostname value instead of the value returned by nmon.
 **CAUTION:** This option must not be used when managing nmon data generated out of Splunk (eg. central repositories)
 --nmon_var <directory path> :Sets the output Home directory for Nmon (Default: /var/log/nmon)
+--nmon_app <directory path> :sets the application Home directory for Nmon (Default: /etc/nmon)
 --splunk_http_url :Defines the URL for Splunk http forwarding, example: --splunk_http_url  https://host.splunk.com:8088/services/collector/event
 --splunk_http_token :Defines the value of the Splunk HEC token, example: --splunk_http_token B07538E6-729F-4D5B-8AE1-30E93646C65A
 --silent: Do not output the per section detail logging to save data volume
+--no_local_log: Do not write local log on machine file system
 --debug :Activate debugging mode for testing purposes
 --version :Show current program version \n
 "
@@ -202,8 +207,8 @@ if ( !-d "$NMON_VAR" ) {
     die;
 }
 
-# Empty init APP
-my $APP = "/etc/nmon-logger";
+# APP
+my $APP = $NMON_APP;
 
 # load configuration from json config file
 # the config_file json may exist in default or local (if customized)
@@ -2093,9 +2098,11 @@ sub csv2kv {
         my @lines = <FH>;
         close FH;
 
-        # Open outfile for writing
-        unless ( open( INSERT, ">> $outfile" ) ) {
-            die("ERROR: Can not open /$outfile for writting\n");
+        if (not $NO_LOCAL_LOG) {
+            # Open outfile for writing
+            unless (open(INSERT, ">> $outfile")) {
+                die("ERROR: Can not open /$outfile for writting\n");
+            }
         }
 
         # for Splunk HEC only
@@ -2129,7 +2136,10 @@ sub csv2kv {
                         $hdcount = $hdcount + 1;
                         last;
                     }
-                    print INSERT $header[$hdcount] . "=" . $loopvariable . " ";
+
+                    if (not $NO_LOCAL_LOG) {
+                        print INSERT $header[$hdcount] . "=" . $loopvariable . " ";
+                    }
 
                     # for Splunk HEC
                     if ($use_splunk_http) {
@@ -2141,7 +2151,9 @@ sub csv2kv {
 
                     $hdcount = $hdcount + 1;
                 }
-                print INSERT "\n";
+                if (not $NO_LOCAL_LOG) {
+                    print INSERT "\n";
+                }
 
                 # For Splunk HEC
                 if ($use_splunk_http) {
@@ -2199,9 +2211,11 @@ sub stream_to_splunk_http () {
 
 sub config_extract {
 
-    # Open for writing in append mode
-    unless ( open( INSERT, ">>$BASEFILENAME" ) ) {
-        die("ERROR: ERROR: Can not open /$BASEFILENAME\n");
+    if (not $NO_LOCAL_LOG) {
+        # Open for writing in append mode
+        unless (open(INSERT, ">>$BASEFILENAME")) {
+            die("ERROR: ERROR: Can not open /$BASEFILENAME\n");
+        }
     }
 
     # Splunk HEC
@@ -2275,7 +2289,10 @@ sub config_extract {
       . "$colon, serialnum=$colon"
       . $SN
       . "$colon, configuration_content=$colon";
-    print( INSERT "$write\n" );
+
+    if (not $NO_LOCAL_LOG) {
+        print(INSERT "$write\n");
+    }
 
     if ($use_splunk_http) {
         print(INSERT_HEC_TMP "$write\n");
@@ -2303,7 +2320,9 @@ sub config_extract {
 
             my $write = $x;
 
-            print( INSERT "$write\n" );
+            if (not $NO_LOCAL_LOG) {
+                print(INSERT "$write\n");
+            }
 
             if ($use_splunk_http) {
                 print(INSERT_HEC_TMP "$write\n");
@@ -2323,7 +2342,9 @@ sub config_extract {
 
             my $write = $x;
 
-            print( INSERT "$write\n" );
+            if (not $NO_LOCAL_LOG) {
+                print(INSERT "$write\n");
+            }
 
             if ($use_splunk_http) {
                 print(INSERT_HEC_TMP "$write\n");
@@ -2336,9 +2357,11 @@ sub config_extract {
 
     }
 
-    # print terminator
-    print( INSERT "$colon" );
-    close INSERT;
+    if (not $NO_LOCAL_LOG) {
+        # print terminator
+        print(INSERT "$colon");
+        close INSERT;
+    }
 
     if ($use_splunk_http) {
 

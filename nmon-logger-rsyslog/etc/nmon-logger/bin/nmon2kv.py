@@ -62,7 +62,7 @@ import json
 import subprocess
 
 # Converter version
-nmon2csv_version = '1.0.7'
+nmon2kv_version = '1.0.7'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -167,12 +167,15 @@ sanity_check = "-1"
 #      Arguments
 #################################################
 
-parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog ' + nmon2csv_version)
+parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog ' + nmon2kv_version)
 
-parser.set_defaults(nmon_var='/var/log/nmon-logger', mode='auto', dumpargs=False)
+parser.set_defaults(nmon_var='/var/log/nmon-logger', nmon_app='/etc/nmon-logger', mode='auto', no_local_log=False,
+                    dumpargs=False)
 
 parser.add_option('-o', '--nmon_var', action='store', type='string', dest='nmon_var',
                   help='sets the output Home directory for Nmon (Default: %default)')
+parser.add_option('-a', '--nmon_app', action='store', type='string', dest='nmon_app',
+                  help='sets the application Home directory for Nmon (Default: %default)')
 opmodes = ['auto', 'realtime', 'colddata', 'fifo']
 parser.add_option('-m', '--mode', action='store', type='choice', dest='mode', choices=opmodes,
                   help='sets the operation mode (Default: %default); supported modes: ' + ', '.join(opmodes))
@@ -198,6 +201,9 @@ parser.add_option('--dumpargs', action='store_true', dest='dumpargs',
 parser.add_option('--debug', action='store_true', dest='debug', help='Activate debug for testing purposes')
 parser.add_option('-s', '--silent', action='store_true', dest='silent', help='Do not output the per section detail'
                                                                               'logging to save data volume')
+parser.add_option('-n', '--no_local_log', action='store_true', dest='no_local_log', help='Do not write local log on'
+                                                                              'machine file system')
+
 
 (options, args) = parser.parse_args()
 
@@ -217,6 +223,12 @@ if options.silent:
     silent = True
 else:
     silent = False
+
+# Write / Don't write log on file system
+if options.no_local_log:
+    no_local_log = True
+else:
+    no_local_log = False
 
 # Set hostname mode
 if options.use_fqdn:
@@ -306,8 +318,13 @@ DATA_DIR = APP_VAR
 # CSV output repository
 CONFIG_DIR = APP_VAR
 
-# bin directory
-APP = "/etc/nmon-logger"
+# NMON_APP variable
+if options.nmon_app:
+    NMON_APP = options.nmon_app
+else:
+    NMON_APP = '/etc/nmon-logger'
+
+APP = NMON_APP
 
 # app.conf
 APP_CONF_FILE = APP + "/default/app.conf"
@@ -538,7 +555,7 @@ msg = "addon version: " + str(addon_version)
 print(msg)
 
 # Show program version
-msg = "nmon2kv version: " + str(nmon2csv_version)
+msg = "nmon2kv version: " + str(nmon2kv_version)
 print(msg)
 
 # Show type of OS we are running
@@ -1073,104 +1090,109 @@ if config_run == 0:
             # Initialize BBB_count
             BBB_count = 0
 
-            # Open config output for writing
-            with open(config_output, "ab") as config:
+            # Open file for writing in append mode
+            if not no_local_log:
+                config = open(config_output, "ab")
 
-                # counter
-                count = 0
+            # counter
+            count = 0
 
-                # Write header
-                if kvdelim:
-                    config_header = 'timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' \
-                                    + 'host="' + HOSTNAME + '", ' + 'serialnum="' + SN \
-                                    + '", configuration_content="' + '\n'
-                else:
-                    config_header = 'timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' \
-                                    + 'host="' + HOSTNAME + '", ' + 'serialnum="' + SN \
-                                    + '", configuration_content=' + '\n'
-                # Write the header
+            # Write header
+            if kvdelim:
+                config_header = 'timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' \
+                                + 'host="' + HOSTNAME + '", ' + 'serialnum="' + SN \
+                                + '", configuration_content="' + '\n'
+            else:
+                config_header = 'timestamp="' + now_epoch + '", ' + 'date="' + DATE + ':' + TIME + '", ' \
+                                + 'host="' + HOSTNAME + '", ' + 'serialnum="' + SN \
+                                + '", configuration_content=' + '\n'
+            # Write the header
+            if not no_local_log:
                 config.write(config_header)
 
-                # For Splunk HEC
-                if use_splunk_http:
-                    config_content = config_header
+            # For Splunk HEC
+            if use_splunk_http:
+                config_content = config_header
 
-                for line in data:
+            for line in data:
 
-                    # Extract AAA and BBB sections, and write to config output
-                    AAABBB = re.match(r'^[AAA|BBB].+', line)
+                # Extract AAA and BBB sections, and write to config output
+                AAABBB = re.match(r'^[AAA|BBB].+', line)
 
-                    if AAABBB:
-                        # Increment
-                        count += 1
+                if AAABBB:
+                    # Increment
+                    count += 1
 
-                        # Increment the BBB counter
-                        if "BBB" in line:
-                            BBB_count += 1
+                    # Increment the BBB counter
+                    if "BBB" in line:
+                        BBB_count += 1
 
-                        # Write
+                    # Write
+                    if not no_local_log:
                         config.write(line)
 
-                        if use_splunk_http:
-                            config_content = config_content + str(line)
+                    if use_splunk_http:
+                        config_content = config_content + str(line)
 
-                # Write end of key=value and line return
+            # Write end of key=value and line return
+            if not no_local_log:
                 config.write('"\n')
+                config.close()
 
-                if use_splunk_http:
+            if use_splunk_http:
 
-                    # Set output pseudo files
-                    config_output_tmp = cStringIO.StringIO()
-                    config_output_final = NMON_VAR + '/nmon_configdata.tmp'
-                    config_content = config_content + '"\n'
+                # Set output pseudo files
+                config_output_tmp = cStringIO.StringIO()
+                config_output_final = NMON_VAR + '/nmon_configdata.tmp'
+                config_content = config_content + '"\n'
 
-                    # For /dev/null redirection
-                    FNULL = open('/dev/null', 'w')
+                # For /dev/null redirection
+                FNULL = open('/dev/null', 'w')
 
-                    raw_params = config_content
+                raw_params = config_content
 
-                    # replace quotes by a space, escape double quotes
-                    raw_params = re.sub(r"\'", " ", raw_params)
-                    raw_params = re.sub(r'\"', '\\"', raw_params)
+                # replace quotes by a space, escape double quotes
+                raw_params = re.sub(r"\'", " ", raw_params)
+                raw_params = re.sub(r'\"', '\\"', raw_params)
 
-                    config_output_tmp.write(raw_params)
-                    config_output_tmp.seek(0)
+                config_output_tmp.write(raw_params)
+                config_output_tmp.seek(0)
 
-                    with open(config_output_final, "wb") as f:
-                        f.write('{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"')
-                        for line in config_output_tmp:
-                            line = line + "\\n"
-                            f.write(line)
-                        f.write('"}')
+                with open(config_output_final, "wb") as f:
+                    f.write('{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"')
+                    for line in config_output_tmp:
+                        line = line + "\\n"
+                        f.write(line)
+                    f.write('"}')
 
-                    # This might be changed for a more Pythonic approach in the future!
-                    http_data = '-s -k -H \"Authorization: Splunk ' + str(splunk_http_token) + '\" ' +\
-                                str(splunk_http_url) + ' -d @' + str(config_output_final)
+                # This might be changed for a more Pythonic approach in the future!
+                http_data = '-s -k -H \"Authorization: Splunk ' + str(splunk_http_token) + '\" ' +\
+                            str(splunk_http_url) + ' -d @' + str(config_output_final)
 
-                    cmd = "curl" + " " + http_data
-                    subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
+                cmd = "curl" + " " + http_data
+                subprocess.call([cmd], shell=True, stdout=FNULL, stderr=subprocess.PIPE)
 
-                    # Clean
-                    if os.path.isfile(config_output_final):
-                        os.remove(config_output_final)
-                    config_output_tmp.close()
+                # Clean
+                if os.path.isfile(config_output_final):
+                    os.remove(config_output_final)
+                config_output_tmp.close()
 
-                # Under 10 lines of data in BBB, estimate extraction is not complete
-                if BBB_count < 10:
-                    with open(BBB_FLAG, "wb") as bbb_flag:
-                        bbb_flag.write("BBB_status KO")
-                else:
-                    if os.path.isfile(BBB_FLAG):
-                        os.remove(BBB_FLAG)
+            # Under 10 lines of data in BBB, estimate extraction is not complete
+            if BBB_count < 10:
+                with open(BBB_FLAG, "wb") as bbb_flag:
+                    bbb_flag.write("BBB_status KO")
+            else:
+                if os.path.isfile(BBB_FLAG):
+                    os.remove(BBB_FLAG)
 
-                # Show number of lines extracted
-                result = "CONFIG section: Wrote" + " " + str(count) + " lines"
-                print(result)
-                ref.write(result + '\n')
+            # Show number of lines extracted
+            result = "CONFIG section: Wrote" + " " + str(count) + " lines"
+            print(result)
+            ref.write(result + '\n')
 
-                # Save the a combo of HOSTNAME: current_epochtime in CONFIG_REF
-                with open(CONFIG_REF, "wb") as f:
-                    f.write(HOSTNAME + ": " + now_epoch + "\n")
+            # Save the a combo of HOSTNAME: current_epochtime in CONFIG_REF
+            with open(CONFIG_REF, "wb") as f:
+                f.write(HOSTNAME + ": " + now_epoch + "\n")
 
         else:
 
@@ -1302,54 +1324,87 @@ def standard_section_fn(section):
         # Open StringIO for temp in memory
         membuffer = cStringIO.StringIO()
 
-        # Open output for writing
-        with open(currsection_output, "ab") as currsection:
+        # counter
+        count = 0
 
-            # counter
-            count = 0
+        for line in data:
 
-            for line in data:
+            # Extract sections (manage specific case of CPUnn), and write to output
+            if section == "CPUnn":
+                myregex = r'^' + 'CPU\d*' + '|ZZZZ.+'
+            else:
+                myregex = r'^' + section + '|ZZZZ.+'
 
-                # Extract sections (manage specific case of CPUnn), and write to output
+            find_section = re.match(myregex, line)
+            if find_section:
+
+                # Replace trouble strings
+                line = subpctreplace(line)
+                line = subreplace(line)
+
+                # csv header
+
+                # Extract header excluding data that always has Txxxx for timestamp reference
+                # For CPUnn, search for first core
                 if section == "CPUnn":
-                    myregex = r'^' + 'CPU\d*' + '|ZZZZ.+'
+                    myregex = '(' + 'CPU01' + ')\,([^T].+)'
                 else:
-                    myregex = r'^' + section + '|ZZZZ.+'
+                    myregex = '(' + section + ')\,([^T].+)'
 
-                find_section = re.match(myregex, line)
-                if find_section:
+                # Search for header
+                fullheader_match = re.search(myregex, line)
 
-                    # Replace trouble strings
-                    line = subpctreplace(line)
-                    line = subreplace(line)
+                # Standard header extraction
 
-                    # csv header
+                # For CPUnn, if first core were not found using CPU01, search for CPU000 (Solaris) and
+                # CPU001 (Linux)
+                if section == "CPUnn":
+                    if not fullheader_match:
+                        myregex = '(' + 'CPU000' + ')\,([^T].+)'
+                        fullheader_match = re.search(myregex, line)
 
-                    # Extract header excluding data that always has Txxxx for timestamp reference
-                    # For CPUnn, search for first core
-                    if section == "CPUnn":
-                        myregex = '(' + 'CPU01' + ')\,([^T].+)'
-                    else:
-                        myregex = '(' + section + ')\,([^T].+)'
+                    if not fullheader_match:
+                        myregex = '(' + 'CPU001' + ')\,([^T].+)'
+                        fullheader_match = re.search(myregex, line)
 
-                    # Search for header
+                if fullheader_match:
+                    fullheader = fullheader_match.group(2)
+
+                    # Replace "." by "_" only for header
+                    fullheader = re.sub("\.", '_', fullheader)
+
+                    # Replace any blank space before comma only for header
+                    fullheader = re.sub(", ", ',', fullheader)
+
+                    header_match = re.search(r'([a-zA-Z\-/_0-9]+,)([a-zA-Z\-/_0-9,]*)', fullheader)
+
+                    if header_match:
+                        header = header_match.group(2)
+
+                        # increment
+                        count += 1
+
+                        # Write header
+                        final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' + \
+                                       'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + \
+                                       ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
+
+                        # Number of separators in final header
+                        num_cols_header = final_header.count(',')
+
+                        # Write header
+                        membuffer.write(final_header)
+
+                # Old Nmon version sometimes incorporates a Txxxx reference in the header, this is unclean
+                # but we want to try getting the header anyway
+
+                elif not fullheader_match:
+                    # Assume the header may start with Txxx, then 1 non alpha char
+                    myregex = '(' + section + ')\,(T\d+),([a-zA-Z]+.+)'
                     fullheader_match = re.search(myregex, line)
 
-                    # Standard header extraction
-
-                    # For CPUnn, if first core were not found using CPU01, search for CPU000 (Solaris) and
-                    # CPU001 (Linux)
-                    if section == "CPUnn":
-                        if not fullheader_match:
-                            myregex = '(' + 'CPU000' + ')\,([^T].+)'
-                            fullheader_match = re.search(myregex, line)
-
-                        if not fullheader_match:
-                            myregex = '(' + 'CPU001' + ')\,([^T].+)'
-                            fullheader_match = re.search(myregex, line)
-
                     if fullheader_match:
-                        fullheader = fullheader_match.group(2)
+                        fullheader = fullheader_match.group(3)
 
                         # Replace "." by "_" only for header
                         fullheader = re.sub("\.", '_', fullheader)
@@ -1357,18 +1412,18 @@ def standard_section_fn(section):
                         # Replace any blank space before comma only for header
                         fullheader = re.sub(", ", ',', fullheader)
 
-                        header_match = re.search(r'([a-zA-Z\-/_0-9]+,)([a-zA-Z\-/_0-9,]*)', fullheader)
+                        header_match = re.search(r'([a-zA-Z\-/_0-9,]*)', fullheader)
 
                         if header_match:
-                            header = header_match.group(2)
+                            header = header_match.group(1)
 
                             # increment
                             count += 1
 
                             # Write header
                             final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' + \
-                                           'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + \
-                                           ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
+                                           'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + \
+                                           'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
 
                             # Number of separators in final header
                             num_cols_header = final_header.count(',')
@@ -1376,162 +1431,69 @@ def standard_section_fn(section):
                             # Write header
                             membuffer.write(final_header)
 
-                    # Old Nmon version sometimes incorporates a Txxxx reference in the header, this is unclean
-                    # but we want to try getting the header anyway
+                # Extract timestamp
 
-                    elif not fullheader_match:
-                        # Assume the header may start with Txxx, then 1 non alpha char
-                        myregex = '(' + section + ')\,(T\d+),([a-zA-Z]+.+)'
-                        fullheader_match = re.search(myregex, line)
+                # Nmon V9 and prior do not have date in ZZZZ
+                # If unavailable, we'll use the global date (AAA,date)
+                ZZZZ_DATE = '-1'
+                ZZZZ_TIME = '-1'
 
-                        if fullheader_match:
-                            fullheader = fullheader_match.group(3)
+                # For Nmon V10 and more
 
-                            # Replace "." by "_" only for header
-                            fullheader = re.sub("\.", '_', fullheader)
+                timestamp_match = re.match(r'^ZZZZ,(.+),(.+),(.+)\n', line)
+                if timestamp_match:
+                    ZZZZ_TIME = timestamp_match.group(2)
+                    ZZZZ_DATE = timestamp_match.group(3)
 
-                            # Replace any blank space before comma only for header
-                            fullheader = re.sub(", ", ',', fullheader)
+                    # Replace month names with numbers
+                    ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
 
-                            header_match = re.search(r'([a-zA-Z\-/_0-9,]*)', fullheader)
+                    # Compose final timestamp
+                    ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
-                            if header_match:
-                                header = header_match.group(1)
+                    ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                        .strftime('%s')
 
-                                # increment
-                                count += 1
+                # For Nmon V9 and less
 
-                                # Write header
-                                final_header = 'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'hostname' + ',' + \
-                                               'serialnum' + ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + \
-                                               'ZZZZ' + ',' + 'interval' + ',' + 'snapshots' + ',' + header + '\n'
+                if ZZZZ_DATE == '-1':
+                    ZZZZ_DATE = DATE
 
-                                # Number of separators in final header
-                                num_cols_header = final_header.count(',')
+                    # Replace month names with numbers
+                    ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
 
-                                # Write header
-                                membuffer.write(final_header)
-
-                    # Extract timestamp
-
-                    # Nmon V9 and prior do not have date in ZZZZ
-                    # If unavailable, we'll use the global date (AAA,date)
-                    ZZZZ_DATE = '-1'
-                    ZZZZ_TIME = '-1'
-
-                    # For Nmon V10 and more
-
-                    timestamp_match = re.match(r'^ZZZZ,(.+),(.+),(.+)\n', line)
+                    timestamp_match = re.match(r'^ZZZZ,(.+),(.+)\n', line)
                     if timestamp_match:
                         ZZZZ_TIME = timestamp_match.group(2)
-                        ZZZZ_DATE = timestamp_match.group(3)
-
-                        # Replace month names with numbers
-                        ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
-                        # Compose final timestamp
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
 
                         ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
                             .strftime('%s')
 
-                    # For Nmon V9 and less
+                # Extract Data
+                if section == "CPUnn":
+                    myregex = r'^' + '(CPU\d*)' + '\,(T\d+)\,(.+)\n'
+                else:
+                    myregex = r'^' + section + '\,(T\d+)\,(.+)\n'
+                perfdata_match = re.match(myregex, line)
 
-                    if ZZZZ_DATE == '-1':
-                        ZZZZ_DATE = DATE
-
-                        # Replace month names with numbers
-                        ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
-                        timestamp_match = re.match(r'^ZZZZ,(.+),(.+)\n', line)
-                        if timestamp_match:
-                            ZZZZ_TIME = timestamp_match.group(2)
-                            ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
-                                .strftime('%s')
-
-                    # Extract Data
-                    if section == "CPUnn":
-                        myregex = r'^' + '(CPU\d*)' + '\,(T\d+)\,(.+)\n'
+                if perfdata_match:
+                    if section == 'CPUnn':
+                        perfdatatype = perfdata_match.group(1)
+                        perfdata = perfdata_match.group(3)
                     else:
-                        myregex = r'^' + section + '\,(T\d+)\,(.+)\n'
-                    perfdata_match = re.match(myregex, line)
+                        perfdata = perfdata_match.group(2)
 
-                    if perfdata_match:
-                        if section == 'CPUnn':
-                            perfdatatype = perfdata_match.group(1)
-                            perfdata = perfdata_match.group(3)
-                        else:
-                            perfdata = perfdata_match.group(2)
+                    if realtime:
 
-                        if realtime:
-
-                            if int(ZZZZ_epochtime) > int(last_epoch_filter):
-
-                                # increment
-                                count += 1
-
-                                # final_perfdata
-                                if section == 'CPUnn':
-
-                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN + \
-                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
-                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
-                                                     perfdata + '\n'
-                                else:
-                                    final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + \
-                                                     ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
-                                                     ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
-                                                     perfdata + '\n'
-
-                                # Analyse the first line of data: Compare number of fields in data with number of fields
-                                # in header
-                                # If the number of fields is higher than header, we assume this section is not
-                                # consistent and will be entirely dropped
-                                # This happens in rare times (mainly with old buggy nmon version) that the header is bad
-                                # formatted (for example missing comma between fields identification)
-                                # For performance purposes, we will test this only with first line of data and assume
-                                # the data sanity based on this result
-                                if count == 2:
-
-                                    # Number of separators in final header
-                                    num_cols_perfdata = final_perfdata.count(',')
-
-                                    if num_cols_perfdata > num_cols_header:
-
-                                        msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
-                                              ' section data is not consistent: ' + str(num_cols_perfdata) + \
-                                              ' fields in data, ' + str(num_cols_header) \
-                                              + ' fields in header, extra fields detected (more fields in data ' \
-                                                'than header), dropping this section to prevent data inconsistency'
-                                        logging.error(msg)
-                                        ref.write(msg + "\n")
-
-                                        # Affect a sanity check to 1, bad data
-                                        sanity_check = 1
-
-                                    else:
-
-                                        # Affect a sanity check to 0, good data
-                                        sanity_check = 0
-
-                                # Write perf data
-                                membuffer.write(final_perfdata)
-                            else:
-                                if debug:
-                                    logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                                  " ( " + str(
-                                        ZZZZ_epochtime) + " is lower than last known epoch time for this "
-                                                          "section " + str(last_epoch_filter) + " )")
-
-                        elif colddata or fifo:
+                        if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                             # increment
                             count += 1
 
                             # final_perfdata
                             if section == 'CPUnn':
+
                                 final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN + \
                                                  ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
                                                  ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
@@ -1544,12 +1506,12 @@ def standard_section_fn(section):
 
                             # Analyse the first line of data: Compare number of fields in data with number of fields
                             # in header
-                            # If the number of fields is higher than header, we assume this section is not consistent
-                            # and will be entirely dropped
+                            # If the number of fields is higher than header, we assume this section is not
+                            # consistent and will be entirely dropped
                             # This happens in rare times (mainly with old buggy nmon version) that the header is bad
                             # formatted (for example missing comma between fields identification)
-                            # For performance purposes, we will test this only with first line of data and assume the
-                            # data sanity based on this result
+                            # For performance purposes, we will test this only with first line of data and assume
+                            # the data sanity based on this result
                             if count == 2:
 
                                 # Number of separators in final header
@@ -1557,12 +1519,12 @@ def standard_section_fn(section):
 
                                 if num_cols_perfdata > num_cols_header:
 
-                                    msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                    msg = 'ERROR: hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
                                           ' section data is not consistent: ' + str(num_cols_perfdata) + \
                                           ' fields in data, ' + str(num_cols_header) \
                                           + ' fields in header, extra fields detected (more fields in data ' \
                                             'than header), dropping this section to prevent data inconsistency'
-                                    logging.warn(msg)
+                                    logging.error(msg)
                                     ref.write(msg + "\n")
 
                                     # Affect a sanity check to 1, bad data
@@ -1575,12 +1537,70 @@ def standard_section_fn(section):
 
                             # Write perf data
                             membuffer.write(final_perfdata)
+                        else:
+                            if debug:
+                                logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
+                                              " ( " + str(
+                                    ZZZZ_epochtime) + " is lower than last known epoch time for this "
+                                                      "section " + str(last_epoch_filter) + " )")
+
+                    elif colddata or fifo:
+
+                        # increment
+                        count += 1
+
+                        # final_perfdata
+                        if section == 'CPUnn':
+                            final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + perfdatatype + ',' + SN + \
+                                             ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
+                                             ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
+                                             perfdata + '\n'
+                        else:
+                            final_perfdata = ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + \
+                                             ',' + HOSTNAME + ',' + logical_cpus + ',' + virtual_cpus + ',' + \
+                                             ZZZZ_timestamp + ',' + INTERVAL + ',' + SNAPSHOTS + ',' + \
+                                             perfdata + '\n'
+
+                        # Analyse the first line of data: Compare number of fields in data with number of fields
+                        # in header
+                        # If the number of fields is higher than header, we assume this section is not consistent
+                        # and will be entirely dropped
+                        # This happens in rare times (mainly with old buggy nmon version) that the header is bad
+                        # formatted (for example missing comma between fields identification)
+                        # For performance purposes, we will test this only with first line of data and assume the
+                        # data sanity based on this result
+                        if count == 2:
+
+                            # Number of separators in final header
+                            num_cols_perfdata = final_perfdata.count(',')
+
+                            if num_cols_perfdata > num_cols_header:
+
+                                msg = 'hostname: ' + str(HOSTNAME) + ' :' + str(section) + \
+                                      ' section data is not consistent: ' + str(num_cols_perfdata) + \
+                                      ' fields in data, ' + str(num_cols_header) \
+                                      + ' fields in header, extra fields detected (more fields in data ' \
+                                        'than header), dropping this section to prevent data inconsistency'
+                                logging.warn(msg)
+                                ref.write(msg + "\n")
+
+                                # Affect a sanity check to 1, bad data
+                                sanity_check = 1
+
+                            else:
+
+                                # Affect a sanity check to 0, good data
+                                sanity_check = 0
+
+                        # Write perf data
+                        membuffer.write(final_perfdata)
 
         # Rewind temp
         membuffer.seek(0)
 
-        # Write final kv file in append mode
-        write_kv(membuffer, currsection_output)
+        if not no_local_log:
+            # Write final kv file in append mode
+            write_kv(membuffer, currsection_output)
 
         # If streaming to Splunk HEC is activated
         if use_splunk_http:
@@ -1689,119 +1709,99 @@ def top_section_fn(section):
         # Open StringIO for temp in memory
         membuffer = cStringIO.StringIO()
 
-        # Open output for writing
-        with open(currsection_output, "ab") as currsection:
+        # counter
+        count = 0
 
-            # counter
-            count = 0
+        for line in data:
 
-            for line in data:
+            # Extract sections, and write to output
+            myregex = r'^' + 'TOP,.PID' + '|ZZZZ.+'
+            find_section = re.match(myregex, line)
+            if find_section:
 
-                # Extract sections, and write to output
-                myregex = r'^' + 'TOP,.PID' + '|ZZZZ.+'
-                find_section = re.match(myregex, line)
-                if find_section:
+                line = subpcttopreplace(line)
+                line = subreplace(line)
 
-                    line = subpcttopreplace(line)
-                    line = subreplace(line)
+                # csv header
 
-                    # csv header
+                # Extract header excluding data that always has Txxxx for timestamp reference
+                myregex = '(' + section + ')\,([^T].+)'
+                fullheader_match = re.search(myregex, line)
 
-                    # Extract header excluding data that always has Txxxx for timestamp reference
-                    myregex = '(' + section + ')\,([^T].+)'
-                    fullheader_match = re.search(myregex, line)
+                if fullheader_match:
+                    fullheader = fullheader_match.group(2)
 
-                    if fullheader_match:
-                        fullheader = fullheader_match.group(2)
+                    # Replace "." by "_" only for header
+                    fullheader = re.sub("\.", '_', fullheader)
 
-                        # Replace "." by "_" only for header
-                        fullheader = re.sub("\.", '_', fullheader)
+                    # Replace any blank space before comma only for header
+                    fullheader = re.sub(", ", ',', fullheader)
 
-                        # Replace any blank space before comma only for header
-                        fullheader = re.sub(", ", ',', fullheader)
+                    header_match = re.search(r'([a-zA-Z\-/_0-9]+,)([a-zA-Z\-/_0-9]+,)([a-zA-Z\-/_0-9,]*)',
+                                             fullheader)
 
-                        header_match = re.search(r'([a-zA-Z\-/_0-9]+,)([a-zA-Z\-/_0-9]+,)([a-zA-Z\-/_0-9,]*)',
-                                                 fullheader)
+                    if header_match:
+                        header_part1 = header_match.group(1)
+                        header_part2 = header_match.group(3)
+                        header = header_part1 + header_part2
 
-                        if header_match:
-                            header_part1 = header_match.group(1)
-                            header_part2 = header_match.group(3)
-                            header = header_part1 + header_part2
+                        # increment
+                        count += 1
 
-                            # increment
-                            count += 1
+                        # Write header
+                        membuffer.write(
+                            'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'serialnum' + ',' + 'hostname' +
+                            ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + ',' + 'interval' + ',' +
+                            'snapshots' + ',' + header + '\n'),
 
-                            # Write header
-                            membuffer.write(
-                                'timestamp' + ',' + 'OStype' + ',' + 'type' + ',' + 'serialnum' + ',' + 'hostname' +
-                                ',' + 'logical_cpus' + ',' + 'virtual_cpus' + ',' + 'ZZZZ' + ',' + 'interval' + ',' +
-                                'snapshots' + ',' + header + '\n'),
+                # Extract timestamp
 
-                    # Extract timestamp
+                # Nmon V9 and prior do not have date in ZZZZ
+                # If unavailable, we'll use the global date (AAA,date)
+                ZZZZ_DATE = '-1'
+                ZZZZ_TIME = '-1'
 
-                    # Nmon V9 and prior do not have date in ZZZZ
-                    # If unavailable, we'll use the global date (AAA,date)
-                    ZZZZ_DATE = '-1'
-                    ZZZZ_TIME = '-1'
+                # For Nmon V10 and more
 
-                    # For Nmon V10 and more
+                timestamp_match = re.match(r'^ZZZZ,(.+),(.+),(.+)\n', line)
+                if timestamp_match:
+                    ZZZZ_TIME = timestamp_match.group(2)
+                    ZZZZ_DATE = timestamp_match.group(3)
 
-                    timestamp_match = re.match(r'^ZZZZ,(.+),(.+),(.+)\n', line)
+                    # Replace month names with numbers
+                    ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
+
+                    ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
+
+                    ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
+                        .strftime('%s')
+
+                # For Nmon V9 and less
+
+                if ZZZZ_DATE == '-1':
+                    ZZZZ_DATE = DATE
+                    timestamp_match = re.match(r'^ZZZZ,(.+),(.+)\n', line)
+
                     if timestamp_match:
                         ZZZZ_TIME = timestamp_match.group(2)
-                        ZZZZ_DATE = timestamp_match.group(3)
 
                         # Replace month names with numbers
                         ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
 
                         ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-
                         ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
                             .strftime('%s')
 
-                    # For Nmon V9 and less
+            # Extract Data
+            perfdata_match = re.match('^TOP,([0-9]+),(T\d+),(.+)\n', line)
+            if perfdata_match:
+                perfdata_part1 = perfdata_match.group(1)
+                perfdata_part2 = perfdata_match.group(3)
+                perfdata = perfdata_part1 + ',' + perfdata_part2
 
-                    if ZZZZ_DATE == '-1':
-                        ZZZZ_DATE = DATE
-                        timestamp_match = re.match(r'^ZZZZ,(.+),(.+)\n', line)
+                if realtime:
 
-                        if timestamp_match:
-                            ZZZZ_TIME = timestamp_match.group(2)
-
-                            # Replace month names with numbers
-                            ZZZZ_DATE = monthtonumber(ZZZZ_DATE)
-
-                            ZZZZ_timestamp = ZZZZ_DATE + ' ' + ZZZZ_TIME
-                            ZZZZ_epochtime = datetime.datetime.strptime(ZZZZ_timestamp, '%d-%m-%Y %H:%M:%S') \
-                                .strftime('%s')
-
-                # Extract Data
-                perfdata_match = re.match('^TOP,([0-9]+),(T\d+),(.+)\n', line)
-                if perfdata_match:
-                    perfdata_part1 = perfdata_match.group(1)
-                    perfdata_part2 = perfdata_match.group(3)
-                    perfdata = perfdata_part1 + ',' + perfdata_part2
-
-                    if realtime:
-
-                        if int(ZZZZ_epochtime) > int(last_epoch_filter):
-
-                            # increment
-                            count += 1
-
-                            # Write perf data
-                            membuffer.write(
-                                ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
-                                logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
-                                SNAPSHOTS + ',' + perfdata + '\n'),
-                        else:
-                            if debug:
-                                logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
-                                              " ( " + str(
-                                    ZZZZ_epochtime) + " is lower than last known epoch time for this"
-                                                      " section " + str(last_epoch_filter) + " )")
-
-                    elif colddata or fifo:
+                    if int(ZZZZ_epochtime) > int(last_epoch_filter):
 
                         # increment
                         count += 1
@@ -1811,12 +1811,30 @@ def top_section_fn(section):
                             ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
                             logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
                             SNAPSHOTS + ',' + perfdata + '\n'),
+                    else:
+                        if debug:
+                            logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
+                                          " ( " + str(
+                                ZZZZ_epochtime) + " is lower than last known epoch time for this"
+                                                  " section " + str(last_epoch_filter) + " )")
+
+                elif colddata or fifo:
+
+                    # increment
+                    count += 1
+
+                    # Write perf data
+                    membuffer.write(
+                        ZZZZ_epochtime + ',' + OStype + ',' + section + ',' + SN + ',' + HOSTNAME + ',' +
+                        logical_cpus + ',' + virtual_cpus + ',' + ZZZZ_timestamp + ',' + INTERVAL + ',' +
+                        SNAPSHOTS + ',' + perfdata + '\n'),
 
         # Rewind temp
         membuffer.seek(0)
 
-        # Write final kv file in append mode
-        write_kv(membuffer, currsection_output)
+        if not no_local_log:
+            # Write final kv file in append mode
+            write_kv(membuffer, currsection_output)
 
         # If streaming to Splunk HEC is activated
         if use_splunk_http:
@@ -2111,25 +2129,23 @@ def uarg_section_fn(section):
             with open(keyref, "wb") as f:
                 f.write("last_epoch: " + ZZZZ_epochtime + "\n")
 
-        # Open output for writing
-        with open(currsection_output, "ab") as currsection:
+        # Rewind temp
+        membuffer.seek(0)
 
-            # Rewind temp
-            membuffer.seek(0)
-
+        if not no_local_log:
             # Write final kv file in append mode
             write_kv(membuffer, currsection_output)
 
-            # If streaming to Splunk HEC is activated
-            if use_splunk_http:
-                # Rewind temp
-                membuffer.seek(0)
+        # If streaming to Splunk HEC is activated
+        if use_splunk_http:
+            # Rewind temp
+            membuffer.seek(0)
 
-                # Transform to kv data and stream to http
-                write_kv_to_http(membuffer)
+            # Transform to kv data and stream to http
+            write_kv_to_http(membuffer)
 
-            # close membuffer
-            membuffer.close()
+        # close membuffer
+        membuffer.close()
 
 
 # End for
@@ -2406,46 +2422,44 @@ def dynamic_section_fn(section):
             # Reset counter
             count = 0
 
-            # Open final for writing
-            with open(currsection_output, "ab") as currsection:
+            # Rewind temp
+            membuffer.seek(0)
 
-                # Rewind temp
-                membuffer.seek(0)
+            # Write to second temp place
+            writer = csv.writer(membuffer2, lineterminator="\n")
+            writer.writerow(
+                ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'interval',
+                 'snapshots', 'ZZZZ', 'device', 'value'])
 
-                # Write to second temp place
-                writer = csv.writer(membuffer2, lineterminator="\n")
-                writer.writerow(
-                    ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'interval',
-                     'snapshots', 'ZZZZ', 'device', 'value'])
+            # increment
+            count += 1
 
-                # increment
-                count += 1
+            for d in csv.DictReader(membuffer):
+                ZZZZ = d.pop('ZZZZ')
+                for device, value in sorted(d.items()):
+                    # increment
+                    count += 1
 
-                for d in csv.DictReader(membuffer):
-                    ZZZZ = d.pop('ZZZZ')
-                    for device, value in sorted(d.items()):
-                        # increment
-                        count += 1
+                    row = [ZZZZ_epochtime, OStype, section, SN, HOSTNAME, INTERVAL,
+                           SNAPSHOTS, ZZZZ, device, value]
+                    writer.writerow(row)
 
-                        row = [ZZZZ_epochtime, OStype, section, SN, HOSTNAME, INTERVAL,
-                               SNAPSHOTS, ZZZZ, device, value]
-                        writer.writerow(row)
+                    # End for
 
-                        # End for
+            # Rewind secondary temp
+            membuffer2.seek(0)
 
-                # Rewind secondary temp
-                membuffer2.seek(0)
-
+            if not no_local_log:
                 # Write final kv file in append mode
                 write_kv(membuffer2, currsection_output)
 
-                # If streaming to Splunk HEC is activated
-                if use_splunk_http:
-                    # Rewind temp
-                    membuffer2.seek(0)
+            # If streaming to Splunk HEC is activated
+            if use_splunk_http:
+                # Rewind temp
+                membuffer2.seek(0)
 
-                    # Transform to kv data and stream to http
-                    write_kv_to_http(membuffer2)
+                # Transform to kv data and stream to http
+                write_kv_to_http(membuffer2)
 
             # Show number of lines extracted
             result = section + " section: Wrote" + " " + str(count) + " lines"
@@ -2800,45 +2814,43 @@ def solaris_wlm_section_fn(section):
             # Reset counter
             count = 0
 
-            # Open final for writing
-            with open(currsection_output, "ab") as currsection:
+            # Rewind temp
+            membuffer.seek(0)
 
-                # Rewind temp
-                membuffer.seek(0)
+            writer = csv.writer(membuffer2, lineterminator="\n")
+            writer.writerow(
+                ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'logical_cpus',
+                 'interval', 'snapshots', 'ZZZZ', 'device', 'value'])
 
-                writer = csv.writer(membuffer2, lineterminator="\n")
-                writer.writerow(
-                    ['timestamp', 'OStype', 'type', 'serialnum', 'hostname', 'logical_cpus',
-                     'interval', 'snapshots', 'ZZZZ', 'device', 'value'])
+            # increment
+            count += 1
 
-                # increment
-                count += 1
+            for d in csv.DictReader(membuffer):
+                ZZZZ = d.pop('ZZZZ')
+                for device, value in sorted(d.items()):
+                    # increment
+                    count += 1
 
-                for d in csv.DictReader(membuffer):
-                    ZZZZ = d.pop('ZZZZ')
-                    for device, value in sorted(d.items()):
-                        # increment
-                        count += 1
+                    row = [ZZZZ_epochtime, OStype, section, SN, HOSTNAME,
+                           logical_cpus, INTERVAL, SNAPSHOTS, ZZZZ, device, value]
+                    writer.writerow(row)
 
-                        row = [ZZZZ_epochtime, OStype, section, SN, HOSTNAME,
-                               logical_cpus, INTERVAL, SNAPSHOTS, ZZZZ, device, value]
-                        writer.writerow(row)
+                    # End for
 
-                        # End for
+            # Rewind secondary temp
+            membuffer2.seek(0)
 
-                # Rewind secondary temp
-                membuffer2.seek(0)
-
+            if not no_local_log:
                 # Write final kv file in append mode
                 write_kv(membuffer2, currsection_output)
 
-                # If streaming to Splunk HEC is activated
-                if use_splunk_http:
-                    # Rewind temp
-                    membuffer.seek(0)
+            # If streaming to Splunk HEC is activated
+            if use_splunk_http:
+                # Rewind temp
+                membuffer.seek(0)
 
-                    # Transform to kv data and stream to http
-                    write_kv_to_http(membuffer2)
+                # Transform to kv data and stream to http
+                write_kv_to_http(membuffer2)
 
             # Show number of lines extracted
             result = str(section) + " section: Wrote" + " " + str(count) + " lines"
