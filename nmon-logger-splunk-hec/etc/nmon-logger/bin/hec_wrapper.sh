@@ -16,6 +16,11 @@
 ## 	Your Customizations Go Here            ##
 #################################################
 
+# format date output to strftime dd/mm/YYYY HH:MM:SS
+log_date () {
+    date "+%d-%m-%Y %H:%M:%S"
+}
+
 # Which type of OS are we running
 UNAME=`uname`
 
@@ -80,6 +85,12 @@ else
     HOST=`hostname`
 fi
 
+# Check curl availability
+which curl >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "`log_date`, ${HOST} ERROR, the curl command could not be found, cannot stream to Splunk HEC without curl"
+fi
+
 ############################################
 # functions
 ############################################
@@ -106,7 +117,7 @@ case ${splunk_http_token} in
 ;;
 
 *)
-	curl -s -k -H "Authorization: Splunk ${splunk_http_token}" ${splunk_http_url} -d "{\"host\": \"${HOST}\", \"sourcetype\": \"${userarg2}\", \"source\": \"${userarg3}\", \"event\": \"${output}\"}" >/dev/null
+	curl -s -k -H "Authorization: Splunk ${splunk_http_token}" ${splunk_http_url} -d "{\"host\": \"${HOST}\", \"sourcetype\": \"${userarg2}\", \"source\": \"${userarg3}\", \"event\": \"${output}\"}" 2>&1 >/dev/null
 ;;
 
 esac

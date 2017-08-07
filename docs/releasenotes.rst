@@ -6,9 +6,15 @@ Release notes
 What has been fixed by release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-========
+=======
+V2.0.6:
+=======
+
+- fix: corrections in hec_wrapper.sh (missing log_date function, check curl availability)
+
+=======
 V2.0.5:
-========
+=======
 
 - fix: from TA-nmon - AIX - Better management of compatibility issue with topas-nmon not supporting the -y option #43
 - fix: from TA-nmon - AIX - fix repeated and not justified pid file removal message #44
@@ -17,8 +23,8 @@ V2.0.5:
 - fix: from TA-nmon - Linux issue: detection of default/nmon.conf rewrite required is incorrect #41
 - fix: from TA-nmon - Error in nmon_helper.sh - bad analysis of external snap processes #42
 
-========
+=======
 V2.0.4:
-========
+=======
 
 - fix: nmon2kv.py issue when using the --use_fqdn option (useless call to get_fqdn function, undesired output)
