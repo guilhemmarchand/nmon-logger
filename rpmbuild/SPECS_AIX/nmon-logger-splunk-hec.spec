@@ -1,5 +1,5 @@
 Name: nmon-logger-splunk-hec
-Version: 2.0.5
+Version: 2.0.6
 Release: 0
 Summary: nmon-logger for Splunk HEC
 Source: %{name}.tar.gz
