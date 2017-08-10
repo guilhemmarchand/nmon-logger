@@ -7,6 +7,12 @@ What has been fixed by release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 =======
+V2.0.7:
+=======
+
+- fix: Python parser issue - epoch time stamp incorrectly parsed for dynamic data #4
+
+=======
 V2.0.6:
 =======
 

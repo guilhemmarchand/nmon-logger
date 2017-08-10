@@ -42,6 +42,8 @@
 #                                           - Optimize nmon_processing output and reduce volume of data to be generated #37
 # - 2017/27/07: V1.0.7: Guilhem Marchand:
 #                                           - Splunk HEC implementation
+# - 2017/10/08: V1.0.8: Guilhem Marchand:
+#                                           - Fix epoch timestmap failure for dynamic sections
 
 # Load libs
 
@@ -62,7 +64,7 @@ import json
 import subprocess
 
 # Converter version
-nmon2kv_version = '1.0.7'
+nmon2kv_version = '1.0.8'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -2265,7 +2267,7 @@ def dynamic_section_fn(section):
                     if header_match:
                         header = header_match.group(2)
 
-                        final_header = 'ZZZZ' + ',' + header + '\n'
+                        final_header = 'timestamp' + ',' + 'ZZZZ' + ',' + header + '\n'
 
                         # increment
                         count += 1
@@ -2317,7 +2319,7 @@ def dynamic_section_fn(section):
                     perfdata = perfdata_match.group(2)
 
                     # final perfdata
-                    final_perfdata = ZZZZ_timestamp + ',' + perfdata + '\n'
+                    final_perfdata = ZZZZ_epochtime + ',' + ZZZZ_timestamp + ',' + perfdata + '\n'
 
                     if realtime:
 
@@ -2364,7 +2366,7 @@ def dynamic_section_fn(section):
                                     sanity_check = 0
 
                             # Write perf data
-                            membuffer.write(ZZZZ_timestamp + ',' + perfdata + '\n'),
+                            membuffer.write(ZZZZ_epochtime + ',' + ZZZZ_timestamp + ',' + perfdata + '\n'),
                         else:
                             if debug:
                                 logging.debug("DEBUG, " + str(section) + " ignoring event " + str(ZZZZ_timestamp) +
@@ -2415,7 +2417,7 @@ def dynamic_section_fn(section):
                                 sanity_check = 0
 
                         # Write perf data
-                        membuffer.write(ZZZZ_timestamp + ',' + perfdata + '\n'),
+                        membuffer.write(ZZZZ_epochtime + ',' + ZZZZ_timestamp + ',' + perfdata + '\n'),
 
         if sanity_check == 0:
 
@@ -2436,6 +2438,7 @@ def dynamic_section_fn(section):
 
             for d in csv.DictReader(membuffer):
                 ZZZZ = d.pop('ZZZZ')
+                ZZZZ_epochtime = d.pop('timestamp')
                 for device, value in sorted(d.items()):
                     # increment
                     count += 1
@@ -2656,7 +2659,7 @@ def solaris_wlm_section_fn(section):
                     if header_match:
                         header = header_match.group(2)
 
-                        final_header = 'ZZZZ' + ',' + header + '\n'
+                        final_header = 'timestamp' + ',' + 'ZZZZ' + ',' + header + '\n'
 
                         # increment
                         count += 1
@@ -2708,7 +2711,7 @@ def solaris_wlm_section_fn(section):
                     perfdata = perfdata_match.group(2)
 
                     # final perfdata
-                    final_perfdata = ZZZZ_timestamp + ',' + perfdata + '\n'
+                    final_perfdata = ZZZZ_epochtime + ',' + ZZZZ_timestamp + ',' + perfdata + '\n'
 
                     if realtime:
 
@@ -2755,7 +2758,7 @@ def solaris_wlm_section_fn(section):
                                     sanity_check = 0
 
                             # Write perf data
-                            membuffer.write(ZZZZ_timestamp + ',' + perfdata + '\n'),
+                            membuffer.write(ZZZZ_epochtime + ',' + ZZZZ_timestamp + ',' + perfdata + '\n'),
 
                         else:
                             if debug:
@@ -2807,7 +2810,7 @@ def solaris_wlm_section_fn(section):
                                 sanity_check = 0
 
                         # Write perf data
-                        membuffer.write(ZZZZ_timestamp + ',' + perfdata + '\n'),
+                        membuffer.write(ZZZZ_epochtime + ',' + ZZZZ_timestamp + ',' + perfdata + '\n'),
 
         if sanity_check == 0:
 
@@ -2827,6 +2830,7 @@ def solaris_wlm_section_fn(section):
 
             for d in csv.DictReader(membuffer):
                 ZZZZ = d.pop('ZZZZ')
+                ZZZZ_epochtime = d.pop('timestamp')
                 for device, value in sorted(d.items()):
                     # increment
                     count += 1
