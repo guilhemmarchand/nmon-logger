@@ -1,5 +1,5 @@
 Package: nmon-logger-splunk-hec
-Version: 2.0.7
+Version: 2.0.8
 Section: base
 Priority: optional
 Architecture: all

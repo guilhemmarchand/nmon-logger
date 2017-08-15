@@ -43,7 +43,9 @@
 # - 2017/27/07: V1.0.7: Guilhem Marchand:
 #                                           - Splunk HEC implementation
 # - 2017/10/08: V1.0.8: Guilhem Marchand:
-#                                           - Fix epoch timestmap failure for dynamic sections
+#                                           - Fix epoch timestamp failure for dynamic sections
+# - 2017/12/08: V1.0.9: Guilhem Marchand:
+#                                           - Preserve data order during key value transformation
 
 # Load libs
 
@@ -64,7 +66,7 @@ import json
 import subprocess
 
 # Converter version
-nmon2kv_version = '1.0.8'
+nmon2kv_version = '1.0.9'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -464,31 +466,30 @@ def write_kv(input, kv_file):
 
         if kvdelim:
             for row in reader:
+                data = ""
                 for k, v in row.items():
-                    f.write("%s=\"%s\" " % (k, v))
-                f.write('\n')
+                    data = ("%s=\"%s\" " % (k, v)) + data
+                f.write(data + '\n')
         else:
             for row in reader:
+                data = ""
                 for k, v in row.items():
-                    f.write("%s=%s " % (k, v))
-                f.write('\n')
+                    data = ("%s=%s " % (k, v)) + data
+                f.write(data + '\n')
 
 # Stream to Splunk HEC
 def write_kv_to_http(input):
 
     reader = csv.DictReader(input)
-    final_data = ""
     http_data = ""
 
     for row in reader:
-
+        data = ""
         for k, v in row.items():
-
-            data="%s=\"%s\" " % (k, v)
-            final_data = final_data + data
+            data = ("%s=\"%s\" " % (k, v)) + data
 
         # extract epochtime
-        timestamp_match = re.match(r'.*timestamp="([0-9]*)".*', final_data)
+        timestamp_match = re.match(r'.*timestamp="([0-9]*)".*', data)
         if timestamp_match:
             timestamp = timestamp_match.group(1)
         else:
@@ -496,14 +497,11 @@ def write_kv_to_http(input):
             timestamp = time.strftime("%s")
 
         # escape any double quote
-        params = final_data.replace('"', '\\"')
+        params = data.replace('"', '\\"')
 
         # This might be changed for a more Pythonic approach in the future!
         http_data = http_data + "\n" + '{"time": "' +\
                     str(timestamp) + '", "sourcetype": "nmon_data:fromhttp", "event": "' + params + '"}'
-
-        # empty variable before next iteration
-        final_data = ""
 
     with open(SPLUNK_HEC_BATCHFILE, "ab") as f:
         f.write(http_data)

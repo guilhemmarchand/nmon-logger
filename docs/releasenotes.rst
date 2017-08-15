@@ -7,6 +7,12 @@ What has been fixed by release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 =======
+V2.0.8:
+=======
+
+- fix: Python parser - preserve data ordering when possible during key value transformation
+
+=======
 V2.0.7:
 =======
 
