@@ -37,7 +37,7 @@ echo "PROCCOUNT,$1,`ps -ef | wc -l`" >>NMON_FIFO_PATH/nmon_external.dat &
 echo "UPTIME,$1,\"`uptime | sed 's/^\s//g' | sed 's/,/;/g'`\"" >>NMON_FIFO_PATH/nmon_external.dat &
 
 # df table information
-DF_TABLE=`df -k -P | sed '1d' | grep -v ' 0%' | grep -v 'tmpfs' | awk '{print $6}'`
+DF_TABLE=`df -k | sed '1d' | grep -v ' 0%' | grep -v 'tmpfs' | awk '{print $6}'`
 for fs in $DF_TABLE; do
-    echo "DF_STORAGE,$1,`df -k $fs | sed '1d' | sed 's/%//g' | sed 's/,/;/g' | awk '{print $1 "," $2 "," $3 "," $4 "," $5 "," $6}'`" >>NMON_FIFO_PATH/nmon_external.dat
+    echo "DF_STORAGE,$1,`df -k -P $fs | sed '1d' | sed 's/%//g' | sed 's/,/;/g' | awk '{print $1 "," $2 "," $3 "," $4 "," $5 "," $6}'`" >>NMON_FIFO_PATH/nmon_external.dat
 done
