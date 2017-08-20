@@ -25,7 +25,7 @@
 
     "AIX_WLM":["WLMCPU", "WLMMEM", "WLMBIO"],
 
-    "nmon_external":["UPTIME", "PROCCOUNT"],
+    "nmon_external":["UPTIME", "PROCCOUNT", "DF_STORAGE"],
 
     "nmon_external_transposed":[""]
 

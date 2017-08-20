@@ -8,8 +8,9 @@
 # Guilhem Marchand 2017/03/18, initial version
 # Guilhem Marchand 2017/03/29, protect against unexpecting failure in NMON_EXTERNAL_DIR getting value
 # Guilhem Marchand 2017/06/09, use dedicated files for external header and data
+# Guilhem Marchand 2017/08/17, Adding DF table
 
-# Version 1.0.2
+# Version 1.0.3
 
 # For AIX / Linux / Solaris
 
@@ -39,3 +40,6 @@ echo "PROCCOUNT,Process Count,nb_running_processes" >>NMON_FIFO_PATH/nmon_extern
 
 # uptime information
 echo "UPTIME,Server Uptime and load,uptime_stdout" >>NMON_FIFO_PATH/nmon_external_header.dat
+
+# DF table (file systems usage)
+echo "DF_STORAGE,File system disk space usage,filesystem,blocks,Used,Available,Use_pct,mount" >>NMON_FIFO_PATH/nmon_external_header.dat

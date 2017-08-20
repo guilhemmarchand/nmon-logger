@@ -46,6 +46,8 @@
 #                                           - Fix epoch timestamp failure for dynamic sections
 # - 2017/12/08: V1.0.9: Guilhem Marchand:
 #                                           - Preserve data order during key value transformation
+# - 08/19/2017: V1.0.10: Guilhem Marchand:
+#                                           - fix: improve header check for static sections
 
 # Load libs
 
@@ -66,7 +68,7 @@ import json
 import subprocess
 
 # Converter version
-nmon2kv_version = '1.0.9'
+nmon2kv_version = '1.0.10'
 
 # LOGGING INFORMATION:
 # - The program uses the standard logging Python module to display important messages in Splunk logs
@@ -1258,6 +1260,8 @@ def standard_section_fn(section):
     # Set output file
     currsection_output = NMON_VAR + '/nmon_perfdata.log'
 
+    header_found = False
+
     # Store last epochtime if in real time mode
     keyref = HOSTNAME_VAR + '/' + HOSTNAME + '.' + section + '_lastepoch.txt'
 
@@ -1381,6 +1385,9 @@ def standard_section_fn(section):
                     if header_match:
                         header = header_match.group(2)
 
+                        # header has been found
+                        header_found = True
+
                         # increment
                         count += 1
 
@@ -1398,7 +1405,7 @@ def standard_section_fn(section):
                 # Old Nmon version sometimes incorporates a Txxxx reference in the header, this is unclean
                 # but we want to try getting the header anyway
 
-                elif not fullheader_match:
+                if not header_found:
                     # Assume the header may start with Txxx, then 1 non alpha char
                     myregex = '(' + section + ')\,(T\d+),([a-zA-Z]+.+)'
                     fullheader_match = re.search(myregex, line)
