@@ -8,7 +8,8 @@
 # Disclaimer:  this provided "as is".
 # Date - June 2014
 
-# Version 1.0.0
+# Version 1.0.1
+# 2017/08/21, Guilhem Marchand: SunOS compatibility issue with GNU grep
 
 # For AIX / Linux / Solaris
 
@@ -53,11 +54,11 @@ if [ -f /etc/nmon.conf ]; then
 	. /etc/nmon.conf
 fi
 
-# AIX does not support Gnu grep but he Perl friendly
+# AIX and Solaris are not GNU grep friendly, but have always Perl available
 
 case `uname` in
 
-"AIX")
+"AIX"|"SunOS")
 
     # Capture the splunk_http_url
     splunk_http_url=`echo $nmon2csv_options | perl -ne '/splunk_http_url\s([^\s]*+)/ && print $1."\n"'`
