@@ -69,8 +69,8 @@ $result = GetOptions(
     "use_fqdn"            => \$USE_FQDN,             # flag
     "splunk_http_url=s"   => \$SPLUNK_HTTP_URL,      # string
     "splunk_http_token=s" => \$SPLUNK_HTTP_TOKEN,    # string
-    "silent"    => \$SILENT,       # flag
-    "no_local_log"    => \$NO_LOCAL_LOG,       # flag
+    "silent"              => \$SILENT,               # flag
+    "no_local_log"        => \$NO_LOCAL_LOG,         # flag
     "help"                => \$help,                 # flag
     "debug"               => \$DEBUG,                # flag
 );
@@ -366,7 +366,7 @@ $BBB_FLAG = "$APP_VAR/BBB_status.flag";
 # Splunk HEC only: store the final batch file to be streamed (remove any pre-existing file)
 $SPLUNK_HEC_BATCHFILE = "$APP_VAR/splunk_hec_perfdata_batch.dat";
 if ( -e $SPLUNK_HEC_BATCHFILE ) {
-            unlink $SPLUNK_HEC_BATCHFILE;
+    unlink $SPLUNK_HEC_BATCHFILE;
 }
 
 #################################################
@@ -462,7 +462,7 @@ while ( defined( my $l = <FILE> ) ) {
 # The value will be equivalent to the stdout of the os "hostname -f" command
 # CAUTION: This option must not be used to manage nmon data out of Splunk ! (eg. central repositories)
 
-    if (not $USE_FQDN) {
+    if ( not $USE_FQDN ) {
         if ( ( rindex $l, "AAA,host," ) > -1 ) {
             ( my $t1, my $t2, $HOSTNAME ) = split( ",", $l );
         }
@@ -622,7 +622,8 @@ foreach $FILENAME (@nmon_files) {
 
     # Print an informational message if running in silent mode
     if ($SILENT) {
-        print "Output mode is configured to run in minimal mode using the --silent option\n";
+        print
+"Output mode is configured to run in minimal mode using the --silent option\n";
     }
 
     # Show Nmon version
@@ -1402,7 +1403,7 @@ foreach $FILENAME (@nmon_files) {
 
                 if ( $sanity_check == 0 ) {
 
-                    if (not $SILENT) {
+                    if ( not $SILENT ) {
                         print "$key section: Wrote $count line(s)\n";
                         print ID_REF "$key section: Wrote $count line(s)\n";
                     }
@@ -1688,130 +1689,147 @@ foreach $FILENAME (@nmon_files) {
 # The FullCommand may be very problematic as it may almost contain any kind of char, comma included
 # This field will have " separator added
 
-                        if ( $l =~
-m/^UARG\,T\d+\,\s*([0-9]*)\s*\,\s*([0-9]*)\s*\,\s*([a-zA-Z\-\/\_\:\.0-9]*)\s*\,\s*([0-9]*)\s*\,\s*([a-zA-Z\-\/\_\:\.0-9]*\s*)\,\s*([a-zA-Z\-\/\_\:\.0-9]*)\s*\,(.+)/
-                          )
+                        if (   $OStype eq "AIX"
+                            || $OStype eq "Unknown" )
                         {
 
+                            if ( $l =~
+m/^UARG\,T\d+\,\s*([0-9]*)\s*\,\s*([0-9]*)\s*\,\s*([a-zA-Z\-\/\_\:\.0-9]*)\s*\,\s*([0-9]*)\s*\,\s*([a-zA-Z\-\/\_\:\.0-9]*\s*)\,\s*([a-zA-Z\-\/\_\:\.0-9]*)\s*\,(.+)/
+                              )
+                            {
+
      # Convert timestamp string to epoch time (from format: DD-MM-YYYY hh:mm:ss)
-                            my ( $day, $month, $year, $hour, $min, $sec ) =
-                              split /\W+/, $timestamp;
-                            my $ZZZZ_epochtime =
-                              timelocal( $sec, $min, $hour, $day,
-                                $month - 1, $year );
+                                my ( $day, $month, $year, $hour, $min, $sec ) =
+                                  split /\W+/, $timestamp;
+                                my $ZZZZ_epochtime =
+                                  timelocal( $sec, $min, $hour, $day,
+                                    $month - 1, $year );
 
-                            $PID         = $1;
-                            $PPID        = $2;
-                            $COMM        = $3;
-                            $THCOUNT     = $4;
-                            $USER        = $5;
-                            $GROUP       = $6;
-                            $FullCommand = $7;
+                                $PID         = $1;
+                                $PPID        = $2;
+                                $COMM        = $3;
+                                $THCOUNT     = $4;
+                                $USER        = $5;
+                                $GROUP       = $6;
+                                $FullCommand = $7;
 
-                            $x =
-                                '"' . ""
-                              . $PID . "" . '","' . ""
-                              . $PPID . "" . '","' . ""
-                              . $COMM . "" . '","' . ""
-                              . $THCOUNT . "" . '","' . ""
-                              . $USER . "" . '","' . ""
-                              . $GROUP . "" . '","' . ""
-                              . $FullCommand . '"';
+                                $x =
+                                    '"' . ""
+                                  . $PID . "" . '","' . ""
+                                  . $PPID . "" . '","' . ""
+                                  . $COMM . "" . '","' . ""
+                                  . $THCOUNT . "" . '","' . ""
+                                  . $USER . "" . '","' . ""
+                                  . $GROUP . "" . '","' . ""
+                                  . $FullCommand . '"';
 
-                            my $write =
-                                '"'
-                              . $ZZZZ_epochtime . '"' . "," . '"'
-                              . $section . '"' . "," . '"'
-                              . $OStype . '"' . "," . '"'
-                              . $SN . '"' . "," . '"'
-                              . $HOSTNAME . '"' . "," . '"'
-                              . $timestamp . '"' . "," . '"'
-                              . $logical_cpus . '"' . "," . '"'
-                              . $virtual_cpus . '"' . "," . '"'
-                              . $INTERVAL . '"' . "," . '"'
-                              . $SNAPSHOTS . '"' . ","
-                              . $x;
+                                my $write =
+                                    '"'
+                                  . $ZZZZ_epochtime . '"' . "," . '"'
+                                  . $section . '"' . "," . '"'
+                                  . $OStype . '"' . "," . '"'
+                                  . $SN . '"' . "," . '"'
+                                  . $HOSTNAME . '"' . "," . '"'
+                                  . $timestamp . '"' . "," . '"'
+                                  . $logical_cpus . '"' . "," . '"'
+                                  . $virtual_cpus . '"' . "," . '"'
+                                  . $INTERVAL . '"' . "," . '"'
+                                  . $SNAPSHOTS . '"' . ","
+                                  . $x;
 
   # If in realtime mode, only extract events newer than the last known epochtime
-                            if ( $realtime eq "True" ) {
+                                if ( $realtime eq "True" ) {
 
-                                if ( $ZZZZ_epochtime > $last_epoch_filter ) {
+                                    if ( $ZZZZ_epochtime > $last_epoch_filter )
+                                    {
 
+                                        print( INSERT $write . "\n" );
+                                        $count++;
+
+                                    }
+                                    else {
+
+                                        if ($DEBUG) {
+                                            print
+"DEBUG, $key ignoring event $timestamp ( $ZZZZ_epochtime is lower than last known epoch time for this section $last_epoch_filter) \n";
+                                        }
+
+                                    }
+                                }
+                                elsif ( $colddata eq "True" || $fifo eq "True" )
+                                {
                                     print( INSERT $write . "\n" );
                                     $count++;
-
                                 }
 
-                                else {
-
-                                    if ($DEBUG) {
-                                        print
-"DEBUG, $key ignoring event $timestamp ( $ZZZZ_epochtime is lower than last known epoch time for this section $last_epoch_filter) \n";
-                                    }
-
-                                }
-                            }
-                            elsif ( $colddata eq "True" || $fifo eq "True" ) {
-                                print( INSERT $write . "\n" );
-                                $count++;
                             }
 
                         }
 
-                        # For Linux / Solaris
+                        if (   $OStype eq "Linux"
+                            || $OStype eq "Solaris"
+                            || $OStype eq "Unknown" )
+                        {
+
+                            # For Linux / Solaris
 
 # In this section, we statically expect 3 fields: PID,ProgName,FullCommand
 # The FullCommand may be very problematic as it may almost contain any kind of char, comma included
 # Let's separate groups and insert " delimiter
 
-                        if ( $l =~
+                            if ( $l =~
 m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
-                          )
-                        {
+                              )
+                            {
 
      # Convert timestamp string to epoch time (from format: DD-MM-YYYY hh:mm:ss)
-                            my ( $day, $month, $year, $hour, $min, $sec ) =
-                              split /\W+/, $timestamp;
-                            my $ZZZZ_epochtime =
-                              timelocal( $sec, $min, $hour, $day,
-                                $month - 1, $year );
+                                my ( $day, $month, $year, $hour, $min, $sec ) =
+                                  split /\W+/, $timestamp;
+                                my $ZZZZ_epochtime =
+                                  timelocal( $sec, $min, $hour, $day,
+                                    $month - 1, $year );
 
-                            $PID         = $1;
-                            $ProgName    = $2;
-                            $FullCommand = $3;
+                                $PID         = $1;
+                                $ProgName    = $2;
+                                $FullCommand = $3;
 
-                            $x =
-                                '"' . ""
-                              . $PID . "" . '","' . ""
-                              . $ProgName . "" . '","' . ""
-                              . $FullCommand . "" . '"';
+                                $x =
+                                    '"' . ""
+                                  . $PID . "" . '","' . ""
+                                  . $ProgName . "" . '","' . ""
+                                  . $FullCommand . "" . '"';
 
-                            my $write =
-                                '"'
-                              . $ZZZZ_epochtime . '"' . "," . '"'
-                              . $section . '"' . "," . '"'
-                              . $OStype . '"' . "," . '"'
-                              . $SN . '"' . "," . '"'
-                              . $HOSTNAME . '"' . "," . '"'
-                              . $timestamp . '"' . "," . '"'
-                              . $logical_cpus . '"' . "," . '"'
-                              . $virtual_cpus . '"' . "," . '"'
-                              . $INTERVAL . '"' . "," . '"'
-                              . $SNAPSHOTS . '"' . ","
-                              . $x;
+                                my $write =
+                                    '"'
+                                  . $ZZZZ_epochtime . '"' . "," . '"'
+                                  . $section . '"' . "," . '"'
+                                  . $OStype . '"' . "," . '"'
+                                  . $SN . '"' . "," . '"'
+                                  . $HOSTNAME . '"' . "," . '"'
+                                  . $timestamp . '"' . "," . '"'
+                                  . $logical_cpus . '"' . "," . '"'
+                                  . $virtual_cpus . '"' . "," . '"'
+                                  . $INTERVAL . '"' . "," . '"'
+                                  . $SNAPSHOTS . '"' . ","
+                                  . $x;
 
   # If in realtime mode, only extract events newer than the last known epochtime
-                            if ( $realtime eq "True" ) {
+                                if ( $realtime eq "True" ) {
 
-                                if ( $ZZZZ_epochtime > $last_known_epochtime ) {
+                                    if ( $ZZZZ_epochtime >
+                                        $last_known_epochtime )
+                                    {
 
+                                        print( INSERT $write . "\n" );
+                                        $count++;
+                                    }
+                                }
+                                elsif ( $colddata eq "True" || $fifo eq "True" )
+                                {
                                     print( INSERT $write . "\n" );
                                     $count++;
                                 }
-                            }
-                            elsif ( $colddata eq "True" || $fifo eq "True" ) {
-                                print( INSERT $write . "\n" );
-                                $count++;
+
                             }
 
                         }
@@ -1825,7 +1843,7 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
 
                     if ( $sanity_check == 0 ) {
 
-                        if (not $SILENT) {
+                        if ( not $SILENT ) {
                             print "$key section: Wrote $count line(s)\n";
                             print ID_REF "$key section: Wrote $count line(s)\n";
                         }
@@ -2050,8 +2068,8 @@ m/^UARG\,T\d+\,([0-9]*)\,([a-zA-Z\-\/\_\:\.0-9]*)\,(.+)/
         }
     }
 
-
     if ($use_splunk_http) {
+
         # Finally Stream to Splunk HEC in batch
         &stream_to_splunk_http();
     }
@@ -2100,9 +2118,10 @@ sub csv2kv {
         my @lines = <FH>;
         close FH;
 
-        if (not $NO_LOCAL_LOG) {
+        if ( not $NO_LOCAL_LOG ) {
+
             # Open outfile for writing
-            unless (open(INSERT, ">> $outfile")) {
+            unless ( open( INSERT, ">> $outfile" ) ) {
                 die("ERROR: Can not open /$outfile for writting\n");
             }
         }
@@ -2139,8 +2158,9 @@ sub csv2kv {
                         last;
                     }
 
-                    if (not $NO_LOCAL_LOG) {
-                        print INSERT $header[$hdcount] . "=" . $loopvariable . " ";
+                    if ( not $NO_LOCAL_LOG ) {
+                        print INSERT $header[$hdcount] . "="
+                          . $loopvariable . " ";
                     }
 
                     # for Splunk HEC
@@ -2153,12 +2173,13 @@ sub csv2kv {
 
                     $hdcount = $hdcount + 1;
                 }
-                if (not $NO_LOCAL_LOG) {
+                if ( not $NO_LOCAL_LOG ) {
                     print INSERT "\n";
                 }
 
                 # For Splunk HEC
                 if ($use_splunk_http) {
+
                     #$kvdata =~ s/"/\\"/g;
                     my $timestamp = "";
 
@@ -2172,7 +2193,8 @@ sub csv2kv {
                     }
 
                     $kvdata =~ s/"/\\"/g;
-                    $kvdata = "{\"time\": \"$timestamp\", \"sourcetype\": \"nmon_data:fromhttp\", \"event\": \"$kvdata\"}\n";
+                    $kvdata =
+"{\"time\": \"$timestamp\", \"sourcetype\": \"nmon_data:fromhttp\", \"event\": \"$kvdata\"}\n";
 
                     print SPLUNK_HEC "$kvdata";
 
@@ -2194,7 +2216,8 @@ sub csv2kv {
 sub stream_to_splunk_http () {
 
     # Stream to http
-    $curl = `unset LIBPATH; curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE 2>&1 /dev/null`;
+    $curl =
+`unset LIBPATH; curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$SPLUNK_HEC_BATCHFILE 2>&1 /dev/null`;
 
     if ($DEBUG) {
         print
@@ -2202,7 +2225,7 @@ sub stream_to_splunk_http () {
     }
 
     if ( -e $SPLUNK_HEC_BATCHFILE ) {
-                unlink $SPLUNK_HEC_BATCHFILE;
+        unlink $SPLUNK_HEC_BATCHFILE;
     }
 
 }
@@ -2213,22 +2236,23 @@ sub stream_to_splunk_http () {
 
 sub config_extract {
 
-    if (not $NO_LOCAL_LOG) {
+    if ( not $NO_LOCAL_LOG ) {
+
         # Open for writing in append mode
-        unless (open(INSERT, ">>$BASEFILENAME")) {
+        unless ( open( INSERT, ">>$BASEFILENAME" ) ) {
             die("ERROR: ERROR: Can not open /$BASEFILENAME\n");
         }
     }
 
     # Splunk HEC
-    my $config_output_tmp = "$NMON_VAR/nmon_configdata_splunkhec.tmp";
+    my $config_output_tmp   = "$NMON_VAR/nmon_configdata_splunkhec.tmp";
     my $config_output_final = "$NMON_VAR/nmon_configdata_splunkhec.log";
 
-     if ($use_splunk_http) {
-        unless (open(INSERT_HEC_TMP, ">$config_output_tmp")) {
+    if ($use_splunk_http) {
+        unless ( open( INSERT_HEC_TMP, ">$config_output_tmp" ) ) {
             die("ERROR: ERROR: Can not open $config_output_tmp\n");
         }
-        unless (open(INSERT_HEC, ">$config_output_final")) {
+        unless ( open( INSERT_HEC, ">$config_output_final" ) ) {
             die("ERROR: ERROR: Can not open $config_output_final\n");
         }
     }
@@ -2243,7 +2267,7 @@ sub config_extract {
     $BBB_count = 0;
 
     # Get nmon/server settings (search string, return column, delimiter)
-    $AIXVER   = &get_setting( "AIX",      2, "," );
+    $AIXVER = &get_setting( "AIX", 2, "," );
 
     # Allow hostname os
     if ($USE_FQDN) {
@@ -2253,8 +2277,8 @@ sub config_extract {
         $HOSTNAME = &get_setting( "host", 2, "," );
     }
 
-    $DATE     = &get_setting( "AAA,date", 2, "," );
-    $TIME     = &get_setting( "AAA,time", 2, "," );
+    $DATE = &get_setting( "AAA,date", 2, "," );
+    $TIME = &get_setting( "AAA,time", 2, "," );
 
     # for AIX
     if ( $AIXVER ne "-1" ) {
@@ -2292,12 +2316,12 @@ sub config_extract {
       . $SN
       . "$colon, configuration_content=$colon";
 
-    if (not $NO_LOCAL_LOG) {
-        print(INSERT "$write\n");
+    if ( not $NO_LOCAL_LOG ) {
+        print( INSERT "$write\n" );
     }
 
     if ($use_splunk_http) {
-        print(INSERT_HEC_TMP "$write\n");
+        print( INSERT_HEC_TMP "$write\n" );
     }
 
     $count++;
@@ -2322,12 +2346,12 @@ sub config_extract {
 
             my $write = $x;
 
-            if (not $NO_LOCAL_LOG) {
-                print(INSERT "$write\n");
+            if ( not $NO_LOCAL_LOG ) {
+                print( INSERT "$write\n" );
             }
 
             if ($use_splunk_http) {
-                print(INSERT_HEC_TMP "$write\n");
+                print( INSERT_HEC_TMP "$write\n" );
             }
 
             $count++;
@@ -2344,12 +2368,12 @@ sub config_extract {
 
             my $write = $x;
 
-            if (not $NO_LOCAL_LOG) {
-                print(INSERT "$write\n");
+            if ( not $NO_LOCAL_LOG ) {
+                print( INSERT "$write\n" );
             }
 
             if ($use_splunk_http) {
-                print(INSERT_HEC_TMP "$write\n");
+                print( INSERT_HEC_TMP "$write\n" );
             }
 
             $count++;
@@ -2359,23 +2383,26 @@ sub config_extract {
 
     }
 
-    if (not $NO_LOCAL_LOG) {
+    if ( not $NO_LOCAL_LOG ) {
+
         # print terminator
-        print(INSERT "$colon");
+        print( INSERT "$colon" );
         close INSERT;
     }
 
     if ($use_splunk_http) {
 
-        print(INSERT_HEC_TMP "$colon");
+        print( INSERT_HEC_TMP "$colon" );
         close INSERT_HEC_TMP;
 
         # Insert the HEC header
-        print INSERT_HEC "{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"";
+        print INSERT_HEC
+          "{\"sourcetype\": \"nmon_config:fromhttp\", \"event\": \"";
 
-        open my $origin, $config_output_tmp or die "Could not open $config_output_tmp: $!";
+        open my $origin, $config_output_tmp
+          or die "Could not open $config_output_tmp: $!";
 
-        while (my $line = <$origin>) {
+        while ( my $line = <$origin> ) {
             $line =~ s/\'/ /g;
             $line =~ s/\"/\\"/g;
             $line = "$line\\n";
@@ -2390,7 +2417,8 @@ sub config_extract {
         }
 
         # Stream to http
-        $curl = `unset LIBPATH; curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$config_output_final 2>&1 /dev/null`;
+        $curl =
+`unset LIBPATH; curl -s -k -H "Authorization: Splunk $SPLUNK_HTTP_TOKEN" $SPLUNK_HTTP_URL -d \@$config_output_final 2>&1 /dev/null`;
 
         close INSERT_HEC;
 
@@ -2581,8 +2609,8 @@ qq|timestamp,type,serialnum,hostname,OStype,logical_cpus,virtual_cpus,ZZZZ,inter
         @rawdata = grep( /^CPU\d*,T.+,/, @nmon );
     }
 
-    $n     = @cols;
-    $n     = $n - 1;    # number of columns -1
+    $n = @cols;
+    $n = $n - 1;    # number of columns -1
 
 # Define the starting line to read (exclusion of csv header)
 # For CPUnn, we don't need to filter the header as we already filtered on perf data
@@ -2704,7 +2732,7 @@ qq|"$ZZZZ_epochtime","$datatype","$SN","$HOSTNAME","$OStype","$logical_cpus","$v
     else {
         if ( $count >= 1 ) {
 
-            if (not $SILENT) {
+            if ( not $SILENT ) {
                 print "$key section: Wrote $count lines\n";
                 print ID_REF "$key section: Wrote $count lines\n";
             }
@@ -3008,7 +3036,7 @@ qq|\n"$ZZZZ_epochtime","$key","$SN","$HOSTNAME","$OStype","$INTERVAL","$SNAPSHOT
     else {
         if ( $count >= 1 ) {
 
-            if (not $SILENT) {
+            if ( not $SILENT ) {
                 print "$key section: Wrote $count lines\n";
                 print ID_REF "$key section: Wrote $count lines\n";
             }
@@ -3304,7 +3332,7 @@ qq|\n$ZZZZ_epochtime,$key,$SN,$HOSTNAME,$OStype,$logical_cpus,$INTERVAL,$SNAPSHO
     else {
         if ( $count >= 1 ) {
 
-            if (not $SILENT) {
+            if ( not $SILENT ) {
                 print "$key section: Wrote $count lines\n";
                 print ID_REF "$key section: Wrote $count lines\n";
             }
@@ -3427,8 +3455,8 @@ sub get_nmon_data {
     }
 
     # Get nmon/server settings (search string, return column, delimiter)
-    $AIXVER   = &get_setting( "AIX",      2, "," );
-    $DATE     = &get_setting( "date",     2, "," );
+    $AIXVER = &get_setting( "AIX",  2, "," );
+    $DATE   = &get_setting( "date", 2, "," );
 
     # Allow hostname os
     if ($USE_FQDN) {
