@@ -40,8 +40,10 @@
 #                                           - Optimize nmon_processing output and reduce volume of data to be generated #37
 # - 2017/27/07: V1.0.7: Guilhem Marchand:
 #                                           - Splunk HEC implementation
+# - 2017/25/08: V1.0.8: Guilhem Marchand:
+#                                           - Perl parser issue - UARG parsing issue for AIX #2
 
-$version = "1.0.7";
+$version = "1.0.8";
 
 use Time::Local;
 use Time::HiRes;
@@ -1749,7 +1751,7 @@ m/^UARG\,T\d+\,\s*([0-9]*)\s*\,\s*([0-9]*)\s*\,\s*([a-zA-Z\-\/\_\:\.0-9]*)\s*\,\
 
                                 }
                             }
-                            elsif ( $colddata eq "True" ) {
+                            elsif ( $colddata eq "True" || $fifo eq "True" ) {
                                 print( INSERT $write . "\n" );
                                 $count++;
                             }
