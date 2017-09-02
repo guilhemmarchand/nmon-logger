@@ -36,15 +36,9 @@ echo "PROCCOUNT,$1,`ps -ef | wc -l`" >>NMON_FIFO_PATH/nmon_external.dat &
 # Uptime information (uptime command output)
 echo "UPTIME,$1,\"`uptime | sed 's/^\s//g' | sed 's/,/;/g'`\"" >>NMON_FIFO_PATH/nmon_external.dat &
 
-# df table information (exclude useless file systems, local file systems only, use POSIX format)
-case `uname` in
-"AIX")
-    DF="df -k -P -T local" ;;
-*)
-    DF="df -k -P --local" ;;
-esac
-
-DF_TABLE=`$DF | sed '1d' | egrep -v '\/proc$|/dev$|\/run$|^tmpfs.*\/dev.*$|^tmpfs.*\/run.*$|^tmpfs.*\/sys.*$|^tmpfs.*\/var.*$' | awk '{print $6}'`
+# df table information
+DF_TABLE=`df -k -P | sed '1d' | egrep -v '\s\/proc$|\s/dev$|\s\/run$|^tmpfs.*\/dev.*$|^tmpfs.*\/run.*$|^tmpfs.*\/sys.*$|^tmpfs.*\/var.*$' | awk '{print $6}'`
 for fs in $DF_TABLE; do
-    echo "DF_STORAGE,$1,`$DF $fs | sed '1d' | sed 's/%//g' | sed 's/,/;/g' | awk '{print $1 "," $2 "," $3 "," $4 "," $5 "," $6}'`" >>NMON_FIFO_PATH/nmon_external.dat
+    echo "DF_STORAGE,$1,`df -k -P $fs | sed '1d' | sed 's/%//g' | sed 's/,/;/g' | awk '{print $1 "," $2 "," $3 "," $4 "," $5 "," $6}'`" >>NMON_FIFO_PATH/nmon_external.dat
+    echo "DF_INODES,$1,`df -i -P $fs | sed '1d' | sed 's/%//g' | sed 's/,/;/g' | awk '{print $1 "," $2 "," $3 "," $4 "," $5 "," $6}'`" >>NMON_FIFO_PATH/nmon_external.dat
 done

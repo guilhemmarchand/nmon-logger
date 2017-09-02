@@ -43,3 +43,4 @@ echo "UPTIME,Server Uptime and load,uptime_stdout" >>NMON_FIFO_PATH/nmon_externa
 
 # DF table (file systems usage)
 echo "DF_STORAGE,File system disk space usage,filesystem,blocks,Used,Available,Use_pct,mount" >>NMON_FIFO_PATH/nmon_external_header.dat
+echo "DF_INODES,File system inodes usage,filesystem,Inodes,IUsed,IFree,IUse_pct,mount" >>NMON_FIFO_PATH/nmon_external_header.dat
