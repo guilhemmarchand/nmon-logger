@@ -7,6 +7,20 @@ What has been fixed by release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 =======
+V2.0.9:
+=======
+
+- fix: Python parser - header detection correction for nmon external monitoring
+- feature: Add df information for improved file system monitoring and storage capacity planning
+- fix: Perl parser issue - UARG parsing issue for AIX #5
+
+=======
+V2.0.8:
+=======
+
+- fix: Python parser - preserve data ordering when possible during key value transformation
+
+=======
 V2.0.7:
 =======
 

@@ -1,5 +1,5 @@
 Package: nmon-logger-syslog-ng
-Version: 2.0.7
+Version: 2.0.9
 Section: base
 Priority: optional
 Architecture: all
