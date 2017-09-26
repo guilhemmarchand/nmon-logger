@@ -6,6 +6,12 @@ Release notes
 What has been fixed by release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+========
+V2.0.10:
+========
+
+- fix: reactivating the JFSFILE / JFSINODE collections until new core release is available to prevent missing features
+
 =======
 V2.0.9:
 =======
